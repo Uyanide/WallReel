@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2025-11-30 22:37:48
+ * @LastEditTime: 2025-12-01 00:44:06
  * @Description: MainWindow implementation.
  */
 #include "main_window.h"
@@ -10,6 +10,7 @@
 #include <QKeyEvent>
 #include <QProcess>
 #include <QPushButton>
+#include <functional>
 
 #include "./ui_main_window.h"
 #include "images_carousel.h"
@@ -134,38 +135,45 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
     }
 }
 
+void MainWindow::_stopLoadingAndQuit(const std::function<void()>& onStopped) {
+    if (m_state != Loading) {
+        return;
+    }
+    info("Stopping loading.");
+    connect(
+        m_carousel,
+        &ImagesCarousel::stopped,
+        this,
+        [this, onStopped]() {
+            if (onStopped) {
+                onStopped();
+            }
+        });
+    m_state = Stopping;
+    emit stop();
+}
+
 void MainWindow::_onCancelPressed() {
     switch (m_state) {
         case Loading:
             // case loading screen is disabled, quit the app
             if (m_config.getStyleConfig().noLoadingScreen) {
-                info("Stopping loading and quitting app.");
-                connect(
-                    m_carousel,
-                    &ImagesCarousel::stopped,
-                    this,
-                    &MainWindow::onCancel);
-                m_state = Stopping;
-                emit stop();
+                _stopLoadingAndQuit([this]() {
+                    info("Quitting app.");
+                    close();
+                });
             }
             // otherwise, stop loading and display the loaded images
             else {
-                info("Stopping loading.");
-                connect(
-                    m_carousel,
-                    &ImagesCarousel::stopped,
-                    this,
-                    [this]() {
-                        _onLoadingCompleted(m_carousel->getLoadedImagesCount());
-                        m_carousel->focusCurrImage();
-                    });
-                m_state = Stopping;
-                emit stop();
+                _stopLoadingAndQuit([this]() {
+                    _onLoadingCompleted(m_carousel->getLoadedImagesCount());
+                    m_carousel->focusCurrImage();
+                });
             }
             break;
         case Ready:
             info("Quitting app.");
-            onCancel();
+            close();
             break;
         default:
             break;
@@ -213,7 +221,10 @@ void MainWindow::wheelEvent(QWheelEvent* event) {
 void MainWindow::closeEvent(QCloseEvent* event) {
     if (m_state == Loading) {
         event->ignore();
-        _onCancelPressed();
+        _stopLoadingAndQuit([this]() {
+            info("Quitting app.");
+            close();
+        });
     } else {
         event->accept();
     }
@@ -241,10 +252,6 @@ void MainWindow::onConfirm() {
         error(QString("Failed to execute command: %1").arg(cmd));
         return;
     }
-}
-
-void MainWindow::onCancel() {
-    close();
 }
 
 void MainWindow::_onImageFocused(const QString& path, const int index, const int count) {

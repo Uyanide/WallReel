@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2025-11-30 23:21:30
+ * @LastEditTime: 2025-12-01 00:45:52
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #include "images_carousel.h"
@@ -54,6 +54,18 @@ ImagesCarousel::ImagesCarousel(const Config::StyleConfigItems& styleConfig,
             this,
             &ImagesCarousel::_onImagesLoaded);
 
+    // Load initial images
+    connect(this,
+            &ImagesCarousel::stopped,
+            this,
+            &ImagesCarousel::_onInitImagesLoaded);
+
+    // Also handle subsequent image loads
+    connect(this,
+            &ImagesCarousel::stopped,
+            this,
+            &ImagesCarousel::_onImagesLoaded);
+
     // Auto focus when scrolling
     m_scrollDebounceTimer = new QTimer(this);
     m_scrollDebounceTimer->setSingleShot(true);
@@ -78,6 +90,7 @@ ImagesCarousel::ImagesCarousel(const Config::StyleConfigItems& styleConfig,
 
 void ImagesCarousel::_onInitImagesLoaded() {
     disconnect(this, &ImagesCarousel::loadingCompleted, this, &ImagesCarousel::_onInitImagesLoaded);
+    disconnect(this, &ImagesCarousel::stopped, this, &ImagesCarousel::_onInitImagesLoaded);
 
     // No images loaded
     if (m_loadedImages.isEmpty()) {

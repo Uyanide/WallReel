@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2025-11-30 22:37:27
+ * @LastEditTime: 2025-12-01 00:37:35
  * @Description: MainWindow implementation.
  */
 #ifndef MAINWINDOW_H
@@ -30,7 +30,6 @@ class MainWindow : public QMainWindow {
 
   public slots:
     void onConfirm();
-    void onCancel();
 
   protected:
     void keyPressEvent(QKeyEvent* event) override;
@@ -39,6 +38,7 @@ class MainWindow : public QMainWindow {
 
   private:
     void _setupUI();
+    void _stopLoadingAndQuit(const std::function<void()>& onStopped = nullptr);
 
   private slots:
     void _onImageFocused(const QString& path, const int index, const int count);
