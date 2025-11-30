@@ -12,6 +12,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
@@ -26,10 +30,12 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(wallpaper-carousel
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        src/utils.h
         src/images_carousel.h src/images_carousel.cpp src/designer/images_carousel.ui
         src/config.h src/config.cpp
         src/logger.h src/logger.cpp
         src/loading_indicator.h src/loading_indicator.cpp src/designer/loading_indicator.ui
+        src/image_item.h src/image_item.cpp
     )
 
 # Define target properties for Android with Qt 6 as:

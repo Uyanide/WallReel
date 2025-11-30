@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2025-08-08 03:37:24
+ * @LastEditTime: 2025-11-30 22:37:27
  * @Description: MainWindow implementation.
  */
 #ifndef MAINWINDOW_H
@@ -25,7 +25,7 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 
   public:
-    MainWindow(const Config &config, QWidget *parent = nullptr);
+    MainWindow(const Config& config, QWidget* parent = nullptr);
     ~MainWindow();
 
   public slots:
@@ -33,14 +33,15 @@ class MainWindow : public QMainWindow {
     void onCancel();
 
   protected:
-    void keyPressEvent(QKeyEvent *event) override;
-    void wheelEvent(QWheelEvent *event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
+    void closeEvent(QCloseEvent* event) override;
 
   private:
     void _setupUI();
 
   private slots:
-    void _onImageFocused(const QString &path, const int index, const int count);
+    void _onImageFocused(const QString& path, const int index, const int count);
     void _onLoadingStarted(const qsizetype amount);
     void _onLoadingCompleted(const qsizetype amount);
 
@@ -55,11 +56,11 @@ class MainWindow : public QMainWindow {
         Ready,
     } m_state = Init;
 
-    Ui::MainWindow *ui;
-    ImagesCarousel *m_carousel           = nullptr;
-    LoadingIndicator *m_loadingIndicator = nullptr;
+    Ui::MainWindow* ui;
+    ImagesCarousel* m_carousel           = nullptr;
+    LoadingIndicator* m_loadingIndicator = nullptr;
     int m_carouselIndex, m_loadingIndicatorIndex;
-    const Config &m_config;
+    const Config& m_config;
 
   signals:
     void stop();
