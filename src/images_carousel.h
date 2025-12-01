@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2025-12-01 00:59:39
+ * @LastEditTime: 2025-12-01 01:36:04
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #ifndef IMAGES_CAROUSEL_H
@@ -12,18 +12,13 @@
 
 #include <QHBoxLayout>
 #include <QKeyEvent>
-#include <QLabel>
 #include <QMutex>
-#include <QObject>
-#include <QPixmap>
 #include <QPointer>
 #include <QPropertyAnimation>
 #include <QQueue>
 #include <QRunnable>
 #include <QScrollArea>
-#include <QThreadPool>
 #include <QTimer>
-#include <QWidget>
 
 #include "config.h"
 #include "image_item.h"
@@ -70,15 +65,28 @@ class ImagesCarousel : public QWidget {
     static constexpr int s_processBatchSize    = 30;  // items
 
     [[nodiscard]] QString getCurrentImagePath() const {
-        if (m_currentIndex < 0 || m_currentIndex >= m_loadedImages.size()) {
-            return "";
+        if (m_currentIndex >= 0 && m_currentIndex < getLoadedImagesCount()) {
+            auto item = getImageItemAt(m_currentIndex);
+            if (item) {
+                return item->getFileFullPath();
+            }
         }
-        return m_loadedImages[m_currentIndex]->getFileFullPath();
+        return "";
     }
 
     // Should always be called in the main thread
-    [[nodiscard]] qsizetype getLoadedImagesCount() {
-        return m_loadedImages.size();
+    [[nodiscard]] qsizetype getLoadedImagesCount() const {
+        return m_imagesLayout->count();
+    }
+
+    [[nodiscard]] ImageItem* getImageItemAt(int index) const {
+        if (index < 0 || index >= getLoadedImagesCount()) {
+            return nullptr;
+        }
+        return dynamic_cast<ImageItem*>(
+            m_imagesLayout
+                ->itemAt(index)
+                ->widget());
     }
 
     [[nodiscard]] qsizetype getAddedImagesCount() {
@@ -126,11 +134,10 @@ class ImagesCarousel : public QWidget {
     ImagesCarouselScrollArea* m_scrollArea = nullptr;
 
     // Items and counters
-    QVector<ImageItem*> m_loadedImages;  // m_loadedImages.size() may != m_loadedImagesCount
-    int m_loadedImagesCount = 0;         // increase when _insertImage is called OR ImageLoader::run() is called with m_stopSign as true
-    int m_addedImagesCount  = 0;         // increase when appendImages called
-    QMutex m_countMutex;                 // for m_loadedImagesCount and m_addedImagesCount
-    int m_currentIndex = -1;             // initially no focus
+    int m_loadedImagesCount = 0;  // increase when _insertImage is called OR ImageLoader::run() is called with m_stopSign as true
+    int m_addedImagesCount  = 0;  // increase when appendImages called
+    QMutex m_countMutex;          // for m_loadedImagesCount and m_addedImagesCount
+    int m_currentIndex = -1;      // initially no focus
 
     // Threading
     QQueue<ImageData*> m_imageInsertQueue;

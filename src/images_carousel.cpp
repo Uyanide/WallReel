@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2025-12-01 00:58:12
+ * @LastEditTime: 2025-12-01 01:40:01
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #include "images_carousel.h"
@@ -14,11 +14,11 @@
 #include <QMetaObject>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QThreadPool>
 #include <QVector>
-#include <algorithm>
 #include <functional>
-#include <iterator>
 
+#include "image_item.h"
 #include "logger.h"
 #include "ui_images_carousel.h"
 #include "utils.h"
@@ -87,7 +87,7 @@ void ImagesCarousel::_onImagesLoaded() {
     }
     if (m_initialImagesLoaded) {
         // No images loaded
-        if (m_loadedImages.isEmpty()) {
+        if (!getLoadedImagesCount()) {
             return;
         }
         // Focus the first image
@@ -102,8 +102,6 @@ void ImagesCarousel::_onImagesLoaded() {
 
 ImagesCarousel::~ImagesCarousel() {
     delete ui;
-    // memory of items in m_loadedImages managed by Qt parent-child system
-    // ...
     if (m_scrollAnimation) {
         m_scrollAnimation->stop();
         m_scrollAnimation->deleteLater();
@@ -132,7 +130,6 @@ void ImagesCarousel::appendImages(const QStringList& paths) {
                 &ImagesCarousel::_processImageInsertQueue);
         m_imageInsertQueueTimer->start();
     }
-    m_loadedImages.reserve(m_loadedImages.size() + paths.size());
     emit loadingStarted(paths.size());
     for (const QString& path : paths) {
         ImageLoader* loader = new ImageLoader(path, this);
@@ -162,7 +159,7 @@ void ImagesCarousel::_insertImageQueue(const ImageData* data) {
 int ImagesCarousel::_insertImage(const ImageData* data) {
     // Increase loaded count regardless of success or failure
     Defer defer([this]() {
-        emit imageLoaded(m_loadedImages.size());
+        emit imageLoaded(getLoadedImagesCount());
         {
             QMutexLocker countLocker(&m_countMutex);
             if (++m_loadedImagesCount >= m_addedImagesCount) {
@@ -204,26 +201,26 @@ int ImagesCarousel::_insertImage(const ImageData* data) {
     };
 
     // insert into correct position based on sort type and direction
-    qint64 insertPos = m_loadedImages.size();
+    qint64 insertPos = getLoadedImagesCount();
     if (m_sortType != Config::SortType::None) {
         auto cmp     = cmpFuncs[static_cast<int>(m_sortType)];
         auto reverse = m_sortReverse;
 
-        auto it = std::upper_bound(
-            m_loadedImages.begin(),
-            m_loadedImages.end(),
-            item,
-            [cmp, reverse](const ImageItem* a, const ImageItem* b) {
-                return reverse ? cmp(b, a) : cmp(a, b);
-            });
-
-        insertPos = std::distance(m_loadedImages.begin(), it);
+        int left = 0, right = getLoadedImagesCount();
+        while (left < right) {
+            int mid = left + (right - left) / 2;
+            if (reverse ? cmp(item, getImageItemAt(mid)) : cmp(getImageItemAt(mid), item)) {
+                right = mid;
+            } else {
+                left = mid + 1;
+            }
+        }
+        insertPos = left;
     }
     connect(item,
             &ImageItem::clicked,
             this,
             &ImagesCarousel::_onItemClicked);
-    m_loadedImages.insert(insertPos, item);
     m_imagesLayout->insertWidget(insertPos, item);
     return insertPos;
 }
@@ -247,7 +244,7 @@ void ImagesCarousel::_processImageInsertQueue() {
     // Update focusing index if any
     if (m_currentIndex >= 0) {
         m_currentIndex = currPos;
-        if (m_currentIndex < 0 || m_currentIndex >= m_loadedImages.size()) {
+        if (m_currentIndex < 0 || m_currentIndex >= getLoadedImagesCount()) {
             m_currentIndex = 0;
         }
     }
@@ -283,46 +280,49 @@ void ImageLoader::run() {
 }
 
 void ImagesCarousel::focusNextImage() {
+    const auto count = getLoadedImagesCount();
     // If no focus, focus the first image
     if (m_currentIndex < 0) {
-        if (m_loadedImages.isEmpty()) return;
+        if (!count) return;
         m_currentIndex = 0;
         focusCurrImage();
         return;
     }
     unfocusCurrImage();
-    if (m_loadedImages.size() <= 1) return;
+    if (count <= 1) return;
     m_currentIndex++;
-    if (m_currentIndex >= m_loadedImages.size()) {
+    if (m_currentIndex >= count) {
         m_currentIndex = 0;
     }
     focusCurrImage();
 }
 
 void ImagesCarousel::focusPrevImage() {
+    const auto count = getLoadedImagesCount();
     // If no focus, focus the last image
     if (m_currentIndex < 0) {
-        if (m_loadedImages.isEmpty()) return;
-        m_currentIndex = m_loadedImages.size() - 1;
+        if (!count) return;
+        m_currentIndex = count - 1;
         focusCurrImage();
         return;
     }
-    if (m_loadedImages.size() <= 1) return;
+    if (count <= 1) return;
     unfocusCurrImage();
     m_currentIndex--;
     if (m_currentIndex < 0) {
-        m_currentIndex = m_loadedImages.size() - 1;
+        m_currentIndex = count - 1;
     }
     focusCurrImage();
 }
 
 void ImagesCarousel::unfocusCurrImage() {
     if (m_currentIndex < 0) return;
-    if (m_currentIndex >= m_loadedImages.size()) {
+    if (m_currentIndex >= getLoadedImagesCount()) {
         warn(QString("Invalid index to unfocus: %1").arg(m_currentIndex));
         return;
     }
-    m_loadedImages[m_currentIndex]->setFocus(false, m_animationEnabled);
+    auto item = getImageItemAt(m_currentIndex);
+    if (item) item->setFocus(false, m_animationEnabled);
 }
 
 int ImagesCarousel::_focusingLeftOffset(int index) {
@@ -334,14 +334,19 @@ int ImagesCarousel::_focusingLeftOffset(int index) {
 void ImagesCarousel::focusCurrImage() {
     // If no focus, do nothing
     if (m_currentIndex < 0) return;
-    if (m_currentIndex >= m_loadedImages.size()) {
+    if (m_currentIndex >= getLoadedImagesCount()) {
         warn(QString("Invalid index to focus: %1").arg(m_currentIndex));
         return;
     }
-    m_loadedImages[m_currentIndex]->setFocus(true, m_animationEnabled);
-    emit imageFocused(m_loadedImages[m_currentIndex]->getFileFullPath(),
+    auto item = getImageItemAt(m_currentIndex);
+    if (!item) {
+        warn(QString("Failed to get item at index: %1").arg(m_currentIndex));
+        return;
+    }
+    item->setFocus(true, m_animationEnabled);
+    emit imageFocused(item->getFileFullPath(),
                       m_currentIndex,
-                      m_loadedImages.size());
+                      getLoadedImagesCount());
     auto hScrollBar = ui->scrollArea->horizontalScrollBar();
     int leftOffset  = _focusingLeftOffset(m_currentIndex);
     if (leftOffset < 0) {
@@ -389,7 +394,7 @@ void ImagesCarousel::_onScrollBarValueChanged(int value) {
     int itemOffset   = m_itemWidth + ui->scrollAreaWidgetContents->layout()->spacing();
     int index        = centerOffset / itemOffset;
 
-    if (index < 0 || index >= m_loadedImages.size()) {
+    if (index < 0 || index >= getLoadedImagesCount()) {
         return;  // Out of bounds
     }
     if (index == m_currentIndex) {
@@ -404,14 +409,15 @@ void ImagesCarousel::_onItemClicked(const QString& path) {
     // if (m_suppressAutoFocus) return;
     unfocusCurrImage();
     // Most likely the clicked item is near the current index
+    const auto count = getLoadedImagesCount();
     for (int i = m_currentIndex, j = m_currentIndex + 1;
-         i >= 0 || j < m_loadedImages.size();
+         i >= 0 || j < count;
          --i, ++j) {
-        if (i >= 0 && m_loadedImages[i]->getFileFullPath() == path) {
+        if (i >= 0 && getImageItemAt(i)->getFileFullPath() == path) {
             m_currentIndex = i;
             break;
         }
-        if (j < m_loadedImages.size() && m_loadedImages[j]->getFileFullPath() == path) {
+        if (j < count && getImageItemAt(j)->getFileFullPath() == path) {
             m_currentIndex = j;
             break;
         }
