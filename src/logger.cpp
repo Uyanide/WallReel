@@ -1,67 +1,28 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-07 01:12:37
- * @LastEditTime: 2025-08-07 22:24:27
+ * @LastEditTime: 2025-12-01 01:12:49
  * @Description: Implementation of logger.
  */
 #include "logger.h"
 
-#include <qnamespace.h>
-
-#ifndef GENERAL_LOGGER_DISABLED
-
 #include <unistd.h>
 
 #include <QCoreApplication>
-#include <QObject>
+#include <QDateTime>
+#include <QMutex>
 #include <QProcessEnvironment>
-#include <QString>
-#include <QTextStream>
-#include <QThreadPool>
+#include <cstdio>
 
-Logger* Logger::instance(FILE* stream,
-                         GeneralLogger::LogIndent indent,
-                         QObject* parent) {
-    static Logger* logger{};
-    if (!logger) {
-        if (!stream) {
-            stream = stderr;  // Default to stderr if no stream provided
-        }
-        logger = new Logger(stream, indent, parent);
-        // Ensure logger runs in the main thread
-        logger->moveToThread(QCoreApplication::instance()->thread());
-    }
-    return logger;
-}
+Q_LOGGING_CATEGORY(logMain, "wallpaper.carousel")
 
-Logger::Logger(FILE* stream,
-               GeneralLogger::LogIndent indent,
-               QObject* parent)
-    : QObject(parent), m_stream(stream), m_logStream(stream), m_indent(indent) {
-    connect(this,
-            &Logger::logSig,
-            this,
-            &Logger::_log,
-            Qt::AutoConnection);
-}
+static FILE* g_logStream                    = stderr;
+static GeneralLogger::LogIndent g_maxIndent = GeneralLogger::DETAIL;
+static bool g_isColored                     = false;
+static QMutex g_logMutex;
 
-void Logger::_log(
-    const QString& msg,
-    const QString& levelString,
-    const QString& levelColorString,
-    const QString& textColorString,
-    const GeneralLogger::LogIndent indent) {
-
-    if (indent > m_indent) return;
-    m_logStream << levelColorString << levelString << ' ';
-    for (qint32 i = 0; i < indent; i++) m_logStream << "  ";
-    m_logStream << textColorString << msg << (textColorString.isEmpty() ? "\n" : "\033[0m\n");
-    m_logStream.flush();
-}
-
-bool Logger::isColored() {
-    const auto stream = Logger::instance()->m_stream;
-    if (!isatty(fileno(stream))) {
+static bool checkIsColored(FILE* stream) {
+    if (!stream || !isatty(fileno(stream))) {
         return false;
     }
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
@@ -72,44 +33,80 @@ bool Logger::isColored() {
     return true;
 }
 
-#endif  // GENERAL_LOGGER_DISABLED
+void myMessageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg) {
+    Q_UNUSED(context);
 
-void GeneralLogger::info(
-    const QString& msg,
-    const GeneralLogger::LogIndent indent) {
-#ifndef GENERAL_LOGGER_DISABLED
-    constexpr const char* colorInfoMsg[]{"\033[32m", "\033[0m", "\033[0m"};
-    const auto color = Logger::isColored();
-    emit Logger::instance() -> logSig(msg,
-                                      "[INFO]",
-                                      color ? "\033[92m" : "",
-                                      color ? colorInfoMsg[indent] : "",
-                                      indent);
-#endif  // GENERAL_LOGGER_DISABLED
+    QMutexLocker locker(&g_logMutex);
+
+    QString levelTag;
+    QString colorTag;
+    QString colorText;
+    QString resetColor = g_isColored ? "\033[0m" : "";
+
+    switch (type) {
+        case QtDebugMsg:
+            levelTag = "[DEBUG]";
+            colorTag = g_isColored ? "\033[36m" : "";  // Cyan
+            break;
+        case QtInfoMsg:
+            levelTag  = "[INFO]";
+            colorTag  = g_isColored ? "\033[92m" : "";  // Light Green
+            colorText = g_isColored ? "\033[32m" : "";  // Green
+            break;
+        case QtWarningMsg:
+            levelTag  = "[WARN]";
+            colorTag  = g_isColored ? "\033[93m" : "";  // Light Yellow
+            colorText = g_isColored ? "\033[33m" : "";  // Yellow
+            break;
+        case QtCriticalMsg:
+            levelTag  = "[ERROR]";
+            colorTag  = g_isColored ? "\033[91m" : "";  // Light Red
+            colorText = g_isColored ? "\033[31m" : "";  // Red
+            break;
+        case QtFatalMsg:
+            levelTag = "[FATAL]";
+            colorTag = g_isColored ? "\033[95m" : "";  // Magenta
+            break;
+    }
+
+    if (g_logStream) {
+        fprintf(g_logStream, "%s%s %s%s%s\n", qPrintable(colorTag), qPrintable(levelTag), qPrintable(colorText), qPrintable(msg), qPrintable(resetColor));
+        fflush(g_logStream);
+    }
 }
 
-void GeneralLogger::warn(
-    const QString& msg,
-    const GeneralLogger::LogIndent indent) {
-#ifndef GENERAL_LOGGER_DISABLED
-    const auto color = Logger::isColored();
-    emit Logger::instance() -> logSig(msg,
-                                      "[WARN]",
-                                      color ? "\033[93m" : "",
-                                      color ? "\033[33m" : "",
-                                      indent);
-#endif  // GENERAL_LOGGER_DISABLED
+void Logger::init(FILE* stream, GeneralLogger::LogIndent maxIndent) {
+    if (stream) {
+        g_logStream = stream;
+    }
+    g_maxIndent = maxIndent;
+    g_isColored = checkIsColored(g_logStream);
+
+    qInstallMessageHandler(myMessageOutput);
 }
 
-void GeneralLogger::error(
-    const QString& msg,
-    const GeneralLogger::LogIndent indent) {
-#ifndef GENERAL_LOGGER_DISABLED
-    const auto color = Logger::isColored();
-    emit Logger::instance() -> logSig(msg,
-                                      "[ERROR]",
-                                      color ? "\033[91m" : "",
-                                      color ? "\033[31m" : "",
-                                      indent);
-#endif  // GENERAL_LOGGER_DISABLED
+void Logger::setMaxIndent(GeneralLogger::LogIndent indent) {
+    g_maxIndent = indent;
+}
+
+GeneralLogger::LogIndent Logger::maxIndent() {
+    return g_maxIndent;
+}
+
+void GeneralLogger::info(const QString& msg, const GeneralLogger::LogIndent indent) {
+    if (indent > g_maxIndent) return;
+    QString indentedMsg = QString("  ").repeated(indent) + msg;
+    qCInfo(logMain).noquote() << indentedMsg;
+}
+
+void GeneralLogger::warn(const QString& msg, const GeneralLogger::LogIndent indent) {
+    if (indent > g_maxIndent) return;
+
+    QString indentedMsg = QString("  ").repeated(indent) + msg;
+    qCWarning(logMain).noquote() << indentedMsg;
+}
+
+void GeneralLogger::error(const QString& msg, const GeneralLogger::LogIndent indent) {
+    QString indentedMsg = QString("  ").repeated(indent) + msg;
+    qCCritical(logMain).noquote() << indentedMsg;
 }

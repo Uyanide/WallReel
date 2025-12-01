@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2025-08-07 22:21:29
+ * @LastEditTime: 2025-12-01 01:07:34
  * @Description: Entry point.
  */
 #include <qapplication.h>
@@ -24,12 +24,10 @@ static QString getConfigDir() {
     return configDir;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     QApplication a(argc, argv);
 
-#ifndef GENERAL_LOGGER_DISABLED
-    Logger::instance(stderr, GeneralLogger::LogIndent::DETAIL, &a);
-#endif  // GENERAL_LOGGER_DISABLED
+    Logger::init(stderr, GeneralLogger::DETAIL);
 
     Config config(getConfigDir());
 
