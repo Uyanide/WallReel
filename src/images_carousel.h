@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2025-11-30 23:10:44
+ * @LastEditTime: 2025-12-01 00:59:39
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #ifndef IMAGES_CAROUSEL_H
@@ -16,6 +16,7 @@
 #include <QMutex>
 #include <QObject>
 #include <QPixmap>
+#include <QPointer>
 #include <QPropertyAnimation>
 #include <QQueue>
 #include <QRunnable>
@@ -43,7 +44,7 @@ class ImageLoader : public QRunnable {
 
   private:
     QString m_path;
-    ImagesCarousel* m_carousel;
+    QPointer<ImagesCarousel> m_carousel;
     const int m_initWidth;
     const int m_initHeight;
 };
@@ -66,7 +67,7 @@ class ImagesCarousel : public QWidget {
     static constexpr int s_debounceInterval    = 200;
     static constexpr int s_animationDuration   = 300;
     static constexpr int s_processBatchTimeout = 50;  // ms
-    static constexpr int s_processBatchSize    = 10;  // items
+    static constexpr int s_processBatchSize    = 30;  // items
 
     [[nodiscard]] QString getCurrentImagePath() const {
         if (m_currentIndex < 0 || m_currentIndex >= m_loadedImages.size()) {
@@ -104,7 +105,6 @@ class ImagesCarousel : public QWidget {
   private slots:
     void _onScrollBarValueChanged(int value);
     void _onItemClicked(const QString& path);
-    void _onInitImagesLoaded();
     void _onImagesLoaded();
 
     void _processImageInsertQueue();
@@ -149,6 +149,9 @@ class ImagesCarousel : public QWidget {
     // Loading stopped by user
     QMutex m_stopSignMutex;
     bool m_stopSign = false;
+
+    // Flags
+    bool m_initialImagesLoaded = true;
 
   signals:
     void imageFocused(const QString& path, const int index, const int count);

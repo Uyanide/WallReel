@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2025-12-01 00:45:52
+ * @LastEditTime: 2025-12-01 00:58:12
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #include "images_carousel.h"
@@ -15,7 +15,9 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QVector>
+#include <algorithm>
 #include <functional>
+#include <iterator>
 
 #include "logger.h"
 #include "ui_images_carousel.h"
@@ -42,25 +44,11 @@ ImagesCarousel::ImagesCarousel(const Config::StyleConfigItems& styleConfig,
     // Remove border
     ui->scrollArea->setFrameShape(QFrame::NoFrame);
 
-    // Load initial images
-    connect(this,
-            &ImagesCarousel::loadingCompleted,
-            this,
-            &ImagesCarousel::_onInitImagesLoaded);
-
-    // Also handle subsequent image loads
     connect(this,
             &ImagesCarousel::loadingCompleted,
             this,
             &ImagesCarousel::_onImagesLoaded);
 
-    // Load initial images
-    connect(this,
-            &ImagesCarousel::stopped,
-            this,
-            &ImagesCarousel::_onInitImagesLoaded);
-
-    // Also handle subsequent image loads
     connect(this,
             &ImagesCarousel::stopped,
             this,
@@ -88,21 +76,6 @@ ImagesCarousel::ImagesCarousel(const Config::StyleConfigItems& styleConfig,
             });
 }
 
-void ImagesCarousel::_onInitImagesLoaded() {
-    disconnect(this, &ImagesCarousel::loadingCompleted, this, &ImagesCarousel::_onInitImagesLoaded);
-    disconnect(this, &ImagesCarousel::stopped, this, &ImagesCarousel::_onInitImagesLoaded);
-
-    // No images loaded
-    if (m_loadedImages.isEmpty()) {
-        return;
-    }
-    // Focus the first image
-    if (m_currentIndex < 0) {
-        m_currentIndex = 0;
-    }
-    focusCurrImage();
-}
-
 void ImagesCarousel::_onImagesLoaded() {
     m_animationEnabled = true;
     if (!m_noLoadingScreen) {
@@ -111,6 +84,17 @@ void ImagesCarousel::_onImagesLoaded() {
         m_imageInsertQueueTimer->stop();
         m_imageInsertQueueTimer->deleteLater();
         m_imageInsertQueueTimer = nullptr;
+    }
+    if (m_initialImagesLoaded) {
+        // No images loaded
+        if (m_loadedImages.isEmpty()) {
+            return;
+        }
+        // Focus the first image
+        if (m_currentIndex < 0) {
+            m_currentIndex = 0;
+            focusCurrImage();
+        }
     }
 
     // exit(1);  // for debug
@@ -282,6 +266,10 @@ void ImagesCarousel::_enableUIUpdates(bool enable) {
 void ImageLoader::run() {
     ImageData* data = nullptr;
     Defer defer([this, &data]() {
+        if (m_carousel.isNull()) {
+            delete data;
+            return;
+        }
         QMetaObject::invokeMethod(m_carousel,
                                   "_insertImageQueue",
                                   Qt::QueuedConnection,
