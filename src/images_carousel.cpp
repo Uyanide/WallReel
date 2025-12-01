@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2025-12-01 01:40:01
+ * @LastEditTime: 2025-12-01 01:43:00
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #include "images_carousel.h"
@@ -209,7 +209,7 @@ int ImagesCarousel::_insertImage(const ImageData* data) {
         int left = 0, right = getLoadedImagesCount();
         while (left < right) {
             int mid = left + (right - left) / 2;
-            if (reverse ? cmp(item, getImageItemAt(mid)) : cmp(getImageItemAt(mid), item)) {
+            if (reverse ? cmp(getImageItemAt(mid), item) : cmp(item, getImageItemAt(mid))) {
                 right = mid;
             } else {
                 left = mid + 1;
