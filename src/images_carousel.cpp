@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2025-12-01 01:43:00
+ * @LastEditTime: 2026-01-14 23:50:49
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #include "images_carousel.h"
@@ -93,7 +93,10 @@ void ImagesCarousel::_onImagesLoaded() {
         // Focus the first image
         if (m_currentIndex < 0) {
             m_currentIndex = 0;
-            focusCurrImage();
+            // Ensure the layout events are processed
+            QTimer::singleShot(0, this, [this]() {
+                focusCurrImage();
+            });
         }
     }
 
@@ -145,7 +148,7 @@ ImageLoader::ImageLoader(const QString& path, ImagesCarousel* carousel)
     setAutoDelete(true);
 }
 
-void ImagesCarousel::_insertImageQueue(const ImageData* data) {
+void ImagesCarousel::_insertImageQueue(ImageData* data) {
     if (!m_noLoadingScreen) {
         _insertImage(data);
         return;
@@ -156,7 +159,7 @@ void ImagesCarousel::_insertImageQueue(const ImageData* data) {
     }
 }
 
-int ImagesCarousel::_insertImage(const ImageData* data) {
+int ImagesCarousel::_insertImage(ImageData* data) {
     // Increase loaded count regardless of success or failure
     Defer defer([this]() {
         emit imageLoaded(getLoadedImagesCount());
@@ -270,7 +273,7 @@ void ImageLoader::run() {
         QMetaObject::invokeMethod(m_carousel,
                                   "_insertImageQueue",
                                   Qt::QueuedConnection,
-                                  Q_ARG(const ImageData*, data));
+                                  Q_ARG(ImageData*, data));
     });
     {
         QMutexLocker stopSignLocker(&m_carousel->m_stopSignMutex);
@@ -340,7 +343,7 @@ void ImagesCarousel::focusCurrImage() {
     }
     auto item = getImageItemAt(m_currentIndex);
     if (!item) {
-        warn(QString("Failed to get item at index: %1").arg(m_currentIndex));
+        error(QString("Failed to get item at index: %1").arg(m_currentIndex));
         return;
     }
     item->setFocus(true, m_animationEnabled);

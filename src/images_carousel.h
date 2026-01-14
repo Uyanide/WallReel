@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2025-12-01 01:36:04
+ * @LastEditTime: 2026-01-14 23:26:32
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #ifndef IMAGES_CAROUSEL_H
@@ -121,8 +121,8 @@ class ImagesCarousel : public QWidget {
     void appendImages(const QStringList& paths);
 
   private:
-    int _insertImage(const ImageData* item);
-    Q_INVOKABLE void _insertImageQueue(const ImageData* item);
+    int _insertImage(ImageData* item);
+    Q_INVOKABLE void _insertImageQueue(ImageData* item);
 
     void _enableUIUpdates(bool enable);
     int _focusingLeftOffset(int index);
