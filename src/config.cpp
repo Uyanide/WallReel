@@ -17,11 +17,11 @@
 #include "logger.h"
 using namespace GeneralLogger;
 
-static QString expandPath(const QString &path);
+static QString expandPath(const QString& path);
 
 const QString Config::s_DefaultConfigFileName = "config.json";
 
-Config::Config(const QString &configDir, const QStringList &searchDirs, QObject *parent)
+Config::Config(const QString& configDir, const QStringList& searchDirs, QObject* parent)
     : QObject(parent), m_configDir(configDir) {
     info(QString("Loading configuration from: %1").arg(configDir));
     _loadConfig(configDir + QDir::separator() + s_DefaultConfigFileName);
@@ -36,7 +36,7 @@ Config::Config(const QString &configDir, const QStringList &searchDirs, QObject 
 Config::~Config() {
 }
 
-void Config::_loadConfig(const QString &configPath) {
+void Config::_loadConfig(const QString& configPath) {
     QFile configFile(configPath);
     if (!configFile.open(QIODevice::ReadOnly)) {
         error(QString("Failed to open config file: %1").arg(configPath));
@@ -56,12 +56,12 @@ void Config::_loadConfig(const QString &configPath) {
     struct ConfigMapping {
         QString path;
         QString key;
-        std::function<void(const QJsonValue &)> parser;
+        std::function<void(const QJsonValue&)> parser;
     };
 
-    static const auto parseJsonArray = [](const QJsonValue &val, QStringList &list) {
+    static const auto parseJsonArray = [](const QJsonValue& val, QStringList& list) {
         if (val.isArray()) {
-            for (const auto &item : val.toArray()) {
+            for (const auto& item : val.toArray()) {
                 if (item.isString()) {
                     list.append(::expandPath(item.toString()));
                 }
@@ -71,58 +71,58 @@ void Config::_loadConfig(const QString &configPath) {
 
     std::vector<ConfigMapping>
         mappings = {
-            {"wallpaper.paths", "paths", [this](const QJsonValue &val) {
+            {"wallpaper.paths", "paths", [this](const QJsonValue& val) {
                  parseJsonArray(val, m_wallpaperConfig.paths);
              }},
-            {"wallpaper.dirs", "dirs", [this](const QJsonValue &val) {
+            {"wallpaper.dirs", "dirs", [this](const QJsonValue& val) {
                  parseJsonArray(val, m_wallpaperConfig.dirs);
              }},
-            {"wallpaper.excludes", "excludes", [this](const QJsonValue &val) {
+            {"wallpaper.excludes", "excludes", [this](const QJsonValue& val) {
                  parseJsonArray(val, m_wallpaperConfig.excludes);
              }},
-            {"action.confirm", "confirm", [this](const QJsonValue &val) {
+            {"action.confirm", "confirm", [this](const QJsonValue& val) {
                  if (val.isString()) {
                      m_actionConfig.confirm = ::expandPath(val.toString());
                      info(QString("Action confirm: %1").arg(m_actionConfig.confirm), GeneralLogger::STEP);
                  }
              }},
-            {"style.aspect_ratio", "aspect_ratio", [this](const QJsonValue &val) {
+            {"style.aspect_ratio", "aspect_ratio", [this](const QJsonValue& val) {
                  if (val.isDouble() && val.toDouble() > 0) {
                      m_styleConfig.aspectRatio = val.toDouble();
                      info(QString("Aspect ratio: %1").arg(m_styleConfig.aspectRatio), GeneralLogger::STEP);
                  }
              }},
-            {"style.image_width", "image_width", [this](const QJsonValue &val) {
+            {"style.image_width", "image_width", [this](const QJsonValue& val) {
                  if (val.isDouble() && val.toDouble() > 0) {
                      m_styleConfig.imageWidth = val.toInt();
                      info(QString("Image width: %1").arg(m_styleConfig.imageWidth), GeneralLogger::STEP);
                  }
              }},
-            {"style.image_focus_width", "image_focus_width", [this](const QJsonValue &val) {
+            {"style.image_focus_width", "image_focus_width", [this](const QJsonValue& val) {
                  if (val.isDouble() && val.toDouble() > 0) {
                      m_styleConfig.imageFocusWidth = val.toInt();
                      info(QString("Image focus width: %1").arg(m_styleConfig.imageFocusWidth), GeneralLogger::STEP);
                  }
              }},
-            {"style.window_width", "window_width", [this](const QJsonValue &val) {
+            {"style.window_width", "window_width", [this](const QJsonValue& val) {
                  if (val.isDouble() && val.toDouble() > 0) {
                      m_styleConfig.windowWidth = val.toInt();
                      info(QString("Window width: %1").arg(m_styleConfig.windowWidth), GeneralLogger::STEP);
                  }
              }},
-            {"style.window_height", "window_height", [this](const QJsonValue &val) {
+            {"style.window_height", "window_height", [this](const QJsonValue& val) {
                  if (val.isDouble() && val.toDouble() > 0) {
                      m_styleConfig.windowHeight = val.toInt();
                      info(QString("Window height: %1").arg(m_styleConfig.windowHeight), GeneralLogger::STEP);
                  }
              }},
-            {"style.no_loading_screen", "no_loading_screen", [this](const QJsonValue &val) {
+            {"style.no_loading_screen", "no_loading_screen", [this](const QJsonValue& val) {
                  if (val.isBool()) {
                      m_styleConfig.noLoadingScreen = val.toBool();
                      info(QString("No loading screen: %1").arg(m_styleConfig.noLoadingScreen), GeneralLogger::STEP);
                  }
              }},
-            {"sort.type", "type", [this](const QJsonValue &val) {
+            {"sort.type", "type", [this](const QJsonValue& val) {
                  if (val.isString()) {
                      QString type = val.toString().toLower();
                      if (type == "none") {
@@ -139,7 +139,7 @@ void Config::_loadConfig(const QString &configPath) {
                  }
                  info(QString("Sort type: %1").arg(static_cast<int>(m_sortConfig.type)), GeneralLogger::STEP);
              }},
-            {"sort.reverse", "reverse", [this](const QJsonValue &val) {
+            {"sort.reverse", "reverse", [this](const QJsonValue& val) {
                  if (val.isBool()) {
                      m_sortConfig.reverse = val.toBool();
                      info(QString("Sort reverse: %1").arg(m_sortConfig.reverse), GeneralLogger::STEP);
@@ -148,7 +148,7 @@ void Config::_loadConfig(const QString &configPath) {
         };
 
     // 统一解析
-    for (const auto &mapping : mappings) {
+    for (const auto& mapping : mappings) {
         ([&mapping, &jsonObj]() {
             auto pathParts = mapping.path.split('.');
 
@@ -165,7 +165,7 @@ void Config::_loadConfig(const QString &configPath) {
             }
 
             // 获取目标值
-            const QString &finalKey = pathParts.last();
+            const QString& finalKey = pathParts.last();
             if (currentObj.contains(finalKey)) {
                 mapping.parser(currentObj[finalKey]);
             } else {
@@ -181,16 +181,16 @@ void Config::_loadWallpapers() {
     QSet<QString> paths;
 
     info(QString("Loading wallpapers from %1 specified paths").arg(m_wallpaperConfig.paths.size()), LogIndent::STEP);
-    for (const QString &path : m_wallpaperConfig.paths) {
+    for (const QString& path : m_wallpaperConfig.paths) {
         paths.insert(path);
     }
 
     info(QString("Loading wallpapers from %1 specified directories").arg(m_wallpaperConfig.dirs.size()), LogIndent::STEP);
-    for (const QString &dirPath : m_wallpaperConfig.dirs) {
+    for (const QString& dirPath : m_wallpaperConfig.dirs) {
         QDir dir(dirPath);
         if (dir.exists()) {
             QStringList files = dir.entryList(QDir::Files | QDir::NoDotAndDotDot);
-            for (const QString &file : files) {
+            for (const QString& file : files) {
                 QString filePath = dir.filePath(file);
                 paths.insert(filePath);
             }
@@ -200,12 +200,12 @@ void Config::_loadWallpapers() {
     }
 
     info(QString("Excluding %1 specified paths").arg(m_wallpaperConfig.excludes.size()), LogIndent::STEP);
-    for (const QString &exclude : m_wallpaperConfig.excludes) {
+    for (const QString& exclude : m_wallpaperConfig.excludes) {
         paths.remove(exclude);
     }
 
     m_wallpapers.reserve(paths.size());
-    for (const QString &path : paths) {
+    for (const QString& path : paths) {
         if (isValidImageFile(path)) {
             m_wallpapers.append(path);
         }
@@ -214,7 +214,7 @@ void Config::_loadWallpapers() {
     info(QString("Found %1 wallpapers").arg(paths.size()));
 }
 
-bool Config::isValidImageFile(const QString &filePath) {
+bool Config::isValidImageFile(const QString& filePath) {
     static const QStringList validExtensions = {
         ".jpg",
         ".jpeg",
@@ -240,7 +240,7 @@ bool Config::isValidImageFile(const QString &filePath) {
         return false;
     }
     // check if valid extension
-    for (const QString &ext : validExtensions) {
+    for (const QString& ext : validExtensions) {
         if (filePath.endsWith(ext, Qt::CaseInsensitive)) {
             return true;
         }
@@ -249,7 +249,7 @@ bool Config::isValidImageFile(const QString &filePath) {
     return false;
 }
 
-static QString expandPath(const QString &path) {
+static QString expandPath(const QString& path) {
     QString expandedPath = path;
 
     if (expandedPath.startsWith("~/")) {

@@ -19,7 +19,7 @@ class LoadingIndicator : public QWidget {
     Q_OBJECT
 
   public:
-    explicit LoadingIndicator(QWidget *parent = nullptr);
+    explicit LoadingIndicator(QWidget* parent = nullptr);
     ~LoadingIndicator();
 
     void setMaximum(int max) { ui->progressBar->setMaximum(max); }
@@ -27,7 +27,7 @@ class LoadingIndicator : public QWidget {
     void setValue(int value) { ui->progressBar->setValue(value); }
 
   private:
-    Ui::LoadingIndicator *ui;
+    Ui::LoadingIndicator* ui;
 };
 
 #endif  // LOADING_INDICATOR_H

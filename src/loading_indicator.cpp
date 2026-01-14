@@ -6,7 +6,7 @@
  */
 #include "loading_indicator.h"
 
-LoadingIndicator::LoadingIndicator(QWidget *parent) : QWidget(parent),
+LoadingIndicator::LoadingIndicator(QWidget* parent) : QWidget(parent),
                                                       ui(new Ui::LoadingIndicator) {
     ui->setupUi(this);
 }
