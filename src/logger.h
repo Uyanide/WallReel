@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 10:43:31
- * @LastEditTime: 2026-01-15 00:57:58
+ * @LastEditTime: 2026-01-15 04:07:46
  * @Description: A simple thread-safe logger.
  */
 #ifndef GENERAL_LOGGER_H
@@ -22,8 +22,6 @@ void info(const QString& msg);
 void warn(const QString& msg);
 
 void critical(const QString& msg);
-
-void fatal(const QString& msg);
 
 }  // namespace GeneralLogger
 

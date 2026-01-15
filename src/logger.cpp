@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-07 01:12:37
- * @LastEditTime: 2026-01-15 02:34:40
+ * @LastEditTime: 2026-01-15 04:07:40
  * @Description: Implementation of logger.
  */
 #include "logger.h"
@@ -125,8 +125,4 @@ void GeneralLogger::warn(const QString& msg) {
 
 void GeneralLogger::critical(const QString& msg) {
     qCCritical(logMain).noquote() << msg;
-}
-
-void GeneralLogger::fatal(const QString& msg) {
-    qCFatal(logMain).noquote() << msg;
 }
