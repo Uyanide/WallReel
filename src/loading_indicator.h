@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-07 00:32:25
- * @LastEditTime: 2025-08-07 21:13:59
+ * @LastEditTime: 2026-01-15 05:24:14
  * @Description: A loading indicator widget with a progress bar.
  */
 #ifndef LOADING_INDICATOR_H
@@ -19,7 +19,7 @@ class LoadingIndicator : public QWidget {
     Q_OBJECT
 
   public:
-    explicit LoadingIndicator(QWidget* parent = nullptr);
+    explicit LoadingIndicator(int barMinimumWidth = 500, QWidget* parent = nullptr);
     ~LoadingIndicator();
 
     void setMaximum(int max) { ui->progressBar->setMaximum(max); }

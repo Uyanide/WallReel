@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2026-01-15 02:01:19
+ * @LastEditTime: 2026-01-15 05:26:49
  * @Description: MainWindow implementation.
  */
 #include "main_window.h"
@@ -10,6 +10,7 @@
 #include <QKeyEvent>
 #include <QProcess>
 #include <QPushButton>
+#include <algorithm>
 #include <functional>
 
 #include "./ui_main_window.h"
@@ -50,7 +51,8 @@ void MainWindow::_setupUI() {
     m_carouselIndex = ui->stackedWidget->addWidget(m_carousel);
 
     // create loading indicator
-    m_loadingIndicator = new LoadingIndicator(this);
+    int barWidth       = m_config.getStyleConfig().windowWidth * 0.7;
+    m_loadingIndicator = new LoadingIndicator(barWidth, this);
     connect(m_carousel,
             &ImagesCarousel::loadingStarted,
             this,
