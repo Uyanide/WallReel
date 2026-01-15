@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2026-01-15 07:06:46
+ * @LastEditTime: 2026-01-15 07:43:44
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #ifndef IMAGES_CAROUSEL_H
@@ -20,56 +20,59 @@
 #include "config.h"
 #include "image_item.h"
 
-// Two different image loading strategies:
-// - With loading screen: load all images directly
-//   1. appendImages called -> increace m_addedImagesCount & spawn all ImageLoader
-//      threads
-//   2. Each ImageLoader calls _insertImageQueue with queued connection
-//   3. _insertImageQueue calls _insertImage directly
-// - Without loading screen: queue loaded images and insert them in batches
-//   1. appendImages called -> increace m_addedImagesCount & spawn all ImageLoader
-//      threads and a timer m_imageInsertQueueTimer, disable UI updates
-//   2. Each ImageLoader calls _insertImageQueue with queued connection
-//   3. _insertImageQueue enqueues the ImageData
-//   4. m_imageInsertQueueTimer calls _processImageInsertQueue every
-//      s_processBatchTimeout ms
-//   5. _processImageInsertQueue processes up to s_processBatchSize items from the
-//      queue and calls _insertImage for each
-//
-// The stop logic is identical:
-// - Force stop
-//   1. Set m_stopSign to true
-//   2. ImageLoader::run checks m_stopSign and returns early if true
-//      and calls _insertImageQueue using queued connection, but passing a
-//      nullptr as parameter
-//   3. The callstack from _insertImageQueue to _insertImage is same as above
-//   4. _insertImage ignores nullptr and just increases m_processedImagesCount
-//   5. when m_processedImagesCount >= m_addedImagesCount, emit stopped()
-//   6. Call ImagesCarousel::_onImagesLoaded
-// - Normal completion
-//   1. Same as above until _insertImage, but m_stopSign is false and ImageLoader::run
-//      passes valid ImageData pointer to _insertImageQueue
-//   2. When m_processedImagesCount >= m_addedImagesCount, emit loadingCompleted()
-//   3. Call ImagesCarousel::_onImagesLoaded
-//
-// 3 different ways to change focusing image:
-// - focusNextImage / focusPrevImage: directly change m_currentIndex and call
-//   focusCurrImage
-//   These can be triggered by different events, e.g. key press, button click, etc.
-// - Auto focus on scroll: debounce scroll events and calculate the nearest image
-//   index to focus, then change m_currentIndex and call focusCurrImage
-// - Initial focus: set m_currentIndex to 0 and call focusCurrImage
-//
-// Note:
-// - All methods and slots of ImageCarousel should be called from the main thread.
-// - ImageCarousel::m_addedImagesCount and ImageCarousel::m_processedImagesCount
-//   should be identical after loading is finished, regardless of whether loading is
-//   forcedly stopped or completed normally.
-// - ImageCarousel::getLoadedImagesCount() returns the number of images currently
-//   displayed in the carousel, which may be less than m_addedImagesCount if loading
-//   is not yet completed or some images failed to load.
-// - The current implementation actually supports dynamic addition of images during runtime,
-//   but the UI does not provide such functionality yet and thus it is not tested :)
+/* Design Notes:
+
+Two different image loading strategies:
+- With loading screen: load all images directly
+  1. appendImages called -> increace m_addedImagesCount & spawn all ImageLoader
+     threads
+  2. Each ImageLoader calls _insertImageQueue with queued connection
+  3. _insertImageQueue calls _insertImage directly
+- Without loading screen: queue loaded images and insert them in batches
+  1. appendImages called -> increace m_addedImagesCount & spawn all ImageLoader
+     threads and a timer m_imageInsertQueueTimer, disable UI updates
+  2. Each ImageLoader calls _insertImageQueue with queued connection
+  3. _insertImageQueue enqueues the ImageData
+  4. m_imageInsertQueueTimer calls _processImageInsertQueue every
+     s_processBatchTimeout ms
+  5. _processImageInsertQueue processes up to s_processBatchSize items from the
+     queue and calls _insertImage for each
+
+The stop logic is identical:
+- Force stop
+  1. Set m_stopSign to true
+  2. ImageLoader::run checks m_stopSign and returns early if true
+     and calls _insertImageQueue using queued connection, but passing a
+     nullptr as parameter
+  3. The callstack from _insertImageQueue to _insertImage is same as above
+  4. _insertImage ignores nullptr and just increases m_processedImagesCount
+  5. when m_processedImagesCount >= m_addedImagesCount, emit stopped()
+  6. Call ImagesCarousel::_onImagesLoaded
+- Normal completion
+  1. Same as above until _insertImage, but m_stopSign is false and ImageLoader::run
+     passes valid ImageData pointer to _insertImageQueue
+  2. When m_processedImagesCount >= m_addedImagesCount, emit loadingCompleted()
+  3. Call ImagesCarousel::_onImagesLoaded
+
+3 different ways to change focusing image:
+- focusNextImage / focusPrevImage: directly change m_currentIndex and call
+  focusCurrImage
+  These can be triggered by different events, e.g. key press, button click, etc.
+- Auto focus on scroll: debounce scroll events and calculate the nearest image
+  index to focus, then change m_currentIndex and call focusCurrImage
+- Initial focus: set m_currentIndex to 0 and call focusCurrImage
+
+Note:
+- All methods and slots of ImageCarousel should be called from the main thread.
+- ImageCarousel::m_addedImagesCount and ImageCarousel::m_processedImagesCount
+  should be identical after loading is finished, regardless of whether loading is
+  forcedly stopped or completed normally.
+- ImageCarousel::getLoadedImagesCount() returns the number of images currently
+  displayed in the carousel, which may be less than m_addedImagesCount if loading
+  is not yet completed or some images failed to load.
+- The current implementation actually supports dynamic addition of images during runtime,
+  but the UI does not provide such functionality yet and thus it is not tested :)
+*/
 
 class ImageLoader;
 class ImagesCarousel;

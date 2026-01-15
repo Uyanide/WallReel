@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2026-01-15 05:58:06
+ * @LastEditTime: 2026-01-15 07:51:54
  * @Description: Argument parser and entry point.
  */
 #include <QApplication>
@@ -37,7 +37,15 @@ static class AppOptions {
     // -h --help
     void printHelp() {
         QTextStream out(stdout);
-        out << parser.helpText() << Qt::endl;
+        QString helpText = parser.helpText();
+        auto lines       = helpText.split('\n');
+        for (auto& line : lines) {
+            if (line.contains("--help-all")) {
+                // Remove the --help-all option line added by Qt by default
+                continue;
+            }
+            out << line << Qt::endl;
+        }
         doReturn = true;
     }
 
