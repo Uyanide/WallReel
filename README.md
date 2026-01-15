@@ -17,11 +17,11 @@ It might not be that worthy to write a QtWidget application for such a small fea
 2. Clone the repository:
 
    ```bash
-   git clone https://github.com/Uyanide/Wallpaper_Carousel.git --depth 1
+   git clone https://github.com/Uyanide/Wallpaper_Carousel.git --depth 1 && \
    cd Wallpaper_Carousel
    ```
 
-3. Run build script:
+3. Run [build script](app/install.sh):
 
    ```bash
    app/install.sh
@@ -33,7 +33,7 @@ It might not be that worthy to write a QtWidget application for such a small fea
    PREFIX=$HOME/.local ./app/install.sh
    ```
 
-> [!NOTE]
+> [Warning]
 >
 > This script will ask for `sudo` permission if the prefix is set to a system directory like `/usr/local`. Please make sure you have read and trust the script before proceeding.
 
@@ -50,3 +50,18 @@ A minimum config should at least contain the path(s) to wallpapers, e.g.
   }
 }
 ```
+
+By default, the path of the selected wallpaper will be output to stdout. If you want to apply the selected wallpaper automatically after selection, the `action.confirm` entry should be set, e.g.
+
+```json
+{
+  "wallpaper": {
+    "dirs": ["/path/to/your/wallpapers"]
+  },
+  "action": {
+    "confirm": "awww img \"%1\""
+  }
+}
+```
+
+`action.confirm` should be a executable followed by a couple of arguments, where `%1` will be replaced by the path of the selected wallpaper.
