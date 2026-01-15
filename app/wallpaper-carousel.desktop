@@ -2,7 +2,11 @@
 Version=1.0
 Type=Application
 Name=Wallpaper Carousel
+GenericName=Animated wallpaper selector
+TryExec=wallpaper-carousel
+Exec=wallpaper-carousel
 Comment=A small wallpaper utility made with Qt
 Terminal=false
-Categories=Application;Utility;
+Categories=Application;Utility;DesktopSettings;
 StartupNotify=true
+Keywords=wallpapers;

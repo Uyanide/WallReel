@@ -89,6 +89,10 @@ install(TARGETS wallpaper-carousel
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+install(FILES ${CMAKE_CURRENT_LIST_DIR}/app/wallpaper-carousel.desktop
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications
+)
+
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(wallpaper-carousel)
 endif()
