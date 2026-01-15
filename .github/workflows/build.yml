@@ -24,9 +24,3 @@ jobs:
 
       - name: Build
         run: cmake --build build --config Release -- -j$(nproc)
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: wallpaper_chooser_build
-          path: build/wallpaper_chooser

@@ -30,7 +30,7 @@ jobs:
       - name: Package
         run: |
           mkdir -p package/bin
-          mkdir -o package/share/applications
+          mkdir -p package/share/applications
           cp build/wallpaper-carousel package/bin/
           cp README.md package/
           cp LICENSE package/
