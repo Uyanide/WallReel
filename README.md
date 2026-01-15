@@ -33,7 +33,7 @@ It might not be that worthy to write a QtWidget application for such a small fea
    PREFIX=$HOME/.local ./app/install.sh
    ```
 
-> [Warning]
+> [!Warning]
 >
 > This script will ask for `sudo` permission if the prefix is set to a system directory like `/usr/local`. Please make sure you have read and trust the script before proceeding.
 
