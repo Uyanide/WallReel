@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2026-01-15 05:26:49
+ * @LastEditTime: 2026-01-15 05:30:06
  * @Description: MainWindow implementation.
  */
 #include "main_window.h"
@@ -10,7 +10,6 @@
 #include <QKeyEvent>
 #include <QProcess>
 #include <QPushButton>
-#include <algorithm>
 #include <functional>
 
 #include "./ui_main_window.h"
