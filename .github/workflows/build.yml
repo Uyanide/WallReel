@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
@@ -24,3 +24,9 @@ jobs:
 
       - name: Build
         run: cmake --build build --config Release -- -j$(nproc)
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: wallpaper_chooser-build
+          path: build/wallpaper_chooser
