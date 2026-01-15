@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-07 01:12:37
- * @LastEditTime: 2026-01-15 00:58:04
+ * @LastEditTime: 2026-01-15 02:10:15
  * @Description: Implementation of logger.
  */
 #include "logger.h"
@@ -12,13 +12,15 @@
 #include <QDateTime>
 #include <QMutex>
 #include <QProcessEnvironment>
+#include <QTextStream>
 #include <cstdio>
 
 Q_LOGGING_CATEGORY(logMain, "wallpaper.carousel")
 
-static FILE* g_logStream = stderr;
-static bool g_isColored  = false;
+static QTextStream* g_logStream = nullptr;
+static bool g_isColored         = false;
 static QMutex g_logMutex;
+static const QString g_appName = "wallpaper.carousel";  // same as above
 
 static bool checkIsColored(FILE* stream) {
     if (!stream || !isatty(fileno(stream))) {
@@ -69,16 +71,17 @@ static void messageOutput(QtMsgType type, const QMessageLogContext& context, con
     }
 
     if (g_logStream) {
-        fprintf(g_logStream, "%s%s %s%s%s\n", qPrintable(colorTag), qPrintable(levelTag), qPrintable(colorText), qPrintable(msg), qPrintable(resetColor));
-        fflush(g_logStream);
+        (*g_logStream) << colorTag << levelTag << " " << colorText << msg << resetColor << Qt::endl;
+        g_logStream->flush();
     }
 }
 
 void Logger::init(FILE* stream) {
     if (stream) {
-        g_logStream = stream;
+        delete g_logStream;
+        g_logStream = new QTextStream(stream);
     }
-    g_isColored = checkIsColored(g_logStream);
+    g_isColored = checkIsColored(stream);
 
     qInstallMessageHandler(messageOutput);
 }
@@ -86,25 +89,25 @@ void Logger::init(FILE* stream) {
 void Logger::setLogLevel(QtMsgType level) {
     switch (level) {
         case QtDebugMsg:
-            QLoggingCategory::setFilterRules("wallpaper.carousel.debug=true");
+            QLoggingCategory::setFilterRules(QString("%1.debug=true").arg(g_appName));
             break;
         case QtInfoMsg:
-            QLoggingCategory::setFilterRules("wallpaper.carousel.debug=false\nwallpaper.carousel.info=true");
+            QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=true").arg(g_appName));
             break;
         case QtWarningMsg:
-            QLoggingCategory::setFilterRules("wallpaper.carousel.debug=false\nwallpaper.carousel.info=false\nwallpaper.carousel.warning=true");
+            QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=true").arg(g_appName));
             break;
         case QtCriticalMsg:
-            QLoggingCategory::setFilterRules("wallpaper.carousel.debug=false\nwallpaper.carousel.info=false\nwallpaper.carousel.warning=false\nwallpaper.carousel.critical=true");
+            QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=false\n%1.critical=true").arg(g_appName));
             break;
         case QtFatalMsg:
-            QLoggingCategory::setFilterRules("wallpaper.carousel.debug=false\nwallpaper.carousel.info=false\nwallpaper.carousel.warning=false\nwallpaper.carousel.critical=false");
+            QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=false\n%1.critical=false").arg(g_appName));
             break;
     }
 }
 
 void Logger::quiet() {
-    QLoggingCategory::setFilterRules("wallpaper.carousel.debug=false\nwallpaper.carousel.info=false\nwallpaper.carousel.warning=false\nwallpaper.carousel.critical=false\nwallpaper.carousel.fatal=false");
+    QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=false\n%1.critical=false\n%1.fatal=false").arg(g_appName));
 }
 
 void GeneralLogger::debug(const QString& msg) {

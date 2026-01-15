@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2026-01-15 01:40:30
+ * @LastEditTime: 2026-01-15 02:01:19
  * @Description: MainWindow implementation.
  */
 #include "main_window.h"
@@ -10,7 +10,6 @@
 #include <QKeyEvent>
 #include <QProcess>
 #include <QPushButton>
-#include <cstdio>
 #include <functional>
 
 #include "./ui_main_window.h"
@@ -242,7 +241,8 @@ void MainWindow::onConfirm() {
         return;
     }
     info(QString("Selected image: %1").arg(path));
-    puts(path.toStdString().c_str());
+    QTextStream out(stdout);
+    out << path << Qt::endl;
     const auto cmdOrig = m_config.getActionConfig().confirm;
     if (cmdOrig.isEmpty()) {
         warn("No action defined for confirmation");
