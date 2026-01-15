@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2026-01-15 07:24:52
+ * @LastEditTime: 2026-01-15 07:33:22
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #include "images_carousel.h"
@@ -238,20 +238,26 @@ void ImagesCarousel::_processImageInsertQueue() {
         }
     }
     if (m_noLoadingScreen) _enableUIUpdates(false);
-    int currPos = m_currentIndex;
+    int currPos    = m_currentIndex;
+    bool anyLoaded = false;
     for (ImageData* data : batch) {
         int pos = _insertImage(data);
         // Keep the focusing index correct
         if (pos >= 0 && pos <= currPos) {
             currPos++;
+        } else if (pos >= 0) {
+            anyLoaded = true;
         }
     }
-    // Update focusing index if any
     if (m_currentIndex >= 0) {
+        // Update focusing index if any
         m_currentIndex = currPos;
         if (m_currentIndex < 0 || m_currentIndex >= getLoadedImagesCount()) {
             m_currentIndex = 0;
         }
+    } else if (anyLoaded) {
+        // Focus the first image if none focused before
+        m_currentIndex = 0;
     }
     if (m_noLoadingScreen) _enableUIUpdates(true);
     focusCurrImage();
