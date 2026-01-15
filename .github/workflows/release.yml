@@ -30,8 +30,11 @@ jobs:
       - name: Package
         run: |
           mkdir -p package/bin
+          mkdir -o package/share/applications
           cp build/wallpaper-carousel package/bin/
           cp README.md package/
+          cp LICENSE package/
+          cp app/wallpaper-carousel.desktop package/share/applications/
 
           cd package
           tar -czvf ../wallpaper-carousel-linux-x64.tar.gz *
@@ -41,3 +44,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: wallpaper-carousel-linux-x64.tar.gz
+          generate_release_notes: true
