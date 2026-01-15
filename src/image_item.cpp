@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-11-30 20:32:27
- * @LastEditTime: 2026-01-15 00:48:24
+ * @LastEditTime: 2026-01-15 07:09:29
  * @Description: Image item widget for displaying an image.
  */
 #include "image_item.h"
@@ -16,6 +16,7 @@ ImageData* ImageData::create(const QString& p, const int initWidth, const int in
     ImageData* data = new ImageData(p);
     data->image     = new QImage();
 
+    // Use QImageReader for better performance
     QImageReader reader(p);
     if (!reader.canRead()) {
         warn(QString("Failed to load image from path: %1").arg(p));
@@ -26,6 +27,7 @@ ImageData* ImageData::create(const QString& p, const int initWidth, const int in
     const QSize targetSize(initWidth, initHeight);
     const QSize originalSize = reader.size();
 
+    // Scale the image to fit the target size while maintaining aspect ratio
     if (originalSize.isValid()) {
         double widthRatio  = (double)targetSize.width() / originalSize.width();
         double heightRatio = (double)targetSize.height() / originalSize.height();
@@ -41,6 +43,7 @@ ImageData* ImageData::create(const QString& p, const int initWidth, const int in
         return nullptr;
     }
 
+    // Crop to target size if necessary
     if (data->image->size() != targetSize) {
         int x        = (data->image->width() - targetSize.width()) / 2;
         int y        = (data->image->height() - targetSize.height()) / 2;

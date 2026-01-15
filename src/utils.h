@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-11-30 20:59:57
- * @LastEditTime: 2026-01-15 03:11:08
+ * @LastEditTime: 2026-01-15 06:00:51
  * @Description: THE utils header that every project needs :)
  */
 
@@ -15,6 +15,11 @@
 #include <QStandardPaths>
 #include <utility>
 
+/**
+ * @brief Defer execution of a callable until the end of the current scope.
+ *
+ * @tparam Callable
+ */
 template <typename Callable>
 class Defer {
     Callable m_func;
@@ -31,16 +36,34 @@ class Defer {
     }
 };
 
+/**
+ * @brief Check if a file exists, is a regular file, and is readable.
+ *
+ * @param path
+ */
 inline bool checkFile(const QString& path) {
     QFileInfo checkFile(path);
+    // According to Qt docs, "exists() returns true if the symlink points to an existing target, otherwise it returns false."
+    // So no need to separately check for isSymbolicLink() or isSymLink().
     return checkFile.exists() && checkFile.isFile() && checkFile.isReadable();
 }
 
+/**
+ * @brief Check if a directory exists, is a directory, and is readable.
+ *
+ * @param path
+ */
 inline bool checkDir(const QString& path) {
     QFileInfo checkFile(path);
     return checkFile.exists() && checkFile.isDir() && checkFile.isReadable();
 }
 
+/**
+ * @brief Expand environment variables and ~ in a given path.
+ *
+ * @param path Input path
+ * @return QString Expanded path
+ */
 inline QString expandPath(const QString& path) {
     QString expandedPath = path;
 
@@ -66,6 +89,25 @@ inline QString expandPath(const QString& path) {
     return QDir::cleanPath(expandedPath);
 }
 
+/**
+ * @brief Split the file name from a given path.
+ *
+ * @param path
+ * @return QString
+ */
+static QString splitNameFromPath(const QString& path) {
+    QFileInfo fileInfo(path);
+    return fileInfo.fileName();
+}
+
+/**
+ * @brief In addition to checking if the file exists and is readable,
+ *        also checks if the file has a valid image extension.
+ *
+ * @param filePath
+ * @return true
+ * @return false
+ */
 inline bool checkImageFile(const QString& filePath) {
     static const QStringList validExtensions = {
         ".jpg",

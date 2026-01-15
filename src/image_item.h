@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-11-30 20:31:15
- * @LastEditTime: 2026-01-14 23:32:58
+ * @LastEditTime: 2026-01-15 07:10:21
  * @Description: Image item widget for displaying an image.
  */
 #ifndef IMAGE_ITEM_H
@@ -12,6 +12,9 @@
 #include <QImage>
 #include <QLabel>
 #include <QPropertyAnimation>
+
+class ImageData;
+class ImageItem;
 
 /**
  * @brief Data structure to hold image information
@@ -26,6 +29,7 @@ class ImageData {
 
     ~ImageData() { releaseImage(); }
 
+    // Optimization: release image data as soon as they are no longer needed
     void releaseImage() { delete image, image = nullptr; }
 
     [[nodiscard]] const QImage& getImage() const { return *image; }
@@ -67,6 +71,12 @@ class ImageItem : public QLabel {
 
     [[nodiscard]] qint64 getFileSize() const { return m_data->getFileInfo().size(); }
 
+    /**
+     * @brief Set focus state by scaling the image label
+     *
+     * @param focus whether to focus
+     * @param animate whether to animate the transition
+     */
     void setFocus(bool focus = true, bool animate = true);
 
   protected:

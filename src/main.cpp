@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2026-01-15 03:41:55
+ * @LastEditTime: 2026-01-15 05:58:06
  * @Description: Argument parser and entry point.
  */
 #include <QApplication>
@@ -16,21 +16,32 @@
 #include "utils.h"
 #include "version.h"
 
+/**
+ * @brief A static & single-instance class to handle application options.
+ *
+ */
 static class AppOptions {
     QCommandLineParser parser{};
 
+    // The following 3 functions handle specific command line options
+    // and mark doReturn as true to indicate that the application should exit
+    // after parsing arguments.
+
+    // -v --version
     void printVersion() {
         QTextStream out(stdout);
         out << APP_NAME << " version " << APP_VERSION << Qt::endl;
         doReturn = true;
     }
 
+    // -h --help
     void printHelp() {
         QTextStream out(stdout);
         out << parser.helpText() << Qt::endl;
         doReturn = true;
     }
 
+    // Print error message and help
     void printError() {
         if (!errorText.isEmpty()) {
             QTextStream out(stderr);
@@ -44,7 +55,7 @@ static class AppOptions {
     QString configPath = "";
     QStringList appendDirs;
     QString errorText = "";
-    bool doReturn     = false;
+    bool doReturn     = false;  ///< Indicates whether the application should exit after parsing arguments.
 
     void parseArgs(QApplication* a) {
         parser.setApplicationDescription("A small wallpaper utility made with Qt");
@@ -64,6 +75,9 @@ static class AppOptions {
         QCommandLineOption configFileOption(QStringList() << "c" << "config-file", "Specify a custom configuration file", "file");
         parser.addOption(configFileOption);
 
+        // Not parser.process(a->arguments()) because we want to handle exit logics ourselves.
+        // parser.process(...) will do something like exit(...) that will terminate
+        // the application brutally and produce unwanted warnings.
         if (!parser.parse(a->arguments())) {
             errorText = parser.errorText();
             doReturn  = true;
@@ -85,6 +99,7 @@ static class AppOptions {
         } else if (parser.isSet(quietOption)) {
             Logger::quiet();
         } else {
+            // Default to INFO level
             Logger::setLogLevel(QtInfoMsg);
         }
 
@@ -113,6 +128,7 @@ static class AppOptions {
 } s_options;
 
 static QString getConfigDir() {
+    // This will be ~/.config/AppName, where AppName is the name of executable target in CMakeLists.txt
     auto configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
     if (configDir.isEmpty()) {
         configDir = QDir::homePath() + QDir::separator() + ".config" + QDir::separator() + APP_NAME;

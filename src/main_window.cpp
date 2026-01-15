@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2026-01-15 05:30:06
+ * @LastEditTime: 2026-01-15 07:25:41
  * @Description: MainWindow implementation.
  */
 #include "main_window.h"
@@ -15,13 +15,9 @@
 #include "./ui_main_window.h"
 #include "images_carousel.h"
 #include "logger.h"
+#include "utils.h"
 
 using namespace GeneralLogger;
-
-static QString splitNameFromPath(const QString& path) {
-    QFileInfo fileInfo(path);
-    return fileInfo.fileName();
-}
 
 MainWindow::MainWindow(const Config& config, QWidget* parent)
     : QMainWindow(parent), ui(new Ui::MainWindow), m_config(config) {
@@ -85,6 +81,7 @@ void MainWindow::_setupUI() {
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event) {
+    // Same effects as clicking the confirm/cancel buttons
     if (event->key() == Qt::Key_Escape) {
         _onCancelPressed();
         return;
@@ -136,6 +133,8 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
     }
 }
 
+// Stop loading images and call onStopped when loading is really stopped
+// emit stop() -> ImagesCarousel::onStop() -> ImagesCarousel::stopped() -> call onStopped
 void MainWindow::_stopLoadingAndQuit(const std::function<void()>& onStopped) {
     if (m_state != Loading) {
         return;
@@ -170,8 +169,7 @@ void MainWindow::_onCancelPressed() {
                 debug("Stopping loading and displaying loaded images...");
                 _stopLoadingAndQuit([this]() {
                     debug("Loading stopped.");
-                    _onLoadingCompleted(m_carousel->getLoadedImagesCount());
-                    m_carousel->focusCurrImage();
+                    // and do nothing
                 });
             }
             break;
@@ -190,13 +188,13 @@ void MainWindow::_onConfirmPressed() {
             // case loading screen is disabled, confirm the selection
             if (m_config.getStyleConfig().noLoadingScreen) {
                 debug("Stopping loading and confirming selection...");
-                connect(
-                    m_carousel,
-                    &ImagesCarousel::stopped,
-                    this,
-                    &MainWindow::onConfirm);
-                m_state = Stopping;
-                emit stop();
+                // Save current path because the stopping process may take some time
+                const QString currentPath = m_carousel->getCurrentImagePath();
+                debug("Loading stopped. Confirming selection...");
+                _stopLoadingAndQuit([this, currentPath]() {
+                    close();
+                    _runConfirmAction(currentPath);
+                });
             }
             break;
         case Ready:
@@ -213,6 +211,7 @@ void MainWindow::wheelEvent(QWheelEvent* event) {
         event->ignore();
         return;
     }
+    // angleDelta().x() is handled by QScrollArea
     if (event->angleDelta().y() > 0) {
         m_carousel->focusPrevImage();
     } else if (event->angleDelta().y() < 0) {
@@ -226,7 +225,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
     if (m_state == Loading) {
         event->ignore();
         _stopLoadingAndQuit([this]() {
-            debug("Quitting app.");
+            debug("Quitting app...");
             close();
         });
     } else {
@@ -236,12 +235,16 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 
 void MainWindow::onConfirm() {
     close();
-    const auto path = m_carousel->getCurrentImagePath();
+    _runConfirmAction(m_carousel->getCurrentImagePath());
+}
+
+void MainWindow::_runConfirmAction(const QString& path) {
     if (path.isEmpty()) {
         warn("No image selected");
         return;
     }
     info(QString("Selected image: %1").arg(path));
+    // Output the selected path to stdout
     QTextStream out(stdout);
     out << path << Qt::endl;
     const auto cmdOrig = m_config.getActionConfig().confirm;
@@ -270,11 +273,13 @@ void MainWindow::_onLoadingStarted(const qsizetype amount) {
         return;
     }
     m_loadingIndicator->setMaximum(amount);
+    // Change to loading indicator view
     ui->stackedWidget->setCurrentIndex(m_loadingIndicatorIndex);
 }
 
 void MainWindow::_onLoadingCompleted(const qsizetype amount) {
     info(QString("Loading completed, loaded %1 images").arg(amount));
+    // Change to carousel view
     ui->stackedWidget->setCurrentIndex(m_carouselIndex);
     m_state = Ready;
 }

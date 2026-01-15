@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2026-01-15 03:42:17
+ * @LastEditTime: 2026-01-15 07:06:46
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #ifndef IMAGES_CAROUSEL_H
@@ -20,8 +20,57 @@
 #include "config.h"
 #include "image_item.h"
 
-class ImageData;
-class ImageItem;
+// Two different image loading strategies:
+// - With loading screen: load all images directly
+//   1. appendImages called -> increace m_addedImagesCount & spawn all ImageLoader
+//      threads
+//   2. Each ImageLoader calls _insertImageQueue with queued connection
+//   3. _insertImageQueue calls _insertImage directly
+// - Without loading screen: queue loaded images and insert them in batches
+//   1. appendImages called -> increace m_addedImagesCount & spawn all ImageLoader
+//      threads and a timer m_imageInsertQueueTimer, disable UI updates
+//   2. Each ImageLoader calls _insertImageQueue with queued connection
+//   3. _insertImageQueue enqueues the ImageData
+//   4. m_imageInsertQueueTimer calls _processImageInsertQueue every
+//      s_processBatchTimeout ms
+//   5. _processImageInsertQueue processes up to s_processBatchSize items from the
+//      queue and calls _insertImage for each
+//
+// The stop logic is identical:
+// - Force stop
+//   1. Set m_stopSign to true
+//   2. ImageLoader::run checks m_stopSign and returns early if true
+//      and calls _insertImageQueue using queued connection, but passing a
+//      nullptr as parameter
+//   3. The callstack from _insertImageQueue to _insertImage is same as above
+//   4. _insertImage ignores nullptr and just increases m_processedImagesCount
+//   5. when m_processedImagesCount >= m_addedImagesCount, emit stopped()
+//   6. Call ImagesCarousel::_onImagesLoaded
+// - Normal completion
+//   1. Same as above until _insertImage, but m_stopSign is false and ImageLoader::run
+//      passes valid ImageData pointer to _insertImageQueue
+//   2. When m_processedImagesCount >= m_addedImagesCount, emit loadingCompleted()
+//   3. Call ImagesCarousel::_onImagesLoaded
+//
+// 3 different ways to change focusing image:
+// - focusNextImage / focusPrevImage: directly change m_currentIndex and call
+//   focusCurrImage
+//   These can be triggered by different events, e.g. key press, button click, etc.
+// - Auto focus on scroll: debounce scroll events and calculate the nearest image
+//   index to focus, then change m_currentIndex and call focusCurrImage
+// - Initial focus: set m_currentIndex to 0 and call focusCurrImage
+//
+// Note:
+// - All methods and slots of ImageCarousel should be called from the main thread.
+// - ImageCarousel::m_addedImagesCount and ImageCarousel::m_processedImagesCount
+//   should be identical after loading is finished, regardless of whether loading is
+//   forcedly stopped or completed normally.
+// - ImageCarousel::getLoadedImagesCount() returns the number of images currently
+//   displayed in the carousel, which may be less than m_addedImagesCount if loading
+//   is not yet completed or some images failed to load.
+// - The current implementation actually supports dynamic addition of images during runtime,
+//   but the UI does not provide such functionality yet and thus it is not tested :)
+
 class ImageLoader;
 class ImagesCarousel;
 class ImagesCarouselScrollArea;
@@ -56,11 +105,19 @@ class ImagesCarousel : public QWidget {
                             QWidget* parent = nullptr);
     ~ImagesCarousel();
 
-    static constexpr int s_debounceInterval    = 200;
-    static constexpr int s_animationDuration   = 300;
+    static constexpr int s_debounceInterval  = 200;  // ms
+    static constexpr int s_animationDuration = 300;  // ms
+
     static constexpr int s_processBatchTimeout = 50;  // ms
     static constexpr int s_processBatchSize    = 30;  // items
 
+    /**
+     * @brief Get the Current Image Path
+     *
+     * @return QString
+     *
+     * @note This method should be always called from the main thread.
+     */
     [[nodiscard]] QString getCurrentImagePath() const {
         if (m_currentIndex >= 0 && m_currentIndex < getLoadedImagesCount()) {
             auto item = getImageItemAt(m_currentIndex);
@@ -71,11 +128,25 @@ class ImagesCarousel : public QWidget {
         return "";
     }
 
-    // Should always be called in the main thread
+    /**
+     * @brief Get count of loaded images
+     *
+     * @return qsizetype
+     *
+     * @note This method should be always called from the main thread.
+     */
     [[nodiscard]] qsizetype getLoadedImagesCount() const {
         return m_imagesLayout->count();
     }
 
+    /**
+     * @brief Get the Image object at index
+     *
+     * @param index
+     * @return ImageItem*
+     *
+     * @note This method should be always called from the main thread.
+     */
     [[nodiscard]] ImageItem* getImageItemAt(int index) const {
         if (index < 0 || index >= getLoadedImagesCount()) {
             return nullptr;
@@ -86,6 +157,11 @@ class ImagesCarousel : public QWidget {
                 ->widget());
     }
 
+    /**
+     * @brief Get count of added images
+     *
+     * @return qsizetype
+     */
     [[nodiscard]] qsizetype getAddedImagesCount() {
         QMutexLocker locker(&m_countMutex);
         return m_addedImagesCount;
@@ -110,8 +186,7 @@ class ImagesCarousel : public QWidget {
   private slots:
     void _onScrollBarValueChanged(int value);
     void _onItemClicked(const QString& path);
-    void _onImagesLoaded();
-
+    void _onImagesLoaded();  // Called when loading is completed or stopped
     void _processImageInsertQueue();
 
   public:
@@ -131,10 +206,10 @@ class ImagesCarousel : public QWidget {
     ImagesCarouselScrollArea* m_scrollArea = nullptr;
 
     // Items and counters
-    int m_loadedImagesCount = 0;  // increase when _insertImage is called OR ImageLoader::run() is called with m_stopSign as true
-    int m_addedImagesCount  = 0;  // increase when appendImages called
-    QMutex m_countMutex;          // for m_loadedImagesCount and m_addedImagesCount
-    int m_currentIndex = -1;      // initially no focus
+    int m_processedImagesCount = 0;  // increase when _insertImage is called OR ImageLoader::run() is called with m_stopSign as true
+    int m_addedImagesCount     = 0;  // increase when appendImages called
+    QMutex m_countMutex;             // for m_processedImagesCount and m_addedImagesCount
+    int m_currentIndex = -1;         // initially no focus
 
     // Threading
     QQueue<ImageData*> m_imageInsertQueue;
@@ -153,9 +228,6 @@ class ImagesCarousel : public QWidget {
     // Loading stopped by user
     QMutex m_stopSignMutex;
     bool m_stopSign = false;
-
-    // Flags
-    bool m_initialImagesLoaded = true;
 
   signals:
     void imageFocused(const QString& path, const int index, const int count);

@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:34:52
- * @LastEditTime: 2026-01-15 03:40:25
+ * @LastEditTime: 2026-01-15 07:18:46
  * @Description: Configuration manager.
  */
 #ifndef CONFIG_H
@@ -10,6 +10,26 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+
+// Config entries:
+//
+// wallpaper.paths          array       image paths
+// wallpaper.dirs           array       directories to search for images.
+//                                      all images in these directories will be added.
+//                                      NOT recursive.
+// wallpaper.excludes       array       exclude patterns
+//
+// action.confirm           string      command to execute on confirm
+//
+// style.aspect_ratio       number      (width / height) of each image
+// style.image_width        number      width of each image
+// style.image_focus_width  number      width of focused image
+// style.window_width       number      fixed window width
+// style.window_height      number      fixed window height
+// style.no_loading_screen  boolean     disable loading screen and load images while updating UI in batches
+//
+// sort.type                string      sorting type: "none", "name", "date", "size"
+// sort.reverse             boolean     whether to reverse the sorting order
 
 class Config : public QObject {
     Q_OBJECT
@@ -23,33 +43,33 @@ class Config : public QObject {
     };
 
     struct WallpaperConfigItems {
-        QStringList paths;
-        QStringList dirs;
-        QStringList excludes;
+        QStringList paths;     // "wallpaper.paths"
+        QStringList dirs;      // "wallpaper.dirs"
+        QStringList excludes;  // "wallpaper.excludes"
     };
 
     struct ActionConfigItems {
-        QString confirm;
+        QString confirm;  // "action.confirm"
     };
 
     struct StyleConfigItems {
-        double aspectRatio   = 1.6;
-        int imageWidth       = 320;
-        int imageFocusWidth  = 480;
-        int windowWidth      = 750;
-        int windowHeight     = 500;
-        bool noLoadingScreen = false;
+        double aspectRatio   = 1.6;    // "style.aspect_ratio"
+        int imageWidth       = 320;    // "style.image_width"
+        int imageFocusWidth  = 480;    // "style.image_focus_width"
+        int windowWidth      = 750;    // "style.window_width"
+        int windowHeight     = 500;    // "style.window_height"
+        bool noLoadingScreen = false;  // "style.no_loading_screen"
     };
 
     struct SortConfigItems {
-        SortType type = SortType::Name;
-        bool reverse  = false;
+        SortType type = SortType::Name;  // "sort.type"
+        bool reverse  = false;           // "sort.reverse"
     };
 
     Config(
-        const QString& configDir,
+        const QString& configDir,  // Fixed, usually "~/.config/wallpaper-carousel"
         const QStringList& searchDirs = {},
-        const QString& configPath     = "",
+        const QString& configPath     = "",  // Override the default config path
         QObject* parent               = nullptr);
 
     ~Config();

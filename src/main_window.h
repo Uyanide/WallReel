@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2025-12-01 00:37:35
+ * @LastEditTime: 2026-01-15 06:16:07
  * @Description: MainWindow implementation.
  */
 #ifndef MAINWINDOW_H
@@ -39,6 +39,7 @@ class MainWindow : public QMainWindow {
   private:
     void _setupUI();
     void _stopLoadingAndQuit(const std::function<void()>& onStopped = nullptr);
+    void _runConfirmAction(const QString& path = "");
 
   private slots:
     void _onImageFocused(const QString& path, const int index, const int count);
@@ -55,6 +56,10 @@ class MainWindow : public QMainWindow {
         Stopping,
         Ready,
     } m_state = Init;
+
+    // Init -> Loading -> Ready -> (Quit)
+    // Init -> Loading -> Stopping -> Ready -> (Quit)   (with loading screen)
+    // Init -> Loading -> Stopping -> (Quit)            (without loading screen)
 
     Ui::MainWindow* ui;
     ImagesCarousel* m_carousel           = nullptr;

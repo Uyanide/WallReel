@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-07 01:12:37
- * @LastEditTime: 2026-01-15 04:07:40
+ * @LastEditTime: 2026-01-15 06:26:35
  * @Description: Implementation of logger.
  */
 #include "logger.h"
@@ -23,6 +23,7 @@ static QTextStream* s_logStream = nullptr;
 static bool s_isColored         = false;
 static QMutex s_logMutex;
 
+// Check if the output stream supports colored output
 static bool checkIsColored(FILE* stream) {
     if (!stream || !isatty(fileno(stream))) {
         return false;
@@ -35,6 +36,7 @@ static bool checkIsColored(FILE* stream) {
     return true;
 }
 
+// Custom message handler
 static void messageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg) {
     Q_UNUSED(context);
 
@@ -126,3 +128,5 @@ void GeneralLogger::warn(const QString& msg) {
 void GeneralLogger::critical(const QString& msg) {
     qCCritical(logMain).noquote() << msg;
 }
+
+// No fatal because qCFatal does not exist before Qt 6.5

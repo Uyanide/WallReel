@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2026-01-15 05:11:52
+ * @LastEditTime: 2026-01-15 07:24:52
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #include "images_carousel.h"
@@ -50,11 +50,6 @@ ImagesCarousel::ImagesCarousel(const Config::StyleConfigItems& styleConfig,
             this,
             &ImagesCarousel::_onImagesLoaded);
 
-    connect(this,
-            &ImagesCarousel::stopped,
-            this,
-            &ImagesCarousel::_onImagesLoaded);
-
     // Auto focus when scrolling
     m_scrollDebounceTimer = new QTimer(this);
     m_scrollDebounceTimer->setSingleShot(true);
@@ -78,6 +73,12 @@ ImagesCarousel::ImagesCarousel(const Config::StyleConfigItems& styleConfig,
 }
 
 void ImagesCarousel::_onImagesLoaded() {
+    // reset stop sign
+    {
+        // No need to lock m_countMutex here, but just for safety
+        QMutexLocker locker(&m_stopSignMutex);
+        m_stopSign = false;
+    }
     m_animationEnabled = true;
     if (!m_noLoadingScreen) {
         _enableUIUpdates(true);
@@ -86,19 +87,17 @@ void ImagesCarousel::_onImagesLoaded() {
         m_imageInsertQueueTimer->deleteLater();
         m_imageInsertQueueTimer = nullptr;
     }
-    if (m_initialImagesLoaded) {
-        // No images loaded
-        if (!getLoadedImagesCount()) {
-            return;
-        }
-        // Focus the first image
-        if (m_currentIndex < 0) {
-            m_currentIndex = 0;
-            // Ensure the layout events are processed
-            QTimer::singleShot(0, this, [this]() {
-                focusCurrImage();
-            });
-        }
+    // No images loaded
+    if (!getLoadedImagesCount()) {
+        return;
+    }
+    // Focus the first image
+    if (m_currentIndex < 0) {
+        m_currentIndex = 0;
+        // Ensure the layout events are processed before focusing
+        QTimer::singleShot(0, this, [this]() {
+            focusCurrImage();
+        });
     }
 
     // exit(1);  // for debug
@@ -156,7 +155,7 @@ void ImagesCarousel::_insertImageQueue(ImageData* data) {
     }
     {
         QMutexLocker locker(&m_imageInsertQueueMutex);
-        m_imageInsertQueue.enqueue(const_cast<ImageData*>(data));
+        m_imageInsertQueue.enqueue(data);
     }
 }
 
@@ -166,14 +165,15 @@ int ImagesCarousel::_insertImage(ImageData* data) {
         emit imageLoaded(getLoadedImagesCount());
         {
             QMutexLocker countLocker(&m_countMutex);
-            if (++m_loadedImagesCount >= m_addedImagesCount) {
-                QMutexLocker stopSignLocker(&m_stopSignMutex);
-                if (m_stopSign) {
-                    // if all stopped
-                    emit stopped();
-                } else {
-                    emit loadingCompleted(m_loadedImagesCount);
+            if (++m_processedImagesCount >= m_addedImagesCount) {
+                {
+                    QMutexLocker stopSignLocker(&m_stopSignMutex);
+                    if (m_stopSign) {
+                        // if all stopped
+                        emit stopped();
+                    }
                 }
+                emit loadingCompleted(m_processedImagesCount);
             }
         }
         return;
@@ -241,6 +241,7 @@ void ImagesCarousel::_processImageInsertQueue() {
     int currPos = m_currentIndex;
     for (ImageData* data : batch) {
         int pos = _insertImage(data);
+        // Keep the focusing index correct
         if (pos >= 0 && pos <= currPos) {
             currPos++;
         }
@@ -276,6 +277,7 @@ void ImageLoader::run() {
                                   Qt::QueuedConnection,
                                   Q_ARG(ImageData*, data));
     });
+    // We need to call _insertImageQueue even if stopped to increase the loaded count
     {
         QMutexLocker stopSignLocker(&m_carousel->m_stopSignMutex);
         if (m_carousel->m_stopSign) return;
