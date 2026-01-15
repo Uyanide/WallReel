@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-07 01:12:37
- * @LastEditTime: 2026-01-15 02:10:15
+ * @LastEditTime: 2026-01-15 02:34:40
  * @Description: Implementation of logger.
  */
 #include "logger.h"
@@ -15,12 +15,13 @@
 #include <QTextStream>
 #include <cstdio>
 
-Q_LOGGING_CATEGORY(logMain, "wallpaper.carousel")
+#include "version.h"
 
-static QTextStream* g_logStream = nullptr;
-static bool g_isColored         = false;
-static QMutex g_logMutex;
-static const QString g_appName = "wallpaper.carousel";  // same as above
+Q_LOGGING_CATEGORY(logMain, APP_NAME)
+
+static QTextStream* s_logStream = nullptr;
+static bool s_isColored         = false;
+static QMutex s_logMutex;
 
 static bool checkIsColored(FILE* stream) {
     if (!stream || !isatty(fileno(stream))) {
@@ -37,51 +38,51 @@ static bool checkIsColored(FILE* stream) {
 static void messageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg) {
     Q_UNUSED(context);
 
-    QMutexLocker locker(&g_logMutex);
+    QMutexLocker locker(&s_logMutex);
 
     QString levelTag;
     QString colorTag;
     QString colorText;
-    QString resetColor = g_isColored ? "\033[0m" : "";
+    QString resetColor = s_isColored ? "\033[0m" : "";
 
     switch (type) {
         case QtDebugMsg:
             levelTag = "[DEBUG]";
-            colorTag = g_isColored ? "\033[36m" : "";  // Cyan
+            colorTag = s_isColored ? "\033[36m" : "";  // Cyan
             break;
         case QtInfoMsg:
             levelTag  = "[INFO]";
-            colorTag  = g_isColored ? "\033[92m" : "";  // Light Green
-            colorText = g_isColored ? "\033[32m" : "";  // Green
+            colorTag  = s_isColored ? "\033[92m" : "";  // Light Green
+            colorText = s_isColored ? "\033[32m" : "";  // Green
             break;
         case QtWarningMsg:
             levelTag  = "[WARN]";
-            colorTag  = g_isColored ? "\033[93m" : "";  // Light Yellow
-            colorText = g_isColored ? "\033[33m" : "";  // Yellow
+            colorTag  = s_isColored ? "\033[93m" : "";  // Light Yellow
+            colorText = s_isColored ? "\033[33m" : "";  // Yellow
             break;
         case QtCriticalMsg:
             levelTag  = "[ERROR]";
-            colorTag  = g_isColored ? "\033[91m" : "";  // Light Red
-            colorText = g_isColored ? "\033[31m" : "";  // Red
+            colorTag  = s_isColored ? "\033[91m" : "";  // Light Red
+            colorText = s_isColored ? "\033[31m" : "";  // Red
             break;
         case QtFatalMsg:
             levelTag = "[FATAL]";
-            colorTag = g_isColored ? "\033[95m" : "";  // Magenta
+            colorTag = s_isColored ? "\033[95m" : "";  // Magenta
             break;
     }
 
-    if (g_logStream) {
-        (*g_logStream) << colorTag << levelTag << " " << colorText << msg << resetColor << Qt::endl;
-        g_logStream->flush();
+    if (s_logStream) {
+        (*s_logStream) << colorTag << levelTag << " " << colorText << msg << resetColor << Qt::endl;
+        s_logStream->flush();
     }
 }
 
 void Logger::init(FILE* stream) {
     if (stream) {
-        delete g_logStream;
-        g_logStream = new QTextStream(stream);
+        delete s_logStream;
+        s_logStream = new QTextStream(stream);
     }
-    g_isColored = checkIsColored(stream);
+    s_isColored = checkIsColored(stream);
 
     qInstallMessageHandler(messageOutput);
 }
@@ -89,25 +90,25 @@ void Logger::init(FILE* stream) {
 void Logger::setLogLevel(QtMsgType level) {
     switch (level) {
         case QtDebugMsg:
-            QLoggingCategory::setFilterRules(QString("%1.debug=true").arg(g_appName));
+            QLoggingCategory::setFilterRules(QString("%1.debug=true").arg(APP_NAME));
             break;
         case QtInfoMsg:
-            QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=true").arg(g_appName));
+            QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=true").arg(APP_NAME));
             break;
         case QtWarningMsg:
-            QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=true").arg(g_appName));
+            QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=true").arg(APP_NAME));
             break;
         case QtCriticalMsg:
-            QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=false\n%1.critical=true").arg(g_appName));
+            QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=false\n%1.critical=true").arg(APP_NAME));
             break;
         case QtFatalMsg:
-            QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=false\n%1.critical=false").arg(g_appName));
+            QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=false\n%1.critical=false").arg(APP_NAME));
             break;
     }
 }
 
 void Logger::quiet() {
-    QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=false\n%1.critical=false\n%1.fatal=false").arg(g_appName));
+    QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=false\n%1.critical=false\n%1.fatal=false").arg(APP_NAME));
 }
 
 void GeneralLogger::debug(const QString& msg) {

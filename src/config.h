@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:34:52
- * @LastEditTime: 2025-08-07 23:24:02
+ * @LastEditTime: 2026-01-15 03:40:25
  * @Description: Configuration manager.
  */
 #ifndef CONFIG_H
@@ -46,11 +46,13 @@ class Config : public QObject {
         bool reverse  = false;
     };
 
-    Config(const QString& configDir, const QStringList& searchDirs = {}, QObject* parent = nullptr);
+    Config(
+        const QString& configDir,
+        const QStringList& searchDirs = {},
+        const QString& configPath     = "",
+        QObject* parent               = nullptr);
 
     ~Config();
-
-    static bool isValidImageFile(const QString& filePath);
 
     [[nodiscard]] const QStringList& getWallpapers() const { return m_wallpapers; }
 

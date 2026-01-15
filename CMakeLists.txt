@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(wallpaper_carousel VERSION 0.1 LANGUAGES CXX)
+project(Wallpaper_Carousel VERSION 1.0.0 LANGUAGES CXX)
+
+set(EXECUTABLE_NAME "wallpaper-carousel")
+
+configure_file(src/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -27,7 +31,7 @@ set(PROJECT_SOURCES
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(wallpaper-carousel
+    qt_add_executable(${EXECUTABLE_NAME}
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         src/utils.h
@@ -44,22 +48,22 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 # For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
 else()
     if(ANDROID)
-        add_library(wallpaper-carousel SHARED
+        add_library(${EXECUTABLE_NAME} SHARED
             ${PROJECT_SOURCES}
         )
 
     # Define properties for Android with Qt 5 after find_package() calls as:
     # set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
     else()
-        add_executable(wallpaper-carousel
+        add_executable(${EXECUTABLE_NAME}
             ${PROJECT_SOURCES}
         )
     endif()
 endif()
 
-target_link_libraries(wallpaper-carousel PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 
-target_include_directories(wallpaper-carousel PRIVATE src)
+target_include_directories(${EXECUTABLE_NAME} PRIVATE src ${CMAKE_BINARY_DIR}/generated)
 
 # if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 # target_compile_definitions(wallpaper_chooser PRIVATE
@@ -74,7 +78,7 @@ if(${QT_VERSION} VERSION_LESS 6.1.0)
     set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.wallpaper_chooser)
 endif()
 
-set_target_properties(wallpaper-carousel PROPERTIES
+set_target_properties(${EXECUTABLE_NAME} PROPERTIES
     ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
@@ -83,16 +87,16 @@ set_target_properties(wallpaper-carousel PROPERTIES
 )
 
 include(GNUInstallDirs)
-install(TARGETS wallpaper-carousel
+install(TARGETS ${EXECUTABLE_NAME}
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-install(FILES ${CMAKE_CURRENT_LIST_DIR}/app/wallpaper-carousel.desktop
+install(FILES ${CMAKE_CURRENT_LIST_DIR}/app/${EXECUTABLE_NAME}.desktop
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications
 )
 
 if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(wallpaper-carousel)
+    qt_finalize_executable(${EXECUTABLE_NAME})
 endif()

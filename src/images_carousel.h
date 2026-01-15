@@ -1,14 +1,11 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2026-01-14 23:26:32
+ * @LastEditTime: 2026-01-15 03:42:17
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #ifndef IMAGES_CAROUSEL_H
 #define IMAGES_CAROUSEL_H
-
-#include <qqueue.h>
-#include <qtmetamacros.h>
 
 #include <QHBoxLayout>
 #include <QKeyEvent>
