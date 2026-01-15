@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2025-12-01 00:44:06
+ * @LastEditTime: 2026-01-15 00:47:54
  * @Description: MainWindow implementation.
  */
 #include "main_window.h"
@@ -139,7 +139,7 @@ void MainWindow::_stopLoadingAndQuit(const std::function<void()>& onStopped) {
     if (m_state != Loading) {
         return;
     }
-    info("Stopping loading.");
+    debug("Stopping loading...");
     connect(
         m_carousel,
         &ImagesCarousel::stopped,
@@ -158,21 +158,24 @@ void MainWindow::_onCancelPressed() {
         case Loading:
             // case loading screen is disabled, quit the app
             if (m_config.getStyleConfig().noLoadingScreen) {
+                debug("Stopping loading...");
                 _stopLoadingAndQuit([this]() {
-                    info("Quitting app.");
+                    debug("Quitting app...");
                     close();
                 });
             }
             // otherwise, stop loading and display the loaded images
             else {
+                debug("Stopping loading and displaying loaded images...");
                 _stopLoadingAndQuit([this]() {
+                    debug("Loading stopped.");
                     _onLoadingCompleted(m_carousel->getLoadedImagesCount());
                     m_carousel->focusCurrImage();
                 });
             }
             break;
         case Ready:
-            info("Quitting app.");
+            debug("Quitting app...");
             close();
             break;
         default:
@@ -185,7 +188,7 @@ void MainWindow::_onConfirmPressed() {
         case Loading:
             // case loading screen is disabled, confirm the selection
             if (m_config.getStyleConfig().noLoadingScreen) {
-                info("Stopping loading and confirming selection.");
+                debug("Stopping loading and confirming selection...");
                 connect(
                     m_carousel,
                     &ImagesCarousel::stopped,
@@ -196,7 +199,7 @@ void MainWindow::_onConfirmPressed() {
             }
             break;
         case Ready:
-            info("Confirming selection.");
+            debug("Confirming selection...");
             onConfirm();
             break;
         default:
@@ -222,7 +225,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
     if (m_state == Loading) {
         event->ignore();
         _stopLoadingAndQuit([this]() {
-            info("Quitting app.");
+            debug("Quitting app.");
             close();
         });
     } else {
@@ -249,7 +252,7 @@ void MainWindow::onConfirm() {
     const auto arguments = QProcess::splitCommand(cmd);
 
     if (QProcess::execute(arguments.first(), arguments.mid(1))) {
-        error(QString("Failed to execute command: %1").arg(cmd));
+        critical(QString("Failed to execute command: %1").arg(cmd));
         return;
     }
 }

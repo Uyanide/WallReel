@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 10:43:31
- * @LastEditTime: 2025-12-01 01:12:53
+ * @LastEditTime: 2026-01-15 00:57:58
  * @Description: A simple thread-safe logger.
  */
 #ifndef GENERAL_LOGGER_H
@@ -15,29 +15,25 @@ Q_DECLARE_LOGGING_CATEGORY(logMain)
 
 namespace GeneralLogger {
 
-enum LogIndent : qint32 {
-    GENERAL = 0,
-    STEP    = 1,
-    DETAIL  = 2,
-};
+void debug(const QString& msg);
 
-void info(const QString& msg,
-          const LogIndent indent = GENERAL);
+void info(const QString& msg);
 
-void warn(const QString& msg,
-          const LogIndent indent = GENERAL);
+void warn(const QString& msg);
 
-void error(const QString& msg,
-           const LogIndent indent = GENERAL);
+void critical(const QString& msg);
+
+void fatal(const QString& msg);
+
 }  // namespace GeneralLogger
 
 class Logger {
   public:
-    static void init(FILE* stream                       = stderr,
-                     GeneralLogger::LogIndent maxIndent = GeneralLogger::DETAIL);
+    static void init(FILE* stream = stderr);
 
-    static void setMaxIndent(GeneralLogger::LogIndent indent);
-    static GeneralLogger::LogIndent maxIndent();
+    static void setLogLevel(QtMsgType level);
+
+    static void quiet();
 };
 
 #endif  // GENERAL_LOGGER_H

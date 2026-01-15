@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2026-01-14 23:58:52
+ * @LastEditTime: 2026-01-15 00:48:17
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #include "images_carousel.h"
@@ -343,7 +343,7 @@ void ImagesCarousel::focusCurrImage() {
     }
     auto item = getImageItemAt(m_currentIndex);
     if (!item) {
-        error(QString("Failed to get item at index: %1").arg(m_currentIndex));
+        warn(QString("Failed to get item at index: %1").arg(m_currentIndex));
         return;
     }
     item->setFocus(true, m_animationEnabled);

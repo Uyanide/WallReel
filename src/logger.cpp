@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-07 01:12:37
- * @LastEditTime: 2025-12-01 01:12:49
+ * @LastEditTime: 2026-01-15 00:58:04
  * @Description: Implementation of logger.
  */
 #include "logger.h"
@@ -16,9 +16,8 @@
 
 Q_LOGGING_CATEGORY(logMain, "wallpaper.carousel")
 
-static FILE* g_logStream                    = stderr;
-static GeneralLogger::LogIndent g_maxIndent = GeneralLogger::DETAIL;
-static bool g_isColored                     = false;
+static FILE* g_logStream = stderr;
+static bool g_isColored  = false;
 static QMutex g_logMutex;
 
 static bool checkIsColored(FILE* stream) {
@@ -33,7 +32,7 @@ static bool checkIsColored(FILE* stream) {
     return true;
 }
 
-void myMessageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg) {
+static void messageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg) {
     Q_UNUSED(context);
 
     QMutexLocker locker(&g_logMutex);
@@ -75,38 +74,55 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext& context, const QS
     }
 }
 
-void Logger::init(FILE* stream, GeneralLogger::LogIndent maxIndent) {
+void Logger::init(FILE* stream) {
     if (stream) {
         g_logStream = stream;
     }
-    g_maxIndent = maxIndent;
     g_isColored = checkIsColored(g_logStream);
 
-    qInstallMessageHandler(myMessageOutput);
+    qInstallMessageHandler(messageOutput);
 }
 
-void Logger::setMaxIndent(GeneralLogger::LogIndent indent) {
-    g_maxIndent = indent;
+void Logger::setLogLevel(QtMsgType level) {
+    switch (level) {
+        case QtDebugMsg:
+            QLoggingCategory::setFilterRules("wallpaper.carousel.debug=true");
+            break;
+        case QtInfoMsg:
+            QLoggingCategory::setFilterRules("wallpaper.carousel.debug=false\nwallpaper.carousel.info=true");
+            break;
+        case QtWarningMsg:
+            QLoggingCategory::setFilterRules("wallpaper.carousel.debug=false\nwallpaper.carousel.info=false\nwallpaper.carousel.warning=true");
+            break;
+        case QtCriticalMsg:
+            QLoggingCategory::setFilterRules("wallpaper.carousel.debug=false\nwallpaper.carousel.info=false\nwallpaper.carousel.warning=false\nwallpaper.carousel.critical=true");
+            break;
+        case QtFatalMsg:
+            QLoggingCategory::setFilterRules("wallpaper.carousel.debug=false\nwallpaper.carousel.info=false\nwallpaper.carousel.warning=false\nwallpaper.carousel.critical=false");
+            break;
+    }
 }
 
-GeneralLogger::LogIndent Logger::maxIndent() {
-    return g_maxIndent;
+void Logger::quiet() {
+    QLoggingCategory::setFilterRules("wallpaper.carousel.debug=false\nwallpaper.carousel.info=false\nwallpaper.carousel.warning=false\nwallpaper.carousel.critical=false\nwallpaper.carousel.fatal=false");
 }
 
-void GeneralLogger::info(const QString& msg, const GeneralLogger::LogIndent indent) {
-    if (indent > g_maxIndent) return;
-    QString indentedMsg = QString("  ").repeated(indent) + msg;
-    qCInfo(logMain).noquote() << indentedMsg;
+void GeneralLogger::debug(const QString& msg) {
+    qCDebug(logMain).noquote() << msg;
 }
 
-void GeneralLogger::warn(const QString& msg, const GeneralLogger::LogIndent indent) {
-    if (indent > g_maxIndent) return;
-
-    QString indentedMsg = QString("  ").repeated(indent) + msg;
-    qCWarning(logMain).noquote() << indentedMsg;
+void GeneralLogger::info(const QString& msg) {
+    qCInfo(logMain).noquote() << msg;
 }
 
-void GeneralLogger::error(const QString& msg, const GeneralLogger::LogIndent indent) {
-    QString indentedMsg = QString("  ").repeated(indent) + msg;
-    qCCritical(logMain).noquote() << indentedMsg;
+void GeneralLogger::warn(const QString& msg) {
+    qCWarning(logMain).noquote() << msg;
+}
+
+void GeneralLogger::critical(const QString& msg) {
+    qCCritical(logMain).noquote() << msg;
+}
+
+void GeneralLogger::fatal(const QString& msg) {
+    qCFatal(logMain).noquote() << msg;
 }

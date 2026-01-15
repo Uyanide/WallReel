@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-11-30 20:32:27
- * @LastEditTime: 2026-01-14 23:31:41
+ * @LastEditTime: 2026-01-15 00:48:24
  * @Description: Image item widget for displaying an image.
  */
 #include "image_item.h"
@@ -18,7 +18,7 @@ ImageData* ImageData::create(const QString& p, const int initWidth, const int in
 
     QImageReader reader(p);
     if (!reader.canRead()) {
-        error(QString("Failed to load image from path: %1").arg(p));
+        warn(QString("Failed to load image from path: %1").arg(p));
         delete data;
         return nullptr;
     }
@@ -36,7 +36,7 @@ ImageData* ImageData::create(const QString& p, const int initWidth, const int in
     }
 
     if (!reader.read(data->image)) {
-        error(QString("Failed to load image from path: %1").arg(p));
+        warn(QString("Failed to load image from path: %1").arg(p));
         delete data;
         return nullptr;
     }

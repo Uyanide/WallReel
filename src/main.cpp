@@ -1,10 +1,11 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2025-12-01 01:07:34
+ * @LastEditTime: 2026-01-15 01:00:12
  * @Description: Entry point.
  */
 #include <qapplication.h>
+#include <qlogging.h>
 
 #include <QApplication>
 #include <QDir>
@@ -24,10 +25,38 @@ static QString getConfigDir() {
     return configDir;
 }
 
+static void setLogLevel(int argc, char* argv[]) {
+    for (int i = 1; i < argc; ++i) {
+        QString arg(argv[i]);
+        if (arg == "--debug" || arg == "-vvv" || arg == "--verbose") {
+            Logger::setLogLevel(QtDebugMsg);
+            break;
+        } else if (arg == "--info" || arg == "-vv") {
+            Logger::setLogLevel(QtInfoMsg);
+            break;
+        } else if (arg == "--warn" || arg == "-v") {
+            Logger::setLogLevel(QtWarningMsg);
+            break;
+        } else if (arg == "--critical") {
+            Logger::setLogLevel(QtCriticalMsg);
+            break;
+        } else if (arg == "--fatal") {
+            Logger::setLogLevel(QtFatalMsg);
+            break;
+        } else if (arg == "--quiet") {
+            Logger::quiet();
+            break;
+        } else {
+            Logger::setLogLevel(QtInfoMsg);
+        }
+    }
+}
+
 int main(int argc, char* argv[]) {
     QApplication a(argc, argv);
 
-    Logger::init(stderr, GeneralLogger::DETAIL);
+    Logger::init(stderr);
+    setLogLevel(argc, argv);
 
     Config config(getConfigDir());
 
