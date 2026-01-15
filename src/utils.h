@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-11-30 20:59:57
- * @LastEditTime: 2026-01-15 06:00:51
+ * @LastEditTime: 2026-01-15 09:55:26
  * @Description: THE utils header that every project needs :)
  */
 
@@ -10,6 +10,7 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QImageReader>
 #include <QProcess>
 #include <QRegularExpression>
 #include <QStandardPaths>
@@ -132,12 +133,9 @@ inline bool checkImageFile(const QString& filePath) {
         return false;
     }
     // check if valid extension
-    for (const QString& ext : validExtensions) {
-        if (filePath.endsWith(ext, Qt::CaseInsensitive)) {
-            return true;
-        }
-    }
-    return false;
+    static const QList<QByteArray> formats = QImageReader::supportedImageFormats();
+    QString ext                            = QFileInfo(filePath).suffix().toLower();
+    return formats.contains(ext.toUtf8());
 }
 
 #endif  // UTILS_H
