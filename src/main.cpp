@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2026-01-15 07:51:54
+ * @LastEditTime: 2026-01-15 14:11:06
  * @Description: Argument parser and entry point.
  */
 #include <QApplication>
@@ -71,7 +71,7 @@ static class AppOptions {
         const QCommandLineOption helpOption    = parser.addHelpOption();
         const QCommandLineOption versionOption = parser.addVersionOption();
 
-        QCommandLineOption verboseOption(QStringList() << "V" << "verbose", "Set log level to DEBUG");
+        QCommandLineOption verboseOption(QStringList() << "V" << "verbose", "Set log level to DEBUG (default is INFO)");
         parser.addOption(verboseOption);
 
         QCommandLineOption quietOption(QStringList() << "q" << "quiet", "Suppress all log output");

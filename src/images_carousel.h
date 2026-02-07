@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-08-05 01:22:53
- * @LastEditTime: 2026-01-15 07:43:44
+ * @LastEditTime: 2026-01-18 06:39:44
  * @Description: Animated carousel widget for displaying and selecting images.
  */
 #ifndef IMAGES_CAROUSEL_H
@@ -24,13 +24,13 @@
 
 Two different image loading strategies:
 - With loading screen: load all images directly
-  1. appendImages called -> increace m_addedImagesCount & spawn all ImageLoader
-     threads
+  1. appendImages called -> increace m_addedImagesCount & disable UI updates &
+     spawn and start all ImageLoader threads
   2. Each ImageLoader calls _insertImageQueue with queued connection
   3. _insertImageQueue calls _insertImage directly
 - Without loading screen: queue loaded images and insert them in batches
-  1. appendImages called -> increace m_addedImagesCount & spawn all ImageLoader
-     threads and a timer m_imageInsertQueueTimer, disable UI updates
+  1. appendImages called -> increace m_addedImagesCount & spawn and start all
+     ImageLoader threads and a timer m_imageInsertQueueTimer & disable animations
   2. Each ImageLoader calls _insertImageQueue with queued connection
   3. _insertImageQueue enqueues the ImageData
   4. m_imageInsertQueueTimer calls _processImageInsertQueue every
@@ -38,7 +38,7 @@ Two different image loading strategies:
   5. _processImageInsertQueue processes up to s_processBatchSize items from the
      queue and calls _insertImage for each
 
-The stop logic is identical:
+The stop logic is identical regardless of whether loading screen is used or not:
 - Force stop
   1. Set m_stopSign to true
   2. ImageLoader::run checks m_stopSign and returns early if true

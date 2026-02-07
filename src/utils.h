@@ -1,7 +1,7 @@
 /*
  * @Author: Uyanide pywang0608@foxmail.com
  * @Date: 2025-11-30 20:59:57
- * @LastEditTime: 2026-01-15 09:55:26
+ * @LastEditTime: 2026-01-18 06:36:13
  * @Description: THE utils header that every project needs :)
  */
 
@@ -110,19 +110,6 @@ static QString splitNameFromPath(const QString& path) {
  * @return false
  */
 inline bool checkImageFile(const QString& filePath) {
-    static const QStringList validExtensions = {
-        ".jpg",
-        ".jpeg",
-        ".jfif",
-        ".png",
-        ".bmp",
-        ".gif",
-        ".webp",
-        ".tiff",
-        ".avif",
-        ".heic",
-        ".heif"};
-
     // check if exist
     if (!QFile::exists(filePath)) {
         return false;
