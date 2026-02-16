@@ -1,19 +1,17 @@
-/*
- * @Author: Uyanide pywang0608@foxmail.com
- * @Date: 2025-08-05 00:37:58
- * @LastEditTime: 2026-01-15 14:11:06
- * @Description: Argument parser and entry point.
- */
+#include <qtypes.h>
+
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QDir>
+#include <QQmlApplicationEngine>
 #include <QStandardPaths>
 #include <QTextStream>
 
-#include "config.h"
-#include "logger.h"
-#include "main_window.h"
-#include "utils.h"
+#include "core/configmgr.hpp"
+#include "core/imagemodel.hpp"
+#include "core/imageprovider.hpp"
+#include "core/utils/logger.hpp"
+#include "core/utils/misc.hpp"
 #include "version.h"
 
 /**
@@ -108,7 +106,7 @@ static class AppOptions {
             Logger::quiet();
         } else {
             // Default to INFO level
-            Logger::setLogLevel(QtInfoMsg);
+            Logger::setLogLevel(QtDebugMsg);
         }
 
         for (const QString& dir : parser.values(appendDirOption)) {
@@ -135,16 +133,6 @@ static class AppOptions {
 
 } s_options;
 
-static QString getConfigDir() {
-    // This will be ~/.config/AppName, where AppName is the name of executable target in CMakeLists.txt
-    auto configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
-    if (configDir.isEmpty()) {
-        configDir = QDir::homePath() + QDir::separator() + ".config" + QDir::separator() + APP_NAME;
-    }
-    QDir().mkpath(configDir);
-    return configDir;
-}
-
 int main(int argc, char* argv[]) {
     QApplication a(argc, argv);
     a.setApplicationName(APP_NAME);
@@ -157,10 +145,44 @@ int main(int argc, char* argv[]) {
         return s_options.errorText.isEmpty() ? 0 : 1;
     }
 
-    Config config(getConfigDir(), s_options.appendDirs, s_options.configPath, &a);
+    Config config(
+        ::getConfigDir(),
+        s_options.appendDirs,
+        s_options.configPath,
+        &a);
+    QQmlApplicationEngine engine;
 
-    MainWindow w(config);
-    w.show();
+    ImageProvider* imageProvider = new ImageProvider();
+    engine.addImageProvider(QLatin1String("processed"), imageProvider);
+
+    ImageModel imageModel(
+        imageProvider,
+        config.getSortConfig(),
+        config.getFocusImageSize(),
+        &a);
+
+    qmlRegisterSingletonInstance(
+        COREMODULE_URI,
+        MODULE_VERSION_MAJOR,
+        MODULE_VERSION_MINOR,
+        "Config",
+        &config);
+    qmlRegisterSingletonInstance(
+        COREMODULE_URI,
+        MODULE_VERSION_MAJOR,
+        MODULE_VERSION_MINOR,
+        "ImageModel",
+        &imageModel);
+
+    QObject::connect(
+        &engine,
+        &QQmlApplicationEngine::objectCreationFailed,
+        &a,
+        []() { QCoreApplication::exit(-1); },
+        Qt::QueuedConnection);
+    engine.loadFromModule(UIMODULE_URI, "Main");
+
+    imageModel.loadAndProcess(config.getWallpapers());
 
     return a.exec();
 }

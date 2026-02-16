@@ -1,2 +1,13 @@
+#ifndef VERSION_H
+#define VERSION_H
+
+// clang-format off
 #define APP_VERSION "@PROJECT_VERSION@"
 #define APP_NAME "@EXECUTABLE_NAME@"
+#define COREMODULE_URI "@COREMODULE_URI@"
+#define UIMODULE_URI "@UIMODULE_URI@"
+#define MODULE_VERSION_MAJOR @MODULE_VERSION_MAJOR@
+#define MODULE_VERSION_MINOR @MODULE_VERSION_MINOR@
+// clang-format on
+
+#endif

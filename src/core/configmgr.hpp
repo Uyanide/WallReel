@@ -1,13 +1,9 @@
-/*
- * @Author: Uyanide pywang0608@foxmail.com
- * @Date: 2025-08-05 01:34:52
- * @LastEditTime: 2026-01-15 07:18:46
- * @Description: Configuration manager.
- */
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef WALLREEL_CONFIGMGR_HPP
+#define WALLREEL_CONFIGMGR_HPP
 
 #include <QObject>
+#include <QQmlEngine>
+#include <QSize>
 #include <QString>
 #include <QStringList>
 
@@ -26,13 +22,18 @@
 // style.image_focus_width  number      width of focused image
 // style.window_width       number      fixed window width
 // style.window_height      number      fixed window height
-// style.no_loading_screen  boolean     disable loading screen and load images while updating UI in batches
 //
 // sort.type                string      sorting type: "none", "name", "date", "size"
 // sort.reverse             boolean     whether to reverse the sorting order
 
 class Config : public QObject {
     Q_OBJECT
+
+    Q_PROPERTY(double aspectRatio READ getAspectRatio CONSTANT)
+    Q_PROPERTY(int imageWidth READ getImageWidth CONSTANT)
+    Q_PROPERTY(int imageFocusWidth READ getImageFocusWidth CONSTANT)
+    Q_PROPERTY(int windowWidth READ getWindowWidth CONSTANT)
+    Q_PROPERTY(int windowHeight READ getWindowHeight CONSTANT)
 
   public:
     enum class SortType : int {
@@ -53,12 +54,11 @@ class Config : public QObject {
     };
 
     struct StyleConfigItems {
-        double aspectRatio   = 1.6;    // "style.aspect_ratio"
-        int imageWidth       = 320;    // "style.image_width"
-        int imageFocusWidth  = 480;    // "style.image_focus_width"
-        int windowWidth      = 750;    // "style.window_width"
-        int windowHeight     = 500;    // "style.window_height"
-        bool noLoadingScreen = false;  // "style.no_loading_screen"
+        double aspectRatio  = 1.6;  // "style.aspect_ratio"
+        int imageWidth      = 320;  // "style.image_width"
+        int imageFocusWidth = 480;  // "style.image_focus_width"
+        int windowWidth     = 750;  // "style.window_width"
+        int windowHeight    = 500;  // "style.window_height"
     };
 
     struct SortConfigItems {
@@ -74,17 +74,33 @@ class Config : public QObject {
 
     ~Config();
 
-    [[nodiscard]] const QStringList& getWallpapers() const { return m_wallpapers; }
+    const QStringList& getWallpapers() const { return m_wallpapers; }
 
-    [[nodiscard]] qint64 getWallpaperCount() const { return m_wallpapers.size(); }
+    qint64 getWallpaperCount() const { return m_wallpapers.size(); }
 
-    [[nodiscard]] const WallpaperConfigItems& getWallpaperConfig() const { return m_wallpaperConfig; }
+    const WallpaperConfigItems& getWallpaperConfig() const { return m_wallpaperConfig; }
 
-    [[nodiscard]] const ActionConfigItems& getActionConfig() const { return m_actionConfig; }
+    const ActionConfigItems& getActionConfig() const { return m_actionConfig; }
 
-    [[nodiscard]] const StyleConfigItems& getStyleConfig() const { return m_styleConfig; }
+    const StyleConfigItems& getStyleConfig() const { return m_styleConfig; }
 
-    [[nodiscard]] const SortConfigItems& getSortConfig() const { return m_sortConfig; }
+    const SortConfigItems& getSortConfig() const { return m_sortConfig; }
+
+    double getAspectRatio() const { return m_styleConfig.aspectRatio; }
+
+    int getImageWidth() const { return m_styleConfig.imageWidth; }
+
+    int getImageFocusWidth() const { return m_styleConfig.imageFocusWidth; }
+
+    int getWindowWidth() const { return m_styleConfig.windowWidth; }
+
+    int getWindowHeight() const { return m_styleConfig.windowHeight; }
+
+    QSize getFocusImageSize() const {
+        int width  = m_styleConfig.imageFocusWidth;
+        int height = static_cast<int>(width / m_styleConfig.aspectRatio);
+        return {width, height};
+    }
 
     static const QString s_DefaultConfigFileName;
     const QString m_configDir;
@@ -102,4 +118,4 @@ class Config : public QObject {
     QStringList m_wallpapers;
 };
 
-#endif  // CONFIG_H
+#endif  // WALLREEL_CONFIGMGR_HPP

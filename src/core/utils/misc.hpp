@@ -1,12 +1,5 @@
-/*
- * @Author: Uyanide pywang0608@foxmail.com
- * @Date: 2025-11-30 20:59:57
- * @LastEditTime: 2026-01-18 06:36:13
- * @Description: THE utils header that every project needs :)
- */
-
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef WALLREEL_MISC_HPP
+#define WALLREEL_MISC_HPP
 
 #include <QDir>
 #include <QFileInfo>
@@ -15,6 +8,8 @@
 #include <QRegularExpression>
 #include <QStandardPaths>
 #include <utility>
+
+#include "version.h"
 
 /**
  * @brief Defer execution of a callable until the end of the current scope.
@@ -96,7 +91,7 @@ inline QString expandPath(const QString& path) {
  * @param path
  * @return QString
  */
-static QString splitNameFromPath(const QString& path) {
+inline QString splitNameFromPath(const QString& path) {
     QFileInfo fileInfo(path);
     return fileInfo.fileName();
 }
@@ -125,4 +120,14 @@ inline bool checkImageFile(const QString& filePath) {
     return formats.contains(ext.toUtf8());
 }
 
-#endif  // UTILS_H
+inline QString getConfigDir() {
+    // This will be ~/.config/AppName, where AppName is the name of executable target in CMakeLists.txt
+    auto configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+    if (configDir.isEmpty()) {
+        configDir = QDir::homePath() + QDir::separator() + ".config" + QDir::separator() + APP_NAME;
+    }
+    QDir().mkpath(configDir);
+    return configDir;
+}
+
+#endif  // WALLREEL_MISC_HPP

@@ -1,10 +1,4 @@
-/*
- * @Author: Uyanide pywang0608@foxmail.com
- * @Date: 2025-08-05 01:34:52
- * @LastEditTime: 2026-01-15 03:54:42
- * @Description: Configuration manager.
- */
-#include "config.h"
+#include "configmgr.hpp"
 
 #include <QDir>
 #include <QFile>
@@ -14,8 +8,8 @@
 #include <QProcessEnvironment>
 #include <QStandardPaths>
 
-#include "logger.h"
-#include "utils.h"
+#include "utils/logger.hpp"
+#include "utils/misc.hpp"
 using namespace GeneralLogger;
 
 const QString Config::s_DefaultConfigFileName = "config.json";
@@ -125,12 +119,6 @@ void Config::_loadConfig(const QString& configPath) {
                      debug(QString("Window height: %1").arg(m_styleConfig.windowHeight));
                  }
              }},
-            {"style.no_loading_screen", "no_loading_screen", [this](const QJsonValue& val) {
-                 if (val.isBool()) {
-                     m_styleConfig.noLoadingScreen = val.toBool();
-                     debug(QString("No loading screen: %1").arg(m_styleConfig.noLoadingScreen));
-                 }
-             }},
             {"sort.type", "type", [this](const QJsonValue& val) {
                  if (val.isString()) {
                      QString type = val.toString().toLower();
@@ -188,16 +176,16 @@ void Config::_loadWallpapers() {
     QSet<QString> paths;
 
     debug(QString("Loading wallpapers from %1 specified paths...").arg(m_wallpaperConfig.paths.size()));
-    for (const QString& path : m_wallpaperConfig.paths) {
+    for (const QString& path : std::as_const(m_wallpaperConfig.paths)) {
         paths.insert(path);
     }
 
     debug(QString("Loading wallpapers from %1 specified directories...").arg(m_wallpaperConfig.dirs.size()));
-    for (const QString& dirPath : m_wallpaperConfig.dirs) {
+    for (const QString& dirPath : std::as_const(m_wallpaperConfig.dirs)) {
         QDir dir(dirPath);
         if (checkDir(dirPath)) {
             QStringList files = dir.entryList(QDir::Files | QDir::NoDotAndDotDot);
-            for (const QString& file : files) {
+            for (const QString& file : std::as_const(files)) {
                 QString filePath = dir.filePath(file);
                 paths.insert(expandPath(filePath));
             }
@@ -207,7 +195,7 @@ void Config::_loadWallpapers() {
     }
 
     debug(QString("Excluding %1 specified paths...").arg(m_wallpaperConfig.excludes.size()));
-    for (const QString& exclude : m_wallpaperConfig.excludes) {
+    for (const QString& exclude : std::as_const(m_wallpaperConfig.excludes)) {
         paths.remove(exclude);
     }
 

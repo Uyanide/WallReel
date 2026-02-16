@@ -1,11 +1,5 @@
-/*
- * @Author: Uyanide pywang0608@foxmail.com
- * @Date: 2025-08-05 10:43:31
- * @LastEditTime: 2026-01-15 06:25:57
- * @Description: A simple thread-safe logger.
- */
-#ifndef GENERAL_LOGGER_H
-#define GENERAL_LOGGER_H
+#ifndef WALLREEL_LOGGER_HPP
+#define WALLREEL_LOGGER_HPP
 
 #include <QLoggingCategory>
 #include <QString>
@@ -48,4 +42,4 @@ class Logger {
     static void quiet();
 };
 
-#endif  // GENERAL_LOGGER_H
+#endif  // WALLREEL_LOGGER_HPP

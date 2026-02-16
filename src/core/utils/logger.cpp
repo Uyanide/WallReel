@@ -1,10 +1,4 @@
-/*
- * @Author: Uyanide pywang0608@foxmail.com
- * @Date: 2025-08-07 01:12:37
- * @LastEditTime: 2026-01-15 06:26:35
- * @Description: Implementation of logger.
- */
-#include "logger.h"
+#include "logger.hpp"
 
 #include <unistd.h>
 
@@ -38,8 +32,6 @@ static bool checkIsColored(FILE* stream) {
 
 // Custom message handler
 static void messageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg) {
-    Q_UNUSED(context);
-
     QMutexLocker locker(&s_logMutex);
 
     QString levelTag;
