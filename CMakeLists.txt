@@ -21,7 +21,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_definitions(-DSUPPRESS_QRC_LOG)
 endif()
 
-configure_file(src/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h)
+configure_file(WallReel/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h)
 
 find_package(Qt6 REQUIRED COMPONENTS Quick Widgets QuickControls2 Concurrent)
 
@@ -29,11 +29,11 @@ qt_standard_project_setup(REQUIRES 6.5)
 
 qt_policy(SET QTP0004 NEW)
 
-add_subdirectory(src/core)
-add_subdirectory(src/ui)
+add_subdirectory(WallReel/Core)
+add_subdirectory(WallReel/UI)
 
 add_executable(${EXECUTABLE_NAME}
-    src/main.cpp
+    WallReel/main.cpp
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

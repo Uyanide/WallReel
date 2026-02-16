@@ -7,11 +7,11 @@
 #include <QStandardPaths>
 #include <QTextStream>
 
-#include "core/configmgr.hpp"
-#include "core/imagemodel.hpp"
-#include "core/imageprovider.hpp"
-#include "core/utils/logger.hpp"
-#include "core/utils/misc.hpp"
+#include "Core/configmgr.hpp"
+#include "Core/imagemodel.hpp"
+#include "Core/imageprovider.hpp"
+#include "Core/utils/logger.hpp"
+#include "Core/utils/misc.hpp"
 #include "version.h"
 
 /**
