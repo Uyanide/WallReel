@@ -5,30 +5,30 @@
 #include <QImage>
 
 class ImageData {
-    QString id;
-    QFileInfo file;
-    QImage image;
+    QString m_id;
+    QFileInfo m_file;
+    QImage m_image;
 
     ImageData(const QString& path, const QSize& size);
 
   public:
     static ImageData* create(const QString& path, const QSize& size);
 
-    const QImage& getImage() const { return image; }
+    const QImage& getImage() const { return m_image; }
 
-    const QString& getId() const { return id; }
+    const QString& getId() const { return m_id; }
 
-    bool isValid() const { return !image.isNull(); }
+    bool isValid() const { return !m_image.isNull(); }
 
-    QString getFullPath() const { return file.absoluteFilePath(); }
+    QString getFullPath() const { return m_file.absoluteFilePath(); }
 
-    QString getFileName() const { return file.fileName(); }
+    QString getFileName() const { return m_file.fileName(); }
 
-    QDateTime getLastModified() const { return file.lastModified(); }
+    QDateTime getLastModified() const { return m_file.lastModified(); }
 
-    qint64 getSize() const { return file.size(); }
+    qint64 getSize() const { return m_file.size(); }
 
-    const QFileInfo& getFileInfo() const { return file; }
+    const QFileInfo& getFileInfo() const { return m_file; }
 
   private:
 };

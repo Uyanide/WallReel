@@ -32,7 +32,7 @@ class ImageModel : public QAbstractListModel {
     }
 
     ImageModel(
-        ImageProvider* provider,
+        ImageProvider& provider,
         const Config::SortConfigItems& sortConfig,
         QSize thumbnailSize,
         QObject* parent = nullptr);
@@ -57,30 +57,38 @@ class ImageModel : public QAbstractListModel {
 
     Q_INVOKABLE QVariant dataAt(int index, const QString& roleName) const;
 
+    Q_INVOKABLE void selectImage(int index);
+
+    Q_INVOKABLE void previewImage(int index);
+
+  private:
+    void _clearData();
+
   signals:
     void isLoadingChanged();
     void progressChanged();
     void totalCountChanged();
-    void imageSelected(const QString& path);
+    void imageSelected(const ImageData& imageData);
+    void imagePreviewed(const ImageData& imageData);
 
   private slots:
-    void onProgressValueChanged(int value);
-    void onProcessingFinished();
+    void _onProgressValueChanged(int value);
+    void _onProcessingFinished();
 
   private:
-    ImageProvider* m_provider;
+    ImageProvider& m_provider;
     const Config::SortConfigItems& m_sortConfig;
     QSize m_thumbnailSize;
 
-    QList<ImageData*> m_data;
+    QVector<ImageData*> m_data;
 
     QFutureWatcher<ImageData*> m_watcher;
     bool m_isLoading = false;
 
     std::atomic<int> m_processedCount{0};
     QTimer m_progressUpdateTimer;
-    static constexpr int s_progressUpdateInterval  = 30;
-    static constexpr int s_isLoadingUpdateInterval = 50;
+    static constexpr int s_ProgressUpdateIntervalMs  = 30;
+    static constexpr int s_IsLoadingUpdateIntervalMs = 50;
 };
 
 #endif  // WALLREEL_IMAGEMODEL_HPP

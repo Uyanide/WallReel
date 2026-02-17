@@ -7,7 +7,7 @@
 #include "imagedata.hpp"
 
 ImageModel::ImageModel(
-    ImageProvider* provider,
+    ImageProvider& provider,
     const Config::SortConfigItems& sortConfig,
     QSize thumbnailSize,
     QObject* parent)
@@ -19,7 +19,7 @@ ImageModel::ImageModel(
         &m_watcher,
         &QFutureWatcher<ImageData*>::finished,
         this,
-        &ImageModel::onProcessingFinished);
+        &ImageModel::_onProcessingFinished);
     connect(
         &m_progressUpdateTimer,
         &QTimer::timeout,
@@ -33,6 +33,7 @@ ImageModel::~ImageModel() {
     m_watcher.cancel();
     m_watcher.waitForFinished();
     qDeleteAll(m_data);
+    m_data.clear();
 }
 
 int ImageModel::rowCount(const QModelIndex& parent) const {
@@ -67,16 +68,10 @@ void ImageModel::loadAndProcess(const QStringList& paths) {
     m_isLoading = true;
     emit isLoadingChanged();
 
-    beginResetModel();
-    if (!m_data.isEmpty()) {
-        qDeleteAll(m_data);
-    }
-    m_data.clear();
-    m_provider->clear();
-    endResetModel();
+    _clearData();
 
     m_processedCount = 0;
-    m_progressUpdateTimer.start(s_progressUpdateInterval);
+    m_progressUpdateTimer.start(s_ProgressUpdateIntervalMs);
     const auto thumbnailSize   = m_thumbnailSize;
     const auto counterPtr      = &m_processedCount;
     QFuture<ImageData*> future = QtConcurrent::mapped(paths, [thumbnailSize, counterPtr](const QString& path) {
@@ -94,12 +89,12 @@ void ImageModel::stop() {
     }
 }
 
-void ImageModel::onProgressValueChanged(int value) {
+void ImageModel::_onProgressValueChanged(int value) {
     Q_UNUSED(value);
     emit progressChanged();
 }
 
-void ImageModel::onProcessingFinished() {
+void ImageModel::_onProcessingFinished() {
     auto results = m_watcher.future().results();
     for (auto& data : results) {
         if (data && data->isValid()) {
@@ -116,7 +111,7 @@ void ImageModel::onProcessingFinished() {
     m_progressUpdateTimer.stop();
     emit progressChanged();
     // emit isLoadingChanged();
-    QTimer::singleShot(s_isLoadingUpdateInterval, this, [this]() {
+    QTimer::singleShot(s_IsLoadingUpdateIntervalMs, this, [this]() {
         emit isLoadingChanged();
     });
 }
@@ -128,27 +123,29 @@ void ImageModel::sortUpdate() {
         if (!a || !b) {
             return false;
         }
-        bool result = false;
+        if (a == b) {
+            return false;
+        }
+
+        ImageData* first  = reverse ? b : a;
+        ImageData* second = reverse ? a : b;
+
         switch (type) {
             case Config::SortType::Name:
-                result = QString::compare(a->getFileName(), b->getFileName(), Qt::CaseInsensitive) < 0;
-                break;
+                return QString::compare(first->getFileName(), second->getFileName(), Qt::CaseInsensitive) < 0;
             case Config::SortType::Date:
-                result = a->getLastModified() < b->getLastModified();
-                break;
+                return first->getLastModified() < second->getLastModified();
             case Config::SortType::Size:
-                result = a->getSize() < b->getSize();
-                break;
+                return first->getSize() < second->getSize();
             default:
-                break;
+                return false;
         }
-        return reverse ? !result : result;
     });
 
     beginResetModel();
-    m_provider->clear();
+    m_provider.clear();
     for (const auto& item : m_data) {
-        m_provider->insert(item);
+        m_provider.insert(item);
     }
     endResetModel();
 }
@@ -167,5 +164,33 @@ QVariant ImageModel::dataAt(int index, const QString& roleName) const {
         return item->getFileName();
     } else {
         return QVariant();
+    }
+}
+
+void ImageModel::_clearData() {
+    beginResetModel();
+    m_provider.clear();
+    qDeleteAll(m_data);
+    m_data.clear();
+    endResetModel();
+}
+
+void ImageModel::selectImage(int index) {
+    if (index < 0 || index >= m_data.count()) {
+        return;
+    }
+    const auto& item = m_data[index];
+    if (item) {
+        emit imageSelected(*item);
+    }
+}
+
+void ImageModel::previewImage(int index) {
+    if (index < 0 || index >= m_data.count()) {
+        return;
+    }
+    const auto& item = m_data[index];
+    if (item) {
+        emit imagePreviewed(*item);
     }
 }

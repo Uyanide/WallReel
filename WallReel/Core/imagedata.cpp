@@ -16,7 +16,7 @@ ImageData* ImageData::create(const QString& path, const QSize& size) {
 }
 
 ImageData::ImageData(const QString& path, const QSize& targetSize)
-    : file(path) {
+    : m_file(path) {
     QImageReader reader(path);
     if (!reader.canRead()) {
         warn(QString("Failed to load image from path: %1").arg(path));
@@ -38,27 +38,27 @@ ImageData::ImageData(const QString& path, const QSize& targetSize)
         }
     }
 
-    if (!reader.read(&image)) {
+    if (!reader.read(&m_image)) {
         warn(QString("Failed to load image from path: %1").arg(path));
         return;
     }
 
-    if (image.width() > processSize.width() || image.height() > processSize.height()) {
-        image = image.scaled(processSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    if (m_image.width() > processSize.width() || m_image.height() > processSize.height()) {
+        m_image = m_image.scaled(processSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     }
 
     // Crop to target size if necessary
-    if (image.size() != targetSize) {
-        int x = (image.width() - targetSize.width()) / 2;
-        int y = (image.height() - targetSize.height()) / 2;
-        image = image.copy(x, y, targetSize.width(), targetSize.height());
+    if (m_image.size() != targetSize) {
+        int x   = (m_image.width() - targetSize.width()) / 2;
+        int y   = (m_image.height() - targetSize.height()) / 2;
+        m_image = m_image.copy(x, y, targetSize.width(), targetSize.height());
     }
 
     // Convert to GPU-friendly format
-    if (image.format() != QImage::Format_ARGB32_Premultiplied) {
-        image = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    if (m_image.format() != QImage::Format_ARGB32_Premultiplied) {
+        m_image = m_image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
     }
 
     // Create ID
-    id = QString::number(qHash(file.absoluteFilePath()));
+    m_id = QString::number(qHash(m_file.absoluteFilePath()));
 }

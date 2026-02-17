@@ -8,6 +8,9 @@ qt_add_qml_module(${CORELIB_NAME}
     configmgr.hpp configmgr.cpp
     imagemodel.hpp imagemodel.cpp
     imageprovider.hpp imageprovider.cpp
+    wallpaperservice.hpp wallpaperservice.cpp
+    palette/data.hpp
+    palette/manager.hpp palette/manager.cpp
 )
 
 target_link_libraries(${CORELIB_NAME} PRIVATE

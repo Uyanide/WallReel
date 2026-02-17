@@ -19,9 +19,21 @@ Item {
         } else if (e.key === Qt.Key_Escape)
             Qt.quit();
         else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter)
-            ImageModel.confirm(carousel.currentIndex);
+            ImageModel.selectImage(carousel.currentIndex);
         else
             e.accepted = false;
+    }
+    Component.onCompleted: {
+        ImageModel.previewImage(carousel.currentIndex);
+        root.forceActiveFocus();
+    }
+
+    Connections {
+        function onCurrentIndexChanged() {
+            ImageModel.previewImage(carousel.currentIndex);
+        }
+
+        target: carousel
     }
 
     ColumnLayout {
@@ -42,9 +54,9 @@ Item {
             Layout.fillHeight: true
             model: ImageModel
             itemWidth: Config.imageWidth
-            itemHeight: Config.imageWidth / Config.aspectRatio
-            focusedItemWidth: Config.imageFocusWidth
-            focusedItemHeight: Config.imageFocusWidth / Config.aspectRatio
+            itemHeight: Config.imageHeight
+            focusedItemWidth: Config.imageWidth * Config.imageFocusScale
+            focusedItemHeight: Config.imageHeight * Config.imageFocusScale
 
             MouseArea {
                 anchors.fill: parent

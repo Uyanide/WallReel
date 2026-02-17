@@ -1,17 +1,21 @@
-#include <qtypes.h>
+#include <qobject.h>
 
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QDir>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
 #include <QStandardPaths>
 #include <QTextStream>
 
 #include "Core/configmgr.hpp"
 #include "Core/imagemodel.hpp"
 #include "Core/imageprovider.hpp"
+#include "Core/palette/data.hpp"
+#include "Core/palette/manager.hpp"
 #include "Core/utils/logger.hpp"
 #include "Core/utils/misc.hpp"
+#include "Core/wallpaperservice.hpp"
 #include "version.h"
 
 /**
@@ -145,34 +149,58 @@ int main(int argc, char* argv[]) {
         return s_options.errorText.isEmpty() ? 0 : 1;
     }
 
-    Config config(
-        ::getConfigDir(),
-        s_options.appendDirs,
-        s_options.configPath,
-        &a);
     QQmlApplicationEngine engine;
 
     ImageProvider* imageProvider = new ImageProvider();
     engine.addImageProvider(QLatin1String("processed"), imageProvider);
 
-    ImageModel imageModel(
-        imageProvider,
-        config.getSortConfig(),
-        config.getFocusImageSize(),
+    auto config = new Config(
+        ::getConfigDir(),
+        s_options.appendDirs,
+        s_options.configPath,
+        imageProvider);
+
+    auto paletteMgr = new PaletteManager(
+        config->getPaletteConfig(),
         &a);
+    engine.rootContext()->setContextProperty("PaletteManager", paletteMgr);
+    qRegisterMetaType<PaletteItem>();
+    qRegisterMetaType<ColorItem>();
+
+    auto imageModel = new ImageModel(
+        *imageProvider,
+        config->getSortConfig(),
+        config->getFocusImageSize(),
+        config);
+
+    auto wallpaperService = new WallpaperService(
+        config->getActionConfig(),
+        config);
+
+    QObject::connect(
+        imageModel,
+        &ImageModel::imageSelected,
+        wallpaperService,
+        &WallpaperService::select);
+
+    QObject::connect(
+        imageModel,
+        &ImageModel::imagePreviewed,
+        wallpaperService,
+        &WallpaperService::preview);
 
     qmlRegisterSingletonInstance(
         COREMODULE_URI,
         MODULE_VERSION_MAJOR,
         MODULE_VERSION_MINOR,
         "Config",
-        &config);
+        config);
     qmlRegisterSingletonInstance(
         COREMODULE_URI,
         MODULE_VERSION_MAJOR,
         MODULE_VERSION_MINOR,
         "ImageModel",
-        &imageModel);
+        imageModel);
 
     QObject::connect(
         &engine,
@@ -182,7 +210,7 @@ int main(int argc, char* argv[]) {
         Qt::QueuedConnection);
     engine.loadFromModule(UIMODULE_URI, "Main");
 
-    imageModel.loadAndProcess(config.getWallpapers());
+    imageModel->loadAndProcess(config->getWallpapers());
 
     return a.exec();
 }

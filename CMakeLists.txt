@@ -13,6 +13,8 @@ set(MODULE_VERSION_MINOR 0)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(CMAKE_CXX_STANDARD 23)
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -23,14 +25,27 @@ endif()
 
 configure_file(WallReel/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick Widgets QuickControls2 Concurrent)
+find_package(Qt6 REQUIRED COMPONENTS Quick Widgets QuickControls2 Concurrent Test)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
 qt_policy(SET QTP0004 NEW)
 
+option(BUILD_TESTING "Build the testing tree." ON)
+option(ADDRESS_SANITIZER "Enable Address Sanitizer for debugging." OFF)
+
 add_subdirectory(WallReel/Core)
 add_subdirectory(WallReel/UI)
+
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(Tests)
+endif()
+
+if(ADDRESS_SANITIZER)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+endif()
 
 add_executable(${EXECUTABLE_NAME}
     WallReel/main.cpp
