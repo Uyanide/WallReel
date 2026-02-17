@@ -6,10 +6,12 @@
 #include <QTimer>
 #include <atomic>
 
-#include "configmgr.hpp"
-#include "imageprovider.hpp"
+#include "Config/manager.hpp"
+#include "provider.hpp"
 
-class ImageModel : public QAbstractListModel {
+namespace WallReel::Core::Image {
+
+class Model : public QAbstractListModel {
     Q_OBJECT
 
     Q_PROPERTY(bool isLoading READ isLoading NOTIFY isLoadingChanged)
@@ -31,13 +33,13 @@ class ImageModel : public QAbstractListModel {
         };
     }
 
-    ImageModel(
-        ImageProvider& provider,
+    Model(
+        Provider& provider,
         const Config::SortConfigItems& sortConfig,
         QSize thumbnailSize,
         QObject* parent = nullptr);
 
-    ~ImageModel();
+    ~Model();
 
     bool isLoading() const { return m_isLoading; }
 
@@ -68,21 +70,21 @@ class ImageModel : public QAbstractListModel {
     void isLoadingChanged();
     void progressChanged();
     void totalCountChanged();
-    void imageSelected(const ImageData& imageData);
-    void imagePreviewed(const ImageData& imageData);
+    void imageSelected(const Data& imageData);
+    void imagePreviewed(const Data& imageData);
 
   private slots:
     void _onProgressValueChanged(int value);
     void _onProcessingFinished();
 
   private:
-    ImageProvider& m_provider;
+    Provider& m_provider;
     const Config::SortConfigItems& m_sortConfig;
     QSize m_thumbnailSize;
 
-    QVector<ImageData*> m_data;
+    QVector<Data*> m_data;
 
-    QFutureWatcher<ImageData*> m_watcher;
+    QFutureWatcher<Data*> m_watcher;
     bool m_isLoading = false;
 
     std::atomic<int> m_processedCount{0};
@@ -90,5 +92,7 @@ class ImageModel : public QAbstractListModel {
     static constexpr int s_ProgressUpdateIntervalMs  = 30;
     static constexpr int s_IsLoadingUpdateIntervalMs = 50;
 };
+
+}  // namespace WallReel::Core::Image
 
 #endif  // WALLREEL_IMAGEMODEL_HPP

@@ -4,8 +4,10 @@
 #include <QProcess>
 #include <QTimer>
 
-#include "configmgr.hpp"
-#include "imagedata.hpp"
+#include "Config/manager.hpp"
+#include "Image/data.hpp"
+
+namespace WallReel::Core {
 
 class WallpaperService : public QObject {
     Q_OBJECT
@@ -16,9 +18,9 @@ class WallpaperService : public QObject {
         QObject* parent = nullptr);
 
   public slots:
-    void preview(const ImageData& imageData);  // execute after 500ms of inactivity
-    void select(const ImageData& imageData);   // execute immediately, ignore if already running
-    void restore();                            // execute immediately, ignore if already running
+    void preview(const Image::Data& imageData);  // execute after 500ms of inactivity
+    void select(const Image::Data& imageData);   // execute immediately, ignore if already running
+    void restore();                              // execute immediately, ignore if already running
 
   signals:
     void previewCompleted();
@@ -26,16 +28,18 @@ class WallpaperService : public QObject {
     void restoreCompleted();
 
   private:
-    void _doPreview(const ImageData& imageData);
-    void _doSelect(const ImageData& imageData);
+    void _doPreview(const Image::Data& imageData);
+    void _doSelect(const Image::Data& imageData);
     void _doRestore();
 
     const Config::ActionConfigItems& m_actionConfig;
     QTimer* m_previewDebounceTimer;
-    const ImageData* m_pendingImageData;
+    const Image::Data* m_pendingImageData;
     QProcess* m_previewProcess;
     QProcess* m_selectProcess;
     QProcess* m_restoreProcess;
 };
+
+}  // namespace WallReel::Core
 
 #endif  // WALLREEL_WALLPAPERSERVICE_HPP

@@ -64,10 +64,6 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
 )
 
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE
-    Qt6::Quick
-    Qt6::Widgets
-    Qt6::QuickControls2
-    Qt6::Concurrent
     ${CORELIB_NAME}
     ${UILIB_NAME}
 )

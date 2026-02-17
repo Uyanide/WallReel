@@ -71,7 +71,7 @@ static void messageOutput(QtMsgType type, const QMessageLogContext& context, con
     }
 }
 
-void Logger::init(FILE* stream) {
+void WallReel::Core::Logger::init(FILE* stream) {
     if (stream) {
         delete s_logStream;
         s_logStream = new QTextStream(stream);
@@ -81,7 +81,7 @@ void Logger::init(FILE* stream) {
     qInstallMessageHandler(messageOutput);
 }
 
-void Logger::setLogLevel(QtMsgType level) {
+void WallReel::Core::Logger::setLogLevel(QtMsgType level) {
     switch (level) {
         case QtDebugMsg:
             QLoggingCategory::setFilterRules(QString("%1.debug=true").arg(APP_NAME));
@@ -101,23 +101,23 @@ void Logger::setLogLevel(QtMsgType level) {
     }
 }
 
-void Logger::quiet() {
+void WallReel::Core::Logger::quiet() {
     QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=false\n%1.critical=false\n%1.fatal=false").arg(APP_NAME));
 }
 
-void GeneralLogger::debug(const QString& msg) {
+void WallReel::Core::Logger::debug(const QString& msg) {
     qCDebug(logMain).noquote() << msg;
 }
 
-void GeneralLogger::info(const QString& msg) {
+void WallReel::Core::Logger::info(const QString& msg) {
     qCInfo(logMain).noquote() << msg;
 }
 
-void GeneralLogger::warn(const QString& msg) {
+void WallReel::Core::Logger::warn(const QString& msg) {
     qCWarning(logMain).noquote() << msg;
 }
 
-void GeneralLogger::critical(const QString& msg) {
+void WallReel::Core::Logger::critical(const QString& msg) {
     qCCritical(logMain).noquote() << msg;
 }
 

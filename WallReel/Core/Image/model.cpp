@@ -1,13 +1,12 @@
-
-#include "imagemodel.hpp"
+#include "model.hpp"
 
 #include <QFuture>
 #include <QtConcurrent>
 
-#include "imagedata.hpp"
+#include "data.hpp"
 
-ImageModel::ImageModel(
-    ImageProvider& provider,
+WallReel::Core::Image::Model::Model(
+    Provider& provider,
     const Config::SortConfigItems& sortConfig,
     QSize thumbnailSize,
     QObject* parent)
@@ -17,9 +16,9 @@ ImageModel::ImageModel(
       m_thumbnailSize(thumbnailSize) {
     connect(
         &m_watcher,
-        &QFutureWatcher<ImageData*>::finished,
+        &QFutureWatcher<Data*>::finished,
         this,
-        &ImageModel::_onProcessingFinished);
+        &Model::_onProcessingFinished);
     connect(
         &m_progressUpdateTimer,
         &QTimer::timeout,
@@ -29,21 +28,21 @@ ImageModel::ImageModel(
         });
 }
 
-ImageModel::~ImageModel() {
+WallReel::Core::Image::Model::~Model() {
     m_watcher.cancel();
     m_watcher.waitForFinished();
     qDeleteAll(m_data);
     m_data.clear();
 }
 
-int ImageModel::rowCount(const QModelIndex& parent) const {
+int WallReel::Core::Image::Model::rowCount(const QModelIndex& parent) const {
     if (parent.isValid()) {
         return 0;
     }
     return m_data.count();
 }
 
-QVariant ImageModel::data(const QModelIndex& index, int role) const {
+QVariant WallReel::Core::Image::Model::data(const QModelIndex& index, int role) const {
     if (!index.isValid() || index.row() >= m_data.count()) {
         return QVariant();
     }
@@ -61,7 +60,7 @@ QVariant ImageModel::data(const QModelIndex& index, int role) const {
     }
 }
 
-void ImageModel::loadAndProcess(const QStringList& paths) {
+void WallReel::Core::Image::Model::loadAndProcess(const QStringList& paths) {
     if (m_isLoading) {
         return;
     }
@@ -72,10 +71,10 @@ void ImageModel::loadAndProcess(const QStringList& paths) {
 
     m_processedCount = 0;
     m_progressUpdateTimer.start(s_ProgressUpdateIntervalMs);
-    const auto thumbnailSize   = m_thumbnailSize;
-    const auto counterPtr      = &m_processedCount;
-    QFuture<ImageData*> future = QtConcurrent::mapped(paths, [thumbnailSize, counterPtr](const QString& path) {
-        auto data = ImageData::create(path, thumbnailSize);
+    const auto thumbnailSize = m_thumbnailSize;
+    const auto counterPtr    = &m_processedCount;
+    QFuture<Data*> future    = QtConcurrent::mapped(paths, [thumbnailSize, counterPtr](const QString& path) {
+        auto data = Data::create(path, thumbnailSize);
         counterPtr->fetch_add(1, std::memory_order_relaxed);
         return data;
     });
@@ -83,18 +82,18 @@ void ImageModel::loadAndProcess(const QStringList& paths) {
     emit totalCountChanged();
 }
 
-void ImageModel::stop() {
+void WallReel::Core::Image::Model::stop() {
     if (m_isLoading) {
         m_watcher.cancel();
     }
 }
 
-void ImageModel::_onProgressValueChanged(int value) {
+void WallReel::Core::Image::Model::_onProgressValueChanged(int value) {
     Q_UNUSED(value);
     emit progressChanged();
 }
 
-void ImageModel::_onProcessingFinished() {
+void WallReel::Core::Image::Model::_onProcessingFinished() {
     auto results = m_watcher.future().results();
     for (auto& data : results) {
         if (data && data->isValid()) {
@@ -116,10 +115,10 @@ void ImageModel::_onProcessingFinished() {
     });
 }
 
-void ImageModel::sortUpdate() {
+void WallReel::Core::Image::Model::sortUpdate() {
     const auto type    = m_sortConfig.type;
     const auto reverse = m_sortConfig.reverse;
-    std::sort(m_data.begin(), m_data.end(), [type, reverse](ImageData* a, ImageData* b) {
+    std::sort(m_data.begin(), m_data.end(), [type, reverse](Data* a, Data* b) {
         if (!a || !b) {
             return false;
         }
@@ -127,8 +126,8 @@ void ImageModel::sortUpdate() {
             return false;
         }
 
-        ImageData* first  = reverse ? b : a;
-        ImageData* second = reverse ? a : b;
+        Data* first  = reverse ? b : a;
+        Data* second = reverse ? a : b;
 
         switch (type) {
             case Config::SortType::Name:
@@ -150,7 +149,7 @@ void ImageModel::sortUpdate() {
     endResetModel();
 }
 
-QVariant ImageModel::dataAt(int index, const QString& roleName) const {
+QVariant WallReel::Core::Image::Model::dataAt(int index, const QString& roleName) const {
     if (index < 0 || index >= m_data.count()) {
         return QVariant();
     }
@@ -167,7 +166,7 @@ QVariant ImageModel::dataAt(int index, const QString& roleName) const {
     }
 }
 
-void ImageModel::_clearData() {
+void WallReel::Core::Image::Model::_clearData() {
     beginResetModel();
     m_provider.clear();
     qDeleteAll(m_data);
@@ -175,7 +174,7 @@ void ImageModel::_clearData() {
     endResetModel();
 }
 
-void ImageModel::selectImage(int index) {
+void WallReel::Core::Image::Model::selectImage(int index) {
     if (index < 0 || index >= m_data.count()) {
         return;
     }
@@ -185,7 +184,7 @@ void ImageModel::selectImage(int index) {
     }
 }
 
-void ImageModel::previewImage(int index) {
+void WallReel::Core::Image::Model::previewImage(int index) {
     if (index < 0 || index >= m_data.count()) {
         return;
     }

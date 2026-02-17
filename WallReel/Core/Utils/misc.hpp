@@ -11,6 +11,8 @@
 
 #include "version.h"
 
+namespace WallReel::Core::Utils {
+
 /**
  * @brief Defer execution of a callable until the end of the current scope.
  *
@@ -129,5 +131,7 @@ inline QString getConfigDir() {
     QDir().mkpath(configDir);
     return configDir;
 }
+
+}  // namespace WallReel::Core::Utils
 
 #endif  // WALLREEL_MISC_HPP

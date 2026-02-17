@@ -2,24 +2,25 @@ qt_add_qml_module(${CORELIB_NAME}
     URI ${COREMODULE_URI}
     VERSION ${MODULE_VERSION_MAJOR}.${MODULE_VERSION_MINOR}
     SOURCES
-    imagedata.hpp imagedata.cpp
-    utils/logger.hpp utils/logger.cpp
-    utils/misc.hpp
-    configmgr.hpp configmgr.cpp
-    imagemodel.hpp imagemodel.cpp
-    imageprovider.hpp imageprovider.cpp
+    Image/data.hpp Image/data.cpp
+    Image/model.hpp Image/model.cpp
+    Image/provider.hpp Image/provider.cpp
+    Palette/data.hpp
+    Palette/manager.hpp Palette/manager.cpp
+    Config/manager.hpp Config/manager.cpp
+    logger.hpp logger.cpp
     wallpaperservice.hpp wallpaperservice.cpp
-    palette/data.hpp
-    palette/manager.hpp palette/manager.cpp
+    appoptions.hpp appoptions.cpp
 )
 
-target_link_libraries(${CORELIB_NAME} PRIVATE
+target_link_libraries(${CORELIB_NAME} PUBLIC
     Qt6::Quick
     Qt6::Widgets
     Qt6::QuickControls2
     Qt6::Concurrent
 )
 
-target_include_directories(${CORELIB_NAME} PRIVATE
+target_include_directories(${CORELIB_NAME} PUBLIC
     ${CMAKE_BINARY_DIR}/generated
+    ${CMAKE_CURRENT_LIST_DIR}
 )

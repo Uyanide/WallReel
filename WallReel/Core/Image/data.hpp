@@ -4,15 +4,17 @@
 #include <QFileInfo>
 #include <QImage>
 
-class ImageData {
+namespace WallReel::Core::Image {
+
+class Data {
     QString m_id;
     QFileInfo m_file;
     QImage m_image;
 
-    ImageData(const QString& path, const QSize& size);
+    Data(const QString& path, const QSize& size);
 
   public:
-    static ImageData* create(const QString& path, const QSize& size);
+    static Data* create(const QString& path, const QSize& size);
 
     const QImage& getImage() const { return m_image; }
 
@@ -32,5 +34,7 @@ class ImageData {
 
   private:
 };
+
+}  // namespace WallReel::Core::Image
 
 #endif  // WALLREEL_IMAGEDATA_HPP

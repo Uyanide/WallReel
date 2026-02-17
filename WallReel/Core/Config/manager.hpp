@@ -1,8 +1,6 @@
 #ifndef WALLREEL_CONFIGMGR_HPP
 #define WALLREEL_CONFIGMGR_HPP
 
-#include <qregularexpression.h>
-
 #include <QColor>
 #include <QObject>
 #include <QRegularExpression>
@@ -44,7 +42,67 @@
 //                                                            date: older before newer
 //                                                            size: smaller before larger
 
-class Config : public QObject {
+namespace WallReel::Core::Config {
+
+static const QString s_DefaultConfigFileName = "config.json";
+
+enum class SortType : int {
+    None = 0,  // "none"
+    Name,      // "name"
+    Date,      // "date"
+    Size,      // "size"
+};
+
+struct WallpaperConfigItems {
+    struct WallpaperDirConfigItem {
+        QString path;
+        bool recursive;
+    };
+
+    QStringList paths;
+    QList<WallpaperDirConfigItem> dirs;
+    QList<QRegularExpression> excludes;
+};
+
+struct PaletteConfigItems {
+    struct PaletteColorConfigItem {
+        QString name;
+        QColor value;
+    };
+
+    struct PaletteConfigItem {
+        QString name;
+        QList<PaletteColorConfigItem> colors;
+    };
+
+    QList<PaletteConfigItem> palettes;
+};
+
+struct ActionConfigItems {
+
+    QHash<QString, QString> saveState;
+    QString onSelected;
+    QString onPreview;
+    QString onRestore;
+    int previewDebounceTime = 300;  // milliseconds
+    bool printSelected      = false;
+    bool printPreview       = false;
+};
+
+struct StyleConfigItems {
+    double imageFocusScale = 1.5;
+    int imageWidth         = 320;
+    int imageHeight        = 200;
+    int windowWidth        = 750;
+    int windowHeight       = 500;
+};
+
+struct SortConfigItems {
+    SortType type = SortType::Name;
+    bool reverse  = false;
+};
+
+class Manager : public QObject {
     Q_OBJECT
 
     Q_PROPERTY(int imageWidth READ getImageWidth CONSTANT)
@@ -54,69 +112,13 @@ class Config : public QObject {
     Q_PROPERTY(int windowHeight READ getWindowHeight CONSTANT)
 
   public:
-    enum class SortType : int {
-        None = 0,  // "none"
-        Name,      // "name"
-        Date,      // "date"
-        Size,      // "size"
-    };
-
-    struct WallpaperConfigItems {
-        struct WallpaperDirConfigItem {
-            QString path;
-            bool recursive;
-        };
-
-        QStringList paths;
-        QList<WallpaperDirConfigItem> dirs;
-        QList<QRegularExpression> excludes;
-    };
-
-    struct PaletteConfigItems {
-        struct PaletteColorConfigItem {
-            QString name;
-            QColor value;
-        };
-
-        struct PaletteConfigItem {
-            QString name;
-            QList<PaletteColorConfigItem> colors;
-        };
-
-        QList<PaletteConfigItem> palettes;
-    };
-
-    struct ActionConfigItems {
-
-        QHash<QString, QString> saveState;
-        QString onSelected;
-        QString onPreview;
-        QString onRestore;
-        int previewDebounceTime = 300;  // milliseconds
-        bool printSelected      = false;
-        bool printPreview       = false;
-    };
-
-    struct StyleConfigItems {
-        double imageFocusScale = 1.5;
-        int imageWidth         = 320;
-        int imageHeight        = 200;
-        int windowWidth        = 750;
-        int windowHeight       = 500;
-    };
-
-    struct SortConfigItems {
-        SortType type = SortType::Name;
-        bool reverse  = false;
-    };
-
-    Config(
+    Manager(
         const QString& configDir,
         const QStringList& searchDirs = {},
         const QString& configPath     = "",  // Override the default config path
         QObject* parent               = nullptr);
 
-    ~Config();
+    ~Manager();
 
     const QStringList& getWallpapers() const { return m_wallpapers; }
 
@@ -146,7 +148,6 @@ class Config : public QObject {
         return QSize{m_styleConfig.imageWidth, m_styleConfig.imageHeight} * m_styleConfig.imageFocusScale;
     }
 
-    static const QString s_DefaultConfigFileName;
     const QString m_configDir;
 
   private:
@@ -167,5 +168,7 @@ class Config : public QObject {
 
     QStringList m_wallpapers;
 };
+
+}  // namespace WallReel::Core::Config
 
 #endif  // WALLREEL_CONFIGMGR_HPP

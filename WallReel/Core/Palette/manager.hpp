@@ -1,16 +1,18 @@
 #ifndef WALLREEL_PALETTE_MANAGER_HPP
 #define WALLREEL_PALETTE_MANAGER_HPP
 
-#include "../configmgr.hpp"
+#include "Config/manager.hpp"
 #include "data.hpp"
 
-class PaletteManager : public QObject {
+namespace WallReel::Core::Palette {
+
+class Manager : public QObject {
     Q_OBJECT
     Q_PROPERTY(QList<PaletteItem> availablePalettes READ availablePalettes CONSTANT)
 
   public:
-    PaletteManager(const Config::PaletteConfigItems& config,
-                   QObject* parent = nullptr);
+    Manager(const Config::PaletteConfigItems& config,
+            QObject* parent = nullptr);
 
     const QList<PaletteItem>& availablePalettes() const {
         return m_palettes;
@@ -26,5 +28,7 @@ class PaletteManager : public QObject {
   private:
     QList<PaletteItem> m_palettes;
 };
+
+}  // namespace WallReel::Core::Palette
 
 #endif  // WALLREEL_PALETTE_MANAGER_HPP

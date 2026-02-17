@@ -8,7 +8,9 @@
 #include <QTemporaryDir>
 #include <QTest>
 
-#include "configmgr.hpp"
+#include "Config/manager.hpp"
+
+using namespace WallReel::Core;
 
 class TestConfigMgr : public QObject {
     Q_OBJECT
@@ -67,7 +69,7 @@ void TestConfigMgr::testDefaults() {
     // Empty config file
     writeConfig(QJsonObject());
 
-    Config config(m_tempDir.path(), {}, m_configPath);
+    Config::Manager config(m_tempDir.path(), {}, m_configPath);
 
     // Check Style Defaults
     QCOMPARE(config.getImageWidth(), 320);
@@ -144,7 +146,7 @@ void TestConfigMgr::testFullConfigParsing() {
     root["sort"]       = sortObj;
 
     writeConfig(root);
-    Config config(m_tempDir.path(), {}, m_configPath);
+    Config::Manager config(m_tempDir.path(), {}, m_configPath);
 
     // Assertions
     QCOMPARE(config.getWallpaperConfig().dirs.size(), 1);
@@ -184,7 +186,7 @@ void TestConfigMgr::testInvalidConfigValues() {
     root["sort"]    = sortObj;
 
     writeConfig(root);
-    Config config(m_tempDir.path(), {}, m_configPath);
+    Config::Manager config(m_tempDir.path(), {}, m_configPath);
 
     // Should retain defaults
     QCOMPARE(config.getImageWidth(), 320);
@@ -208,7 +210,7 @@ void TestConfigMgr::testWallpaperScanRecursive() {
     root["wallpaper"]    = wallpaperObj;
 
     writeConfig(root);
-    Config config(m_tempDir.path(), {}, m_configPath);
+    Config::Manager config(m_tempDir.path(), {}, m_configPath);
 
     QStringList wallpapers = config.getWallpapers();
     QCOMPARE(wallpapers.size(), 2);
@@ -235,7 +237,7 @@ void TestConfigMgr::testWallpaperScanNonRecursive() {
     root["wallpaper"]    = wallpaperObj;
 
     writeConfig(root);
-    Config config(m_tempDir.path(), {}, m_configPath);
+    Config::Manager config(m_tempDir.path(), {}, m_configPath);
 
     QStringList wallpapers = config.getWallpapers();
     QCOMPARE(wallpapers.size(), 1);
@@ -262,7 +264,7 @@ void TestConfigMgr::testWallpaperExcludes() {
     root["wallpaper"] = wallpaperObj;
 
     writeConfig(root);
-    Config config(m_tempDir.path(), {}, m_configPath);
+    Config::Manager config(m_tempDir.path(), {}, m_configPath);
 
     QStringList wallpapers = config.getWallpapers();
     QCOMPARE(wallpapers.size(), 1);
@@ -281,7 +283,7 @@ void TestConfigMgr::testExplicitPaths() {
     root["wallpaper"]     = wallpaperObj;
 
     writeConfig(root);
-    Config config(m_tempDir.path(), {}, m_configPath);
+    Config::Manager config(m_tempDir.path(), {}, m_configPath);
 
     QStringList wallpapers = config.getWallpapers();
     QCOMPARE(wallpapers.size(), 1);
@@ -308,7 +310,7 @@ void TestConfigMgr::testImageExtensions() {
     root["wallpaper"]    = wallpaperObj;
 
     writeConfig(root);
-    Config config(m_tempDir.path(), {}, m_configPath);
+    Config::Manager config(m_tempDir.path(), {}, m_configPath);
 
     QStringList wallpapers = config.getWallpapers();
 
@@ -332,7 +334,7 @@ void TestConfigMgr::testSortTypes() {
         root["sort"]       = sortObj;
 
         writeConfig(root);
-        Config config(m_tempDir.path(), {}, m_configPath);
+        Config::Manager config(m_tempDir.path(), {}, m_configPath);
         QCOMPARE(config.getSortConfig().type, Config::SortType::None);
         QCOMPARE(config.getSortConfig().reverse, false);
     }
@@ -344,7 +346,7 @@ void TestConfigMgr::testSortTypes() {
         sortObj["reverse"] = true;
         root["sort"]       = sortObj;
         writeConfig(root);
-        Config config(m_tempDir.path(), {}, m_configPath);
+        Config::Manager config(m_tempDir.path(), {}, m_configPath);
         QCOMPARE(config.getSortConfig().type, Config::SortType::Name);
         QCOMPARE(config.getSortConfig().reverse, true);
     }
@@ -355,7 +357,7 @@ void TestConfigMgr::testSortTypes() {
         sortObj["type"] = "size";
         root["sort"]    = sortObj;
         writeConfig(root);
-        Config config(m_tempDir.path(), {}, m_configPath);
+        Config::Manager config(m_tempDir.path(), {}, m_configPath);
         QCOMPARE(config.getSortConfig().type, Config::SortType::Size);
     }
     // 4. Date sort
@@ -365,7 +367,7 @@ void TestConfigMgr::testSortTypes() {
         sortObj["type"] = "date";
         root["sort"]    = sortObj;
         writeConfig(root);
-        Config config(m_tempDir.path(), {}, m_configPath);
+        Config::Manager config(m_tempDir.path(), {}, m_configPath);
         QCOMPARE(config.getSortConfig().type, Config::SortType::Date);
     }
     // 5. Invalid sort -> fallback to default (Name)
@@ -375,7 +377,7 @@ void TestConfigMgr::testSortTypes() {
         sortObj["type"] = "invalid_blah";
         root["sort"]    = sortObj;
         writeConfig(root);
-        Config config(m_tempDir.path(), {}, m_configPath);
+        Config::Manager config(m_tempDir.path(), {}, m_configPath);
         // Default initialized in Config constructor is Name
         // But warning is logged
         QCOMPARE(config.getSortConfig().type, Config::SortType::Name);
@@ -387,7 +389,7 @@ void TestConfigMgr::testSortTypes() {
         sortObj["type"] = "DaTe";
         root["sort"]    = sortObj;
         writeConfig(root);
-        Config config(m_tempDir.path(), {}, m_configPath);
+        Config::Manager config(m_tempDir.path(), {}, m_configPath);
         QCOMPARE(config.getSortConfig().type, Config::SortType::Date);
     }
 }

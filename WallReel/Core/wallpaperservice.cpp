@@ -3,12 +3,10 @@
 #include <QColor>
 #include <iostream>
 
-#include "utils/logger.hpp"
-#include "utils/texttemplate.hpp"
+#include "Utils/texttemplate.hpp"
+#include "logger.hpp"
 
-using namespace GeneralLogger;
-
-WallpaperService::WallpaperService(
+WallReel::Core::WallpaperService::WallpaperService(
     const Config::ActionConfigItems& actionConfig,
     QObject* parent)
     : QObject(parent), m_actionConfig(actionConfig) {
@@ -50,28 +48,28 @@ WallpaperService::WallpaperService(
             });
 }
 
-void WallpaperService::preview(const ImageData& imageData) {
+void WallReel::Core::WallpaperService::preview(const Image::Data& imageData) {
     m_pendingImageData = &imageData;
     m_previewDebounceTimer->start();
 }
 
-void WallpaperService::select(const ImageData& imageData) {
+void WallReel::Core::WallpaperService::select(const Image::Data& imageData) {
     if (m_selectProcess->state() != QProcess::NotRunning) {
-        warn("Previous select command is still running. Ignoring new command.");
+        Logger::warn("Previous select command is still running. Ignoring new command.");
         return;
     }
     _doSelect(imageData);
 }
 
-void WallpaperService::restore() {
+void WallReel::Core::WallpaperService::restore() {
     if (m_restoreProcess->state() != QProcess::NotRunning) {
-        warn("Previous restore command is still running. Ignoring new command.");
+        Logger::warn("Previous restore command is still running. Ignoring new command.");
         return;
     }
     _doRestore();
 }
 
-void WallpaperService::_doPreview(const ImageData& imageData) {
+void WallReel::Core::WallpaperService::_doPreview(const Image::Data& imageData) {
     QString path = imageData.getFullPath();
 
     if (path.isEmpty()) {
@@ -86,7 +84,7 @@ void WallpaperService::_doPreview(const ImageData& imageData) {
         {"path", path},
         {"name", imageData.getFileName()},
     };
-    auto command = renderTemplate(m_actionConfig.onPreview, variables);
+    auto command = Utils::renderTemplate(m_actionConfig.onPreview, variables);
     if (command.isEmpty()) {
         return;
     }
@@ -98,7 +96,7 @@ void WallpaperService::_doPreview(const ImageData& imageData) {
     m_previewProcess->start("sh", QStringList() << "-c" << command);
 }
 
-void WallpaperService::_doSelect(const ImageData& imageData) {
+void WallReel::Core::WallpaperService::_doSelect(const Image::Data& imageData) {
     QString path = imageData.getFullPath();
 
     if (path.isEmpty()) {
@@ -113,19 +111,19 @@ void WallpaperService::_doSelect(const ImageData& imageData) {
         {"path", path},
         {"name", imageData.getFileName()},
     };
-    auto command = renderTemplate(m_actionConfig.onSelected, variables);
+    auto command = Utils::renderTemplate(m_actionConfig.onSelected, variables);
     if (command.isEmpty()) {
         return;
     }
     m_selectProcess->start("sh", QStringList() << "-c" << command);
 }
 
-void WallpaperService::_doRestore() {
+void WallReel::Core::WallpaperService::_doRestore() {
     if (m_actionConfig.onRestore.isEmpty()) {
         return;
     }
 
-    const QString command = renderTemplate(m_actionConfig.onRestore, m_actionConfig.saveState);
+    const QString command = Utils::renderTemplate(m_actionConfig.onRestore, m_actionConfig.saveState);
     if (command.isEmpty()) {
         return;
     }

@@ -3,6 +3,8 @@
 
 #include "data.hpp"
 
+namespace WallReel::Core::Palette {
+
 inline const QList<PaletteItem> preDefinedPalettes = {
 
     {
@@ -84,5 +86,7 @@ inline const QList<PaletteItem> preDefinedPalettes = {
         },
     },
 };
+
+}  // namespace WallReel::Core::Palette
 
 #endif  // WALLREEL_PALETTES_PREDEFINED_HPP

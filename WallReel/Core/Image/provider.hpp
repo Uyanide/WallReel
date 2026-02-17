@@ -5,23 +5,27 @@
 #include <QMutex>
 #include <QQuickImageProvider>
 
-#include "imagedata.hpp"
+#include "data.hpp"
 
-class ImageProvider : public QQuickImageProvider {
+namespace WallReel::Core::Image {
+
+class Provider : public QQuickImageProvider {
     Q_OBJECT
 
   public:
-    ImageProvider() : QQuickImageProvider(QQuickImageProvider::Image) {}
+    Provider() : QQuickImageProvider(QQuickImageProvider::Image) {}
 
     QImage requestImage(const QString& id, QSize* size, const QSize& requestedSize) override;
 
-    void insert(ImageData* data);
+    void insert(Data* data);
 
     void clear();
 
   private:
     QMutex m_mutex;
-    QHash<QString, ImageData*> m_images;
+    QHash<QString, Data*> m_images;
 };
+
+}  // namespace WallReel::Core::Image
 
 #endif  // WALLREEL_IMAGEPROVIDER_HPP

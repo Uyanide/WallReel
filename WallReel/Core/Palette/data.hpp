@@ -6,6 +6,8 @@
 #include <QObject>
 #include <QString>
 
+namespace WallReel::Core::Palette {
+
 struct ColorItem {
     Q_GADGET
     Q_PROPERTY(QString name MEMBER name CONSTANT)
@@ -37,7 +39,9 @@ struct PaletteItem {
     }
 };
 
-Q_DECLARE_METATYPE(ColorItem)
-Q_DECLARE_METATYPE(PaletteItem)
+}  // namespace WallReel::Core::Palette
+
+Q_DECLARE_METATYPE(WallReel::Core::Palette::ColorItem)
+Q_DECLARE_METATYPE(WallReel::Core::Palette::PaletteItem)
 
 #endif  // WALLREEL_PALETTE_DATA_HPP

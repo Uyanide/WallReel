@@ -1,13 +1,11 @@
-#include "imagedata.hpp"
+#include "data.hpp"
 
 #include <QImageReader>
 
-#include "utils/logger.hpp"
+#include "../logger.hpp"
 
-using namespace GeneralLogger;
-
-ImageData* ImageData::create(const QString& path, const QSize& size) {
-    ImageData* ret = new ImageData(path, size);
+WallReel::Core::Image::Data* WallReel::Core::Image::Data::create(const QString& path, const QSize& size) {
+    Data* ret = new Data(path, size);
     if (!ret->isValid()) {
         delete ret;
         return nullptr;
@@ -15,11 +13,11 @@ ImageData* ImageData::create(const QString& path, const QSize& size) {
     return ret;
 }
 
-ImageData::ImageData(const QString& path, const QSize& targetSize)
+WallReel::Core::Image::Data::Data(const QString& path, const QSize& targetSize)
     : m_file(path) {
     QImageReader reader(path);
     if (!reader.canRead()) {
-        warn(QString("Failed to load image from path: %1").arg(path));
+        Logger::warn(QString("Failed to load image from path: %1").arg(path));
         return;
     }
 
@@ -39,7 +37,7 @@ ImageData::ImageData(const QString& path, const QSize& targetSize)
     }
 
     if (!reader.read(&m_image)) {
-        warn(QString("Failed to load image from path: %1").arg(path));
+        Logger::warn(QString("Failed to load image from path: %1").arg(path));
         return;
     }
 

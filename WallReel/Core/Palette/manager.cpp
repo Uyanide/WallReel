@@ -2,7 +2,7 @@
 
 #include "predefined.hpp"
 
-PaletteManager::PaletteManager(
+WallReel::Core::Palette::Manager::Manager(
     const Config::PaletteConfigItems& config,
     QObject* parent) : QObject(parent) {
     // The new ones overrides the old ones, use a hashtable to track

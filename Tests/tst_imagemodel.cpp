@@ -3,9 +3,11 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
-#include "configmgr.hpp"
-#include "imagemodel.hpp"
-#include "imageprovider.hpp"
+#include "Config/manager.hpp"
+#include "Image/model.hpp"
+#include "Image/provider.hpp"
+
+using namespace WallReel::Core;
 
 class TestImageModel : public QObject {
     Q_OBJECT
@@ -23,7 +25,7 @@ class TestImageModel : public QObject {
     QString m_pathC;
 
     void createTestFiles();
-    void waitForModel(ImageModel* model);
+    void waitForModel(Image::Model* model);
 };
 
 // clang-format off
@@ -115,11 +117,11 @@ void TestImageModel::createTestFiles() {
     }
 }
 
-void TestImageModel::waitForModel(ImageModel* model) {
+void TestImageModel::waitForModel(Image::Model* model) {
     if (!model->isLoading()) {
         return;
     }
-    QSignalSpy spy(model, &ImageModel::isLoadingChanged);
+    QSignalSpy spy(model, &Image::Model::isLoadingChanged);
     while (model->isLoading()) {
         if (!spy.wait(5000)) {
             qWarning() << "Timeout waiting for model to load";
@@ -133,8 +135,8 @@ void TestImageModel::testSortName() {
     sortConfig.type    = Config::SortType::Name;
     sortConfig.reverse = false;
 
-    ImageProvider provider;
-    ImageModel model(provider, sortConfig, QSize(100, 100));
+    Image::Provider provider;
+    Image::Model model(provider, sortConfig, QSize(100, 100));
 
     QStringList paths = {m_pathB, m_pathA, m_pathC};  // Unordered input
     model.loadAndProcess(paths);
@@ -143,9 +145,9 @@ void TestImageModel::testSortName() {
     QCOMPARE(model.rowCount(), 3);
 
     // Expected: a.gif, b.gif, c.gif
-    QCOMPARE(model.data(model.index(0), ImageModel::NameRole).toString(), "a.gif");
-    QCOMPARE(model.data(model.index(1), ImageModel::NameRole).toString(), "b.gif");
-    QCOMPARE(model.data(model.index(2), ImageModel::NameRole).toString(), "c.gif");
+    QCOMPARE(model.data(model.index(0), Image::Model::NameRole).toString(), "a.gif");
+    QCOMPARE(model.data(model.index(1), Image::Model::NameRole).toString(), "b.gif");
+    QCOMPARE(model.data(model.index(2), Image::Model::NameRole).toString(), "c.gif");
 
     // Reverse
     sortConfig.reverse = true;
@@ -154,9 +156,9 @@ void TestImageModel::testSortName() {
     QCOMPARE(model.rowCount(), 3);
 
     // Expected: c.gif, b.gif, a.gif
-    QCOMPARE(model.data(model.index(0), ImageModel::NameRole).toString(), "c.gif");
-    QCOMPARE(model.data(model.index(1), ImageModel::NameRole).toString(), "b.gif");
-    QCOMPARE(model.data(model.index(2), ImageModel::NameRole).toString(), "a.gif");
+    QCOMPARE(model.data(model.index(0), Image::Model::NameRole).toString(), "c.gif");
+    QCOMPARE(model.data(model.index(1), Image::Model::NameRole).toString(), "b.gif");
+    QCOMPARE(model.data(model.index(2), Image::Model::NameRole).toString(), "a.gif");
 }
 
 void TestImageModel::testSortDate() {
@@ -164,8 +166,8 @@ void TestImageModel::testSortDate() {
     sortConfig.type    = Config::SortType::Date;
     sortConfig.reverse = false;
 
-    ImageProvider provider;
-    ImageModel model(provider, sortConfig, QSize(100, 100));
+    Image::Provider provider;
+    Image::Model model(provider, sortConfig, QSize(100, 100));
 
     QStringList paths = {m_pathA, m_pathC, m_pathB};
     model.loadAndProcess(paths);
@@ -174,17 +176,17 @@ void TestImageModel::testSortDate() {
     QCOMPARE(model.rowCount(), 3);
 
     // Expected: c (old), a (mid), b (new)
-    QCOMPARE(model.data(model.index(0), ImageModel::NameRole).toString(), "c.gif");
-    QCOMPARE(model.data(model.index(1), ImageModel::NameRole).toString(), "a.gif");
-    QCOMPARE(model.data(model.index(2), ImageModel::NameRole).toString(), "b.gif");
+    QCOMPARE(model.data(model.index(0), Image::Model::NameRole).toString(), "c.gif");
+    QCOMPARE(model.data(model.index(1), Image::Model::NameRole).toString(), "a.gif");
+    QCOMPARE(model.data(model.index(2), Image::Model::NameRole).toString(), "b.gif");
 
     // Reverse (Newest first)
     sortConfig.reverse = true;
     model.sortUpdate();
 
-    QCOMPARE(model.data(model.index(0), ImageModel::NameRole).toString(), "b.gif");
-    QCOMPARE(model.data(model.index(1), ImageModel::NameRole).toString(), "a.gif");
-    QCOMPARE(model.data(model.index(2), ImageModel::NameRole).toString(), "c.gif");
+    QCOMPARE(model.data(model.index(0), Image::Model::NameRole).toString(), "b.gif");
+    QCOMPARE(model.data(model.index(1), Image::Model::NameRole).toString(), "a.gif");
+    QCOMPARE(model.data(model.index(2), Image::Model::NameRole).toString(), "c.gif");
 }
 
 void TestImageModel::testSortSize() {
@@ -192,8 +194,8 @@ void TestImageModel::testSortSize() {
     sortConfig.type    = Config::SortType::Size;
     sortConfig.reverse = false;
 
-    ImageProvider provider;
-    ImageModel model(provider, sortConfig, QSize(100, 100));
+    Image::Provider provider;
+    Image::Model model(provider, sortConfig, QSize(100, 100));
 
     QStringList paths = {m_pathB, m_pathC, m_pathA};
     model.loadAndProcess(paths);
@@ -201,17 +203,17 @@ void TestImageModel::testSortSize() {
 
     QCOMPARE(model.rowCount(), 3);
 
-    QCOMPARE(model.data(model.index(0), ImageModel::NameRole).toString(), "c.gif");
-    QCOMPARE(model.data(model.index(1), ImageModel::NameRole).toString(), "a.gif");
-    QCOMPARE(model.data(model.index(2), ImageModel::NameRole).toString(), "b.gif");
+    QCOMPARE(model.data(model.index(0), Image::Model::NameRole).toString(), "c.gif");
+    QCOMPARE(model.data(model.index(1), Image::Model::NameRole).toString(), "a.gif");
+    QCOMPARE(model.data(model.index(2), Image::Model::NameRole).toString(), "b.gif");
 
     // Reverse
     sortConfig.reverse = true;
     model.sortUpdate();
 
-    QCOMPARE(model.data(model.index(0), ImageModel::NameRole).toString(), "b.gif");
-    QCOMPARE(model.data(model.index(1), ImageModel::NameRole).toString(), "a.gif");
-    QCOMPARE(model.data(model.index(2), ImageModel::NameRole).toString(), "c.gif");
+    QCOMPARE(model.data(model.index(0), Image::Model::NameRole).toString(), "b.gif");
+    QCOMPARE(model.data(model.index(1), Image::Model::NameRole).toString(), "a.gif");
+    QCOMPARE(model.data(model.index(2), Image::Model::NameRole).toString(), "c.gif");
 }
 
 QTEST_MAIN(TestImageModel)

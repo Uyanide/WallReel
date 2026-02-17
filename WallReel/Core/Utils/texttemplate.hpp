@@ -5,6 +5,8 @@
 #include <QRegularExpression>
 #include <QString>
 
+namespace WallReel::Core::Utils {
+
 /**
  * @brief Replaces {{ key }} style placeholders in a template string with corresponding values from a map.
  *
@@ -134,5 +136,7 @@ inline QStringList extractTemplateKeys(const QString& templateStr) {
 
     return keys;
 }
+
+}  // namespace WallReel::Core::Utils
 
 #endif  // TEXTTEMPLATE_HPP
