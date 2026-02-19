@@ -6,10 +6,10 @@ import WallReel.UI.Pages
 ApplicationWindow {
     width: Config.windowWidth
     height: Config.windowHeight
-    minimumWidth: width
-    maximumWidth: width
-    minimumHeight: height
-    maximumHeight: height
+    // minimumWidth: width
+    // maximumWidth: width
+    // minimumHeight: height
+    // maximumHeight: height
     visible: true
     title: qsTr("Hello World")
 

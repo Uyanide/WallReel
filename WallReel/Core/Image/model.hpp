@@ -6,7 +6,7 @@
 #include <QTimer>
 #include <atomic>
 
-#include "Config/manager.hpp"
+#include "Config/data.hpp"
 #include "provider.hpp"
 
 namespace WallReel::Core::Image {

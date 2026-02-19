@@ -4,7 +4,7 @@
 #include <QProcess>
 #include <QTimer>
 
-#include "Config/manager.hpp"
+#include "Config/data.hpp"
 #include "Image/data.hpp"
 
 namespace WallReel::Core {

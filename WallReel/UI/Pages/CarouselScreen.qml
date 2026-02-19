@@ -41,10 +41,11 @@ Item {
         anchors.margins: 20
         spacing: 20
 
-        Label {
-            text: (ImageModel.dataAt(carousel.currentIndex, "imgName") ?? "") + " (" + (carousel.currentIndex + 1) + "/" + carousel.count + ")"
-            font.pixelSize: 12
-            Layout.alignment: Qt.AlignHCenter
+        TitleBar {
+            title: ImageModel.dataAt(carousel.currentIndex, "imgName") ?? ""
+            index: carousel.currentIndex
+            totalCount: carousel.count
+            Layout.fillWidth: true
         }
 
         Carousel {

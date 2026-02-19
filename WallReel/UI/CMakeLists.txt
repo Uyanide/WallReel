@@ -6,4 +6,5 @@ qt_add_qml_module(${UILIB_NAME}
     Pages/LoadingScreen.qml
     Pages/CarouselScreen.qml
     Modules/Carousel.qml
+    Modules/TitleBar.qml
 )

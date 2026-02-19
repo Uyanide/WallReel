@@ -5,8 +5,10 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QProcess>
 #include <QProcessEnvironment>
 #include <QStandardPaths>
+#include <QTimer>
 
 #include "Utils/misc.hpp"
 #include "logger.hpp"
@@ -179,13 +181,27 @@ void WallReel::Core::Config::Manager::_loadActionConfig(const QJsonObject& root)
             m_actionConfig.printPreview = val.toBool();
         }
     }
-    if (config.contains("saveState")) {
-        const auto& val = config["saveState"];
-        if (val.isObject()) {
-            QJsonObject obj = val.toObject();
-            for (const auto& key : obj.keys()) {
-                if (obj[key].isString()) {
-                    m_actionConfig.saveState.insert(key, obj[key].toString());
+    if (config.contains("saveState") && config["saveState"].isArray()) {
+        const QJsonArray& arr = config["saveState"].toArray();
+        for (const auto& item : arr) {
+            if (item.isObject()) {
+                QJsonObject obj = item.toObject();
+                ActionConfigItems::SaveStateItem sItem;
+                if (obj.contains("key") && obj["key"].isString()) {
+                    sItem.key = obj["key"].toString();
+                }
+                if (obj.contains("default") && obj["default"].isString()) {
+                    sItem.defaultVal = obj["default"].toString();
+                }
+                if (obj.contains("cmd") && obj["cmd"].isString()) {
+                    sItem.cmd = obj["cmd"].toString();
+                }
+                if (obj.contains("timeout") && obj["timeout"].isDouble()) {
+                    sItem.timeout = obj["timeout"].toInt();
+                }
+                if (!sItem.key.isEmpty()) {
+                    m_actionConfig.saveStateConfig.append(sItem);
+                    m_actionConfig.saveState.insert(sItem.key, sItem.defaultVal);
                 }
             }
         }
@@ -338,4 +354,99 @@ void WallReel::Core::Config::Manager::_loadWallpapers() {
     }
 
     Logger::info(QString("Found %1 files").arg(paths.size()));
+}
+
+void WallReel::Core::Config::Manager::captureState() {
+    m_pendingCaptures = 0;
+
+    const auto& items = m_actionConfig.saveStateConfig;
+    if (items.isEmpty()) {
+        emit stateCaptured();
+        return;
+    }
+
+    for (const auto& item : items) {
+        if (!item.cmd.isEmpty()) {
+            m_pendingCaptures++;
+        }
+    }
+
+    if (m_pendingCaptures == 0) {
+        emit stateCaptured();
+        return;
+    }
+
+    for (const auto& item : items) {
+        if (item.cmd.isEmpty()) continue;
+
+        QProcess* process = new QProcess(this);
+        QTimer* timer     = nullptr;
+        if (item.timeout > 0) {
+            timer = new QTimer(this);
+            timer->setSingleShot(true);
+            timer->setInterval(item.timeout > 0 ? item.timeout : std::numeric_limits<int>::max());
+        }
+
+        QString key        = item.key;
+        QString defaultVal = item.defaultVal;
+
+        auto onFinished = [this, process, timer, key, defaultVal](const QString& output, bool success) {
+            if (timer) {
+                timer->stop();
+                timer->deleteLater();
+            }
+
+            process->disconnect();
+
+            QString result = success ? output : defaultVal;
+            if (result.isEmpty()) result = defaultVal;
+
+            _onCaptureResult(key, result);
+            process->deleteLater();
+        };
+
+        if (timer) {
+            // Timeout handler
+            connect(timer, &QTimer::timeout, this, [process, onFinished, key]() {
+                Logger::warn(QString("Timeout capturing state for key '%1'").arg(key));
+                if (process->state() != QProcess::NotRunning) {
+                    process->kill();
+                } else {
+                    onFinished(QString(), false);
+                }
+            });
+        }
+
+        // Finished handler
+        connect(process, &QProcess::finished, this, [process, onFinished](int exitCode, QProcess::ExitStatus exitStatus) {
+            bool success = (exitStatus == QProcess::NormalExit && exitCode == 0);
+            QString output;
+            if (success) {
+                output = QString::fromUtf8(process->readAllStandardOutput()).trimmed();
+            }
+            onFinished(output, success);
+        });
+
+        // Error handler
+        connect(process, &QProcess::errorOccurred, this, [process, onFinished, key](QProcess::ProcessError error) {
+            if (error == QProcess::FailedToStart) {
+                Logger::warn(QString("Failed to start state command for key '%1'").arg(key));
+                onFinished(QString(), false);
+            }
+        });
+
+        if (timer) {
+            timer->start();
+        }
+        process->startCommand(item.cmd);
+    }
+}
+
+void WallReel::Core::Config::Manager::_onCaptureResult(const QString& key, const QString& value) {
+    // This is all in main thread, so no lock needed
+    m_actionConfig.saveState[key] = value;
+    m_pendingCaptures--;
+    if (m_pendingCaptures == 0) {
+        emit stateCaptured();
+    }
 }

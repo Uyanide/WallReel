@@ -89,7 +89,7 @@ void TestConfigMgr::testDefaults() {
     QVERIFY(config.getActionConfig().onSelected.isEmpty());
     QVERIFY(config.getActionConfig().onPreview.isEmpty());
     QVERIFY(config.getActionConfig().onRestore.isEmpty());
-    QVERIFY(config.getActionConfig().saveState.isEmpty());
+    QVERIFY(config.getActionConfig().saveStateConfig.isEmpty());
 }
 
 void TestConfigMgr::testFullConfigParsing() {

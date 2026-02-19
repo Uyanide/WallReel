@@ -1,7 +1,7 @@
 #ifndef WALLREEL_PALETTE_MANAGER_HPP
 #define WALLREEL_PALETTE_MANAGER_HPP
 
-#include "Config/manager.hpp"
+#include "Config/data.hpp"
 #include "data.hpp"
 
 namespace WallReel::Core::Palette {
