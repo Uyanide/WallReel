@@ -224,6 +224,12 @@ void WallReel::Core::Config::Manager::_loadActionConfig(const QJsonObject& root)
             m_actionConfig.onPreview = val.toString();
         }
     }
+    if (config.contains("quitOnSelected")) {
+        const auto& val = config["quitOnSelected"];
+        if (val.isBool()) {
+            m_actionConfig.quitOnSelected = val.toBool();
+        }
+    }
 }
 
 void WallReel::Core::Config::Manager::_loadStyleConfig(const QJsonObject& root) {

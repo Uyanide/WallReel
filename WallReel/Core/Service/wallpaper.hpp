@@ -7,7 +7,7 @@
 #include "Config/data.hpp"
 #include "Image/data.hpp"
 
-namespace WallReel::Core {
+namespace WallReel::Core::Service {
 
 class WallpaperService : public QObject {
     Q_OBJECT
@@ -40,6 +40,6 @@ class WallpaperService : public QObject {
     QProcess* m_restoreProcess;
 };
 
-}  // namespace WallReel::Core
+}  // namespace WallReel::Core::Service
 
 #endif  // WALLREEL_WALLPAPERSERVICE_HPP

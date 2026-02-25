@@ -1,0 +1,51 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+Item {
+    id: root
+
+    property var availableSortTypes: []
+    property string selectedSortType: ""
+    property bool isReverse: false
+
+    signal sortTypeSelected(string sortType)
+    signal isReverseToggled(bool reverse)
+
+    implicitWidth: row.implicitWidth
+    implicitHeight: row.implicitHeight
+
+    RowLayout {
+        id: row
+
+        anchors.fill: parent
+        spacing: 4
+
+        Label {
+            text: "Sort by"
+            font.pixelSize: 12
+        }
+
+        ComboBox {
+            id: sortCombo
+
+            implicitWidth: 90
+            model: root.availableSortTypes
+            currentIndex: root.availableSortTypes.indexOf(root.selectedSortType)
+            onActivated: root.sortTypeSelected(currentText)
+        }
+
+        ToolButton {
+            icon.name: root.isReverse ? "view-sort-descending" : "view-sort-ascending"
+            icon.width: 16
+            icon.height: 16
+            focusPolicy: Qt.NoFocus
+            onClicked: root.isReverseToggled(!root.isReverse)
+            ToolTip.visible: hovered
+            ToolTip.delay: 600
+            ToolTip.text: root.isReverse ? "Descending order" : "Ascending order"
+        }
+
+    }
+
+}

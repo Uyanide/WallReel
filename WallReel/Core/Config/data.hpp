@@ -1,6 +1,8 @@
 #ifndef WALLREEL_CONFIG_DATA_HPP
 #define WALLREEL_CONFIG_DATA_HPP
 
+#include <qtmetamacros.h>
+
 #include <QColor>
 #include <QHash>
 #include <QList>
@@ -34,6 +36,7 @@
 // action.saveState[].cmd       string  ""      Command that outputs(to stdout) the value to save when executed
 // action.saveState[].timeout   number  3000    Timeout for executing "cmd" in milliseconds. 0 or negative means no timeout
 // action.onRestore             string  ""      Command to execute on restore ({{ key }} -> value defined or obtained in saveState)
+// action.quitOnSelected        boolean false   Whether to quit the application after confirming a wallpaper
 //
 // style.image_width            number  320     Width of each image
 // style.image_height           number  200     Height of each image
@@ -99,6 +102,7 @@ struct ActionConfigItems {
     int previewDebounceTime = 300;  // milliseconds
     bool printSelected      = true;
     bool printPreview       = false;
+    bool quitOnSelected     = false;
 };
 
 struct StyleConfigItems {

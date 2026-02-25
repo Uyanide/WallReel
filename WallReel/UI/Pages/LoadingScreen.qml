@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import WallReel.Core
 
 Item {
     property int currentValue: 0

@@ -11,7 +11,7 @@ ApplicationWindow {
     // minimumHeight: height
     // maximumHeight: height
     visible: true
-    title: qsTr("Hello World")
+    title: qsTr("WallReel")
 
     LoadingScreen {
         visible: ImageModel.isLoading
@@ -25,7 +25,6 @@ ApplicationWindow {
         active: !ImageModel.isLoading
 
         sourceComponent: CarouselScreen {
-            visible: !ImageModel.isLoading
         }
 
     }

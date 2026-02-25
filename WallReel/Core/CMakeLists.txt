@@ -10,7 +10,8 @@ qt_add_qml_module(${CORELIB_NAME}
     Config/data.hpp
     Config/manager.hpp Config/manager.cpp
     logger.hpp logger.cpp
-    wallpaperservice.hpp wallpaperservice.cpp
+    Service/manager.hpp
+    Service/wallpaper.hpp Service/wallpaper.cpp
     appoptions.hpp appoptions.cpp
 )
 

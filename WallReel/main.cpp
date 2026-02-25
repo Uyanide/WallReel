@@ -7,10 +7,10 @@
 #include "Core/Image/provider.hpp"
 #include "Core/Palette/data.hpp"
 #include "Core/Palette/manager.hpp"
+#include "Core/Service/manager.hpp"
 #include "Core/Utils/misc.hpp"
 #include "Core/appoptions.hpp"
 #include "Core/logger.hpp"
-#include "Core/wallpaperservice.hpp"
 #include "version.h"
 
 using namespace WallReel::Core;
@@ -65,19 +65,23 @@ int main(int argc, char* argv[]) {
         "ImageModel",
         imageModel);
 
-    auto wallpaperService = new WallpaperService(
+    auto Service = new Service::Manager(
         config->getActionConfig(),
-        config);
-    QObject::connect(
-        imageModel,
-        &Image::Model::imageSelected,
-        wallpaperService,
-        &WallpaperService::select);
-    QObject::connect(
-        imageModel,
-        &Image::Model::imagePreviewed,
-        wallpaperService,
-        &WallpaperService::preview);
+        *imageModel,
+        imageModel);
+    qmlRegisterSingletonInstance(
+        COREMODULE_URI,
+        MODULE_VERSION_MAJOR,
+        MODULE_VERSION_MINOR,
+        "ServiceManager",
+        Service);
+    if (config->getActionConfig().quitOnSelected) {
+        QObject::connect(
+            Service,
+            &Service::Manager::selectCompleted,
+            &a,
+            []() { QCoreApplication::quit(); });
+    }
 
     QObject::connect(
         &engine,
