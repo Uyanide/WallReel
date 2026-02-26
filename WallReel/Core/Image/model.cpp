@@ -29,14 +29,13 @@ WallReel::Core::Image::Model::Model(
             emit progressChanged();
         });
 
-    // Update state when sort method changes
+    // Pipeline: sort -> filter -> update properties
     connect(this, &Model::currentSortTypeChanged, this, &Model::_onSortMethodChanged);
     connect(this, &Model::currentSortReverseChanged, this, &Model::_onSortMethodChanged);
+    connect(this, &Model::searchTextChanged, this, &Model::_onSearchTextChanged);
+    connect(this, &Model::focusedImageChanged, this, &Model::_updateFocusedProperties);
 
     m_sortIndices.resize(4);  // None, Name, Date, Size
-
-    // Search text
-    connect(this, &Model::searchTextChanged, this, &Model::_onSearchTextChanged);
 }
 
 WallReel::Core::Image::Model::~Model() {
@@ -58,7 +57,7 @@ QVariant WallReel::Core::Image::Model::data(const QModelIndex& index, int role) 
         return QVariant();
     }
 
-    int actualIndex = fromProxyIndex(index.row());
+    int actualIndex = _convertProxyIndex(index.row());
     if (actualIndex < 0 || actualIndex >= m_data.count()) {
         Logger::debug("Actual index out of bounds: " + QString::number(actualIndex));
         return QVariant();
@@ -126,17 +125,21 @@ void WallReel::Core::Image::Model::setSearchText(const QString& text) {
     }
 }
 
-const WallReel::Core::Image::Data* WallReel::Core::Image::Model::getDataPtrAt(int index) const {
+WallReel::Core::Image::Data* WallReel::Core::Image::Model::imageAt(int index) {
     if (index < 0 || index >= m_filteredIndices.count()) {
         Logger::debug("Invalid index requested: " + QString::number(index));
         return nullptr;
     }
-    int actualIndex = fromProxyIndex(index);
+    int actualIndex = _convertProxyIndex(index);
     if (actualIndex < 0 || actualIndex >= m_data.count()) {
         Logger::debug("Actual index out of bounds: " + QString::number(actualIndex));
         return nullptr;
     }
     return m_data[actualIndex];
+}
+
+WallReel::Core::Image::Data* WallReel::Core::Image::Model::focusedImage() {
+    return imageAt(m_focusedIndex);
 }
 
 QVariant WallReel::Core::Image::Model::dataAt(int index, const QString& roleName) const {
@@ -145,7 +148,7 @@ QVariant WallReel::Core::Image::Model::dataAt(int index, const QString& roleName
         return QVariant();
     }
 
-    int actualIndex = fromProxyIndex(index);
+    int actualIndex = _convertProxyIndex(index);
     if (actualIndex < 0 || actualIndex >= m_data.count()) {
         Logger::debug("Actual index out of bounds: " + QString::number(actualIndex));
         return QVariant();
@@ -185,26 +188,21 @@ void WallReel::Core::Image::Model::loadAndProcess(const QStringList& paths) {
     emit totalCountChanged();
 }
 
-int WallReel::Core::Image::Model::fromProxyIndex(int proxyIndex) const {
-    if (proxyIndex < 0 || proxyIndex >= m_filteredIndices.size()) {
-        Logger::debug("Invalid proxy index requested: " + QString::number(proxyIndex));
-        return -1;
-    }
-    return m_filteredIndices[m_currentSortReverse ? (m_filteredIndices.size() - 1 - proxyIndex) : proxyIndex];
-}
-
 void WallReel::Core::Image::Model::focusOnIndex(int index) {
     if (index < 0 || index >= m_filteredIndices.count()) {
         Logger::debug("Invalid index to focus on: " + QString::number(index));
         return;
     }
-    int actualIndex = fromProxyIndex(index);
+    int actualIndex = _convertProxyIndex(index);
     if (actualIndex < 0 || actualIndex >= m_data.count()) {
         Logger::debug("Actual index out of bounds for focus: " + QString::number(actualIndex));
         return;
     }
-    m_focusedIndex = index;
-    _updateFocusedName();
+    if (m_focusedIndex != index) {
+        m_focusedIndex = index;
+        emit focusedImageChanged();
+        _updateFocusedProperties();
+    }
 }
 
 void WallReel::Core::Image::Model::stop() {
@@ -214,6 +212,14 @@ void WallReel::Core::Image::Model::stop() {
     } else {
         Logger::warn("No loading operation to stop.");
     }
+}
+
+int WallReel::Core::Image::Model::_convertProxyIndex(int proxyIndex) const {
+    if (proxyIndex < 0 || proxyIndex >= m_filteredIndices.size()) {
+        Logger::debug("Invalid proxy index requested: " + QString::number(proxyIndex));
+        return -1;
+    }
+    return m_filteredIndices[proxyIndex];
 }
 
 void WallReel::Core::Image::Model::_clearData() {
@@ -257,11 +263,11 @@ void WallReel::Core::Image::Model::_updateSortIndices(Config::SortType type) {
     std::sort(indices.begin(), indices.end(), compareFunc);
 }
 
-void WallReel::Core::Image::Model::_updateFocusedName() {
-    if (m_focusedIndex < 0 || m_focusedIndex >= m_data.count()) {
+void WallReel::Core::Image::Model::_updateFocusedProperties() {
+    if (m_focusedIndex < 0 || m_focusedIndex >= m_filteredIndices.size()) {
         m_focusedName = "";
     } else {
-        int actualIndex = fromProxyIndex(m_focusedIndex);
+        int actualIndex = _convertProxyIndex(m_focusedIndex);
         if (actualIndex < 0 || actualIndex >= m_data.count()) {
             m_focusedName = "";
         } else {
@@ -272,18 +278,36 @@ void WallReel::Core::Image::Model::_updateFocusedName() {
     emit focusedNameChanged();
 }
 
-void WallReel::Core::Image::Model::_applySearchFilter() {
-    emit layoutAboutToBeChanged();
-    m_filteredIndices.clear();
+void WallReel::Core::Image::Model::_applySearchFilter(bool informView) {
     const auto& sortedIndices = m_sortIndices[static_cast<int>(m_currentSortType)];
-    for (int i = 0; i < sortedIndices.size(); ++i) {
-        int actualIndex  = sortedIndices[i];
+    int srcPos = 0, resPos = 0;
+    for (; srcPos < sortedIndices.size(); ++srcPos) {
+        int actualIndex  = m_currentSortReverse ? sortedIndices[sortedIndices.size() - 1 - srcPos] : sortedIndices[srcPos];
+        const auto& item = m_data[actualIndex];
+        if (item->getFileName().contains(m_searchText, Qt::CaseInsensitive)) {
+            if (resPos >= m_filteredIndices.size() || m_filteredIndices[resPos] != actualIndex) {
+                break;
+            }
+            resPos++;
+        }
+    }
+    if (resPos == m_filteredIndices.size() && srcPos == sortedIndices.size()) {
+        return;  // No change in filtered results
+    }
+    if (informView) {
+        emit layoutAboutToBeChanged();
+    }
+    m_filteredIndices.resize(resPos);
+    for (int i = srcPos; i < sortedIndices.size(); ++i) {
+        int actualIndex  = m_currentSortReverse ? sortedIndices[sortedIndices.size() - 1 - i] : sortedIndices[i];
         const auto& item = m_data[actualIndex];
         if (item->getFileName().contains(m_searchText, Qt::CaseInsensitive)) {
             m_filteredIndices.append(actualIndex);
         }
     }
-    emit layoutChanged();
+    if (informView) {
+        emit layoutChanged();
+    }
 }
 
 void WallReel::Core::Image::Model::_onProgressValueChanged(int value) {
@@ -311,7 +335,7 @@ void WallReel::Core::Image::Model::_onProcessingFinished() {
         _updateSortIndices(static_cast<Config::SortType>(i));
     }
 
-    _applySearchFilter();
+    _applySearchFilter(false);
 
     endResetModel();
 
@@ -320,7 +344,6 @@ void WallReel::Core::Image::Model::_onProcessingFinished() {
     m_isLoading = false;
     m_progressUpdateTimer.stop();
     emit progressChanged();
-    // emit isLoadingChanged();
     // QTimer::singleShot(s_IsLoadingUpdateIntervalMs, this, [this]() {
     //     emit isLoadingChanged();
     // });
@@ -329,8 +352,9 @@ void WallReel::Core::Image::Model::_onProcessingFinished() {
 
 void WallReel::Core::Image::Model::_onSortMethodChanged() {
     _applySearchFilter();
+    emit focusedImageChanged();
 }
 
 void WallReel::Core::Image::Model::_onSearchTextChanged() {
-    _updateFocusedName();
+    emit focusedImageChanged();
 }

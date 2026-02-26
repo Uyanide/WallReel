@@ -28,7 +28,7 @@ Item {
         ComboBox {
             id: paletteCombo
 
-            implicitWidth: 110
+            implicitWidth: 200
             // -1 means nothing selected
             currentIndex: -1
             displayText: currentIndex < 0 ? "— palette —" : currentText
@@ -77,7 +77,7 @@ Item {
                 if (root.colorHex.length > 0)
                     return root.colorName.length > 0 ? root.colorName + "  " + root.colorHex : root.colorHex;
 
-                return root.colorName == "Auto" ? "" : root.colorName;
+                return root.colorName;
             }
             visible: root.colorName.length > 0 || root.colorHex.length > 0
         }

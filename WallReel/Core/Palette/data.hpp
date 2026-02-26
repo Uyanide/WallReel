@@ -1,6 +1,8 @@
 #ifndef WALLREEL_PALETTE_DATA_HPP
 #define WALLREEL_PALETTE_DATA_HPP
 
+#include <qcolor.h>
+
 #include <QColor>
 #include <QList>
 #include <QObject>
@@ -36,6 +38,10 @@ struct PaletteItem {
             if (entry.name == colorName) return entry.color;
         }
         return QColor();
+    }
+
+    bool operator==(const PaletteItem& other) const {
+        return name == other.name;
     }
 };
 

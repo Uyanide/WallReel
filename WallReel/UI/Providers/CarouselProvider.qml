@@ -22,13 +22,13 @@ QtObject {
     property string selectedSortType: ImageModel.currentSortType
     property bool isSortReverse: ImageModel.currentSortReverse
     //// Palette / Color
-    readonly property var availablePalettes: []
+    readonly property var availablePalettes: PaletteManager.availablePalettes
     property var selectedPalette: null // PaletteItem | null
     readonly property var availableColors: selectedPalette ? selectedPalette.colors : []
     property var selectedColor: null // ColorItem | null  (null means "auto")
-    readonly property string colorName: selectedColor ? selectedColor.name : "Auto"
-    readonly property string colorHex: selectedColor ? selectedColor.color.toString().toUpperCase() : ""
-    readonly property color colorValue: selectedColor ? selectedColor.color : "transparent"
+    readonly property string colorName: PaletteManager.colorName
+    readonly property string colorHex: PaletteManager.color
+    readonly property color colorValue: PaletteManager.color
     //// Actions state
     readonly property bool isProcessing: ServiceManager.isProcessing
 
@@ -42,7 +42,7 @@ QtObject {
     }
 
     function cancel() {
-        Qt.quit();
+        ServiceManager.cancel();
     }
 
     function focusSearch() {
@@ -68,19 +68,25 @@ QtObject {
 
     function setSearchText(text) {
         ImageModel.setSearchText(text);
-        currentIndex = 0; // reset index when search text changes
+        if (currentIndex != 0)
+            currentIndex = 0;
+
     }
 
     onCurrentIndexChanged: () => {
-        if (!isLoading) {
-            ServiceManager.previewWallpaper(currentIndex);
+        if (!isLoading)
             ImageModel.focusOnIndex(currentIndex);
-        }
+
     }
     Component.onCompleted: () => {
-        if (!isLoading) {
-            ServiceManager.previewWallpaper(currentIndex);
+        if (!isLoading)
             ImageModel.focusOnIndex(currentIndex);
-        }
+
+    }
+    onSelectedPaletteChanged: () => {
+        PaletteManager.setSelectedPalette(selectedPalette);
+    }
+    onSelectedColorChanged: () => {
+        PaletteManager.setSelectedColor(selectedColor);
     }
 }

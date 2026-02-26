@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import WallReel.UI.Components
 
 Item {
     id: root
@@ -43,7 +44,7 @@ Item {
             Layout.fillWidth: true
         }
 
-        SearchBar {
+        WRSearchBar {
             id: searchBar
 
             Layout.alignment: Qt.AlignVCenter

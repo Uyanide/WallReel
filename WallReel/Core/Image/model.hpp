@@ -78,23 +78,24 @@ class Model : public QAbstractListModel {
 
     Q_INVOKABLE void setSearchText(const QString& text);
 
-    const Data* getDataPtrAt(int index) const;
+    Data* imageAt(int index);
+
+    Data* focusedImage();
 
     Q_INVOKABLE QVariant dataAt(int index, const QString& roleName) const;
 
     void loadAndProcess(const QStringList& paths);
-
-    int fromProxyIndex(int proxyIndex) const;
 
     Q_INVOKABLE void focusOnIndex(int index);
 
     Q_INVOKABLE void stop();
 
   private:
+    int _convertProxyIndex(int proxyIndex) const;
     void _clearData();
     void _updateSortIndices(Config::SortType type);
-    void _updateFocusedName();
-    void _applySearchFilter();
+    void _updateFocusedProperties();
+    void _applySearchFilter(bool informView = true);
 
   signals:
     void isLoadingChanged();
@@ -104,6 +105,7 @@ class Model : public QAbstractListModel {
     void currentSortReverseChanged();
     void focusedNameChanged();
     void searchTextChanged();
+    void focusedImageChanged();
 
   private slots:
     void _onProgressValueChanged(int value);
@@ -128,6 +130,9 @@ class Model : public QAbstractListModel {
     QString m_searchText{};
     // QTimer m_searchDebounceTimer;
     // static constexpr int s_SearchDebounceIntervalMs = 300;
+
+    QColor m_focusedColor{};
+    QString m_focusedColorName{};
 
     QFutureWatcher<Data*> m_watcher;
     bool m_isLoading = false;

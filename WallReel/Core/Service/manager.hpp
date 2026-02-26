@@ -6,6 +6,7 @@
 
 #include "Config/data.hpp"
 #include "Image/model.hpp"
+#include "Palette/manager.hpp"
 #include "Service/wallpaper.hpp"
 #include "logger.hpp"
 
@@ -19,10 +20,16 @@ class Manager : public QObject {
   public:
     Manager(
         const Config::ActionConfigItems& actionConfig,
-        const Image::Model& imageModel,
-        QObject* parent = nullptr) : m_imageModel(imageModel) {
-        m_wallpaperService = new WallpaperService(actionConfig, this);
+        Image::Model& imageModel,
+        Palette::Manager& paletteManager,
+        QObject* parent = nullptr) : m_actionConfig(actionConfig), m_imageModel(imageModel), m_paletteManager(paletteManager) {
+        m_wallpaperService = new WallpaperService(m_actionConfig, m_paletteManager, this);
 
+        // Listen on image change
+        connect(&m_imageModel, &Image::Model::focusedImageChanged, this, &Manager::previewWallpaper);
+        // Listen on palette change
+        connect(&m_paletteManager, &Palette::Manager::colorChanged, this, &Manager::previewWallpaper);
+        connect(&m_paletteManager, &Palette::Manager::colorNameChanged, this, &Manager::previewWallpaper);
         // Forward signals
         // Direct signal 2 signal connection
         connect(m_wallpaperService, &WallpaperService::previewCompleted, this, &Manager::previewCompleted);
@@ -38,22 +45,13 @@ class Manager : public QObject {
         }
         m_isProcessing = true;
         emit isProcessingChanged();
-        const auto* data = m_imageModel.getDataPtrAt(index);
+        const auto* data = m_imageModel.imageAt(index);
         if (data) {
             m_wallpaperService->select(*data);
         } else {
             m_isProcessing = false;
             emit isProcessingChanged();
             emit selectCompleted();
-        }
-    }
-
-    Q_INVOKABLE void previewWallpaper(int index) {
-        const auto* data = m_imageModel.getDataPtrAt(index);
-        if (data) {
-            m_wallpaperService->preview(*data);
-        } else {
-            emit previewCompleted();
         }
     }
 
@@ -67,7 +65,30 @@ class Manager : public QObject {
         m_wallpaperService->restore();
     }
 
+    Q_INVOKABLE void cancel() {
+        m_wallpaperService->stopAll();
+        if (m_actionConfig.restoreOnCancel) {
+            connect(m_wallpaperService, &WallpaperService::restoreCompleted, this, [this]() {
+                emit cancelCompleted();
+            });
+            restore();
+        } else {
+            emit cancelCompleted();
+        }
+    }
+
     bool isProcessing() const { return m_isProcessing; }
+
+  public slots:
+
+    void previewWallpaper() {
+        const auto* data = m_imageModel.focusedImage();
+        if (data) {
+            m_wallpaperService->preview(*data);
+        } else {
+            emit previewCompleted();
+        }
+    }
 
   private slots:
 
@@ -91,10 +112,13 @@ class Manager : public QObject {
     void selectCompleted();
     void previewCompleted();
     void restoreCompleted();
+    void cancelCompleted();
 
   private:
     WallpaperService* m_wallpaperService;
-    const Image::Model& m_imageModel;
+    const Config::ActionConfigItems& m_actionConfig;
+    Image::Model& m_imageModel;
+    Palette::Manager& m_paletteManager;
 
     bool m_isProcessing = false;
 };

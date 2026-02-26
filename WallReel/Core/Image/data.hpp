@@ -10,6 +10,8 @@ class Data {
     QString m_id;
     QFileInfo m_file;
     QImage m_image;
+    QColor m_dominantColor;
+    QHash<QString, QString> m_colorCache;
 
     Data(const QString& path, const QSize& size);
 
@@ -32,7 +34,18 @@ class Data {
 
     const QFileInfo& getFileInfo() const { return m_file; }
 
-  private:
+    const QColor& getDominantColor() const { return m_dominantColor; }
+
+    std::optional<QString> getCachedColor(const QString& paletteName) const {
+        if (m_colorCache.contains(paletteName)) {
+            return m_colorCache.value(paletteName);
+        }
+        return std::nullopt;
+    }
+
+    void cacheColor(const QString& paletteName, const QString& colorName) {
+        m_colorCache.insert(paletteName, colorName);
+    }
 };
 
 }  // namespace WallReel::Core::Image

@@ -2,7 +2,8 @@
 
 #include <QImageReader>
 
-#include "../logger.hpp"
+#include "Palette/domcolor.hpp"
+#include "logger.hpp"
 
 WallReel::Core::Image::Data* WallReel::Core::Image::Data::create(const QString& path, const QSize& size) {
     Data* ret = new Data(path, size);
@@ -59,4 +60,7 @@ WallReel::Core::Image::Data::Data(const QString& path, const QSize& targetSize)
 
     // Create ID
     m_id = QString::number(qHash(m_file.absoluteFilePath()));
+
+    // Get dominant color
+    m_dominantColor = Palette::getDominantColor(m_image);
 }

@@ -8,8 +8,9 @@
 
 WallReel::Core::Service::WallpaperService::WallpaperService(
     const Config::ActionConfigItems& actionConfig,
+    const Palette::Manager& paletteManager,
     QObject* parent)
-    : QObject(parent), m_actionConfig(actionConfig) {
+    : QObject(parent), m_actionConfig(actionConfig), m_paletteManager(paletteManager) {
     m_previewDebounceTimer = new QTimer(this);
     m_previewDebounceTimer->setSingleShot(true);
     m_previewDebounceTimer->setInterval(m_actionConfig.previewDebounceTime);
@@ -48,6 +49,22 @@ WallReel::Core::Service::WallpaperService::WallpaperService(
             });
 }
 
+void WallReel::Core::Service::WallpaperService::stopAll() {
+    if (m_previewProcess->state() != QProcess::NotRunning) {
+        m_previewProcess->kill();
+        m_previewProcess->waitForFinished();
+    }
+    if (m_selectProcess->state() != QProcess::NotRunning) {
+        m_selectProcess->kill();
+        m_selectProcess->waitForFinished();
+    }
+    if (m_restoreProcess->state() != QProcess::NotRunning) {
+        m_restoreProcess->kill();
+        m_restoreProcess->waitForFinished();
+    }
+    m_previewDebounceTimer->stop();
+}
+
 void WallReel::Core::Service::WallpaperService::preview(const Image::Data& imageData) {
     m_pendingImageData = &imageData;
     m_previewDebounceTimer->start();
@@ -69,6 +86,32 @@ void WallReel::Core::Service::WallpaperService::restore() {
     _doRestore();
 }
 
+QHash<QString, QString> WallReel::Core::Service::WallpaperService::_generateVariables(const Image::Data& imageData) {
+    auto palette = m_paletteManager.getSelectedPaletteName();
+    if (palette.isEmpty()) {
+        palette = "null";
+    }
+    auto color = m_paletteManager.getCurrentColorName();
+    if (color.isEmpty()) {
+        color = "null";
+    }
+    auto hex = m_paletteManager.getCurrentColorHex();
+    if (hex.isEmpty()) {
+        hex = "null";
+    }
+    return {
+        {"path", imageData.getFullPath()},
+        {"name", imageData.getFileName()},
+        {"size", QString::number(imageData.getSize())},
+        {"width", QString::number(imageData.getImage().width())},
+        {"height", QString::number(imageData.getImage().height())},
+        {"palette", palette},
+        {"color", color},
+        {"colorHex", hex},
+        {"domColor", m_paletteManager.color().name()},
+    };
+}
+
 void WallReel::Core::Service::WallpaperService::_doPreview(const Image::Data& imageData) {
     QString path = imageData.getFullPath();
 
@@ -81,15 +124,13 @@ void WallReel::Core::Service::WallpaperService::_doPreview(const Image::Data& im
         std::cout << path.toStdString() << std::endl;
     }
 
-    const QHash<QString, QString> variables{
-        {"path", path},
-        {"name", imageData.getFileName()},
-    };
-    auto command = Utils::renderTemplate(m_actionConfig.onPreview, variables);
+    const auto variables = _generateVariables(imageData);
+    auto command         = Utils::renderTemplate(m_actionConfig.onPreview, variables);
     if (command.isEmpty()) {
         emit previewCompleted();
         return;
     }
+    Logger::debug(QString("Executing preview command: %1").arg(command));
 
     if (m_previewProcess->state() != QProcess::NotRunning) {
         m_previewProcess->kill();
@@ -110,15 +151,13 @@ void WallReel::Core::Service::WallpaperService::_doSelect(const Image::Data& ima
         std::cout << path.toStdString() << std::endl;
     }
 
-    const QHash<QString, QString> variables{
-        {"path", path},
-        {"name", imageData.getFileName()},
-    };
-    auto command = Utils::renderTemplate(m_actionConfig.onSelected, variables);
+    const auto variables = _generateVariables(imageData);
+    auto command         = Utils::renderTemplate(m_actionConfig.onSelected, variables);
     if (command.isEmpty()) {
         emit selectCompleted();
         return;
     }
+    Logger::debug(QString("Executing select command: %1").arg(command));
     m_selectProcess->start("sh", QStringList() << "-c" << command);
 }
 
@@ -133,5 +172,6 @@ void WallReel::Core::Service::WallpaperService::_doRestore() {
         emit restoreCompleted();
         return;
     }
+    Logger::debug(QString("Executing restore command: %1").arg(command));
     m_restoreProcess->start("sh", QStringList() << "-c" << command);
 }

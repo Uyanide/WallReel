@@ -7,6 +7,8 @@ qt_add_qml_module(${CORELIB_NAME}
     Image/provider.hpp Image/provider.cpp
     Palette/data.hpp
     Palette/manager.hpp Palette/manager.cpp
+    Palette/domcolor.hpp Palette/domcolor.cpp
+    Palette/matchcolor.hpp Palette/matchcolor.cpp
     Config/data.hpp
     Config/manager.hpp Config/manager.cpp
     logger.hpp logger.cpp

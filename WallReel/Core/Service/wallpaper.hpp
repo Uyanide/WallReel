@@ -6,6 +6,7 @@
 
 #include "Config/data.hpp"
 #include "Image/data.hpp"
+#include "Palette/manager.hpp"
 
 namespace WallReel::Core::Service {
 
@@ -15,7 +16,10 @@ class WallpaperService : public QObject {
   public:
     WallpaperService(
         const Config::ActionConfigItems& actionConfig,
+        const Palette::Manager& paletteManager,
         QObject* parent = nullptr);
+
+    void stopAll();
 
   public slots:
     void preview(const Image::Data& imageData);  // execute after 500ms of inactivity
@@ -31,8 +35,10 @@ class WallpaperService : public QObject {
     void _doPreview(const Image::Data& imageData);
     void _doSelect(const Image::Data& imageData);
     void _doRestore();
+    QHash<QString, QString> _generateVariables(const Image::Data& imageData);
 
     const Config::ActionConfigItems& m_actionConfig;
+    const Palette::Manager& m_paletteManager;
     QTimer* m_previewDebounceTimer;
     const Image::Data* m_pendingImageData;
     QProcess* m_previewProcess;

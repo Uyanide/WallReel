@@ -230,6 +230,12 @@ void WallReel::Core::Config::Manager::_loadActionConfig(const QJsonObject& root)
             m_actionConfig.quitOnSelected = val.toBool();
         }
     }
+    if (config.contains("restoreOnCancel")) {
+        const auto& val = config["restoreOnCancel"];
+        if (val.isBool()) {
+            m_actionConfig.restoreOnCancel = val.toBool();
+        }
+    }
 }
 
 void WallReel::Core::Config::Manager::_loadStyleConfig(const QJsonObject& root) {
@@ -405,6 +411,7 @@ void WallReel::Core::Config::Manager::captureState() {
             process->disconnect();
 
             QString result = success ? output : defaultVal;
+            Logger::debug(QString("Capture result for key '%1': %2 (success: %3)").arg(key).arg(result).arg(success));
             if (result.isEmpty()) result = defaultVal;
 
             _onCaptureResult(key, result);
@@ -444,7 +451,7 @@ void WallReel::Core::Config::Manager::captureState() {
         if (timer) {
             timer->start();
         }
-        process->startCommand(item.cmd);
+        process->start("sh", QStringList() << "-c" << item.cmd);
     }
 }
 

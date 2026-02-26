@@ -8,10 +8,10 @@ qt_add_qml_module(${UILIB_NAME}
     Providers/CarouselProvider.qml
     Modules/Carousel.qml
     Modules/TitleBar.qml
-    Modules/SearchBar.qml
     Modules/SortControl.qml
     Modules/ColorControl.qml
     Modules/TopBar.qml
     Modules/BottomBar.qml
+    Components/WRSearchBar.qml
     Components/WRTextButton.qml
 )

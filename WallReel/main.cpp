@@ -1,3 +1,5 @@
+#include <qobject.h>
+
 #include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -46,13 +48,6 @@ int main(int argc, char* argv[]) {
         "Config",
         config);
 
-    auto paletteMgr = new Palette::Manager(
-        config->getPaletteConfig(),
-        &a);
-    engine.rootContext()->setContextProperty("PaletteManager", paletteMgr);
-    qRegisterMetaType<Palette::PaletteItem>("PaletteItem");
-    qRegisterMetaType<Palette::ColorItem>("ColorItem");
-
     auto imageModel = new Image::Model(
         *imageProvider,
         config->getSortConfig(),
@@ -65,10 +60,19 @@ int main(int argc, char* argv[]) {
         "ImageModel",
         imageModel);
 
+    auto paletteMgr = new Palette::Manager(
+        config->getPaletteConfig(),
+        *imageModel,
+        imageModel);
+    engine.rootContext()->setContextProperty("PaletteManager", paletteMgr);
+    qRegisterMetaType<Palette::PaletteItem>("PaletteItem");
+    qRegisterMetaType<Palette::ColorItem>("ColorItem");
+
     auto Service = new Service::Manager(
         config->getActionConfig(),
         *imageModel,
-        imageModel);
+        *paletteMgr,
+        paletteMgr);
     qmlRegisterSingletonInstance(
         COREMODULE_URI,
         MODULE_VERSION_MAJOR,
@@ -82,6 +86,11 @@ int main(int argc, char* argv[]) {
             &a,
             []() { QCoreApplication::quit(); });
     }
+    QObject::connect(
+        Service,
+        &Service::Manager::cancelCompleted,
+        &a,
+        []() { QCoreApplication::quit(); });
 
     QObject::connect(
         &engine,
@@ -91,6 +100,7 @@ int main(int argc, char* argv[]) {
         Qt::QueuedConnection);
     engine.loadFromModule(UIMODULE_URI, "Main");
 
+    config->captureState();
     imageModel->loadAndProcess(config->getWallpapers());
 
     return a.exec();
