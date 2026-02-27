@@ -4,10 +4,15 @@
 #include <cmath>
 #include <limits>
 
+#include "logger.hpp"
+
+WALLREEL_DECLARE_SENDER("PaletteMatchColor")
+
 namespace WallReel::Core::Palette {
 
 const ColorItem& bestMatch(const QColor& target, const QList<ColorItem>& candidates) {
     if (candidates.isEmpty() || !target.isValid()) {
+        WR_WARN("No candidates or invalid target color for palette matching");
         static ColorItem emptyItem;
         return emptyItem;
     }

@@ -6,6 +6,8 @@
 #include "data.hpp"
 #include "logger.hpp"
 
+WALLREEL_DECLARE_SENDER("ImageModel")
+
 WallReel::Core::Image::Model::Model(
     const Config::SortConfigItems& sortConfig,
     Cache::Manager& cacheMgr,
@@ -54,16 +56,16 @@ int WallReel::Core::Image::Model::rowCount(const QModelIndex& parent) const {
 
 QVariant WallReel::Core::Image::Model::data(const QModelIndex& index, int role) const {
     if (!index.isValid() || index.row() >= m_filteredIndices.count()) {
-        Logger::debug("Invalid index requested: " + QString::number(index.row()));
+        WR_DEBUG("Invalid index requested: " + QString::number(index.row()));
         return QVariant();
     }
 
     int actualIndex = _convertProxyIndex(index.row());
     if (actualIndex < 0 || actualIndex >= m_data.count()) {
-        Logger::debug("Actual index out of bounds: " + QString::number(actualIndex));
+        WR_DEBUG("Actual index out of bounds: " + QString::number(actualIndex));
         return QVariant();
     }
-    // Logger::debug("Data requested for index: " + QString::number(index.row()) + ", actual index: " + QString::number(actualIndex) + ", role: " + QString::number(role));
+    // WR_DEBUG("Data requested for index: " + QString::number(index.row()) + ", actual index: " + QString::number(actualIndex) + ", role: " + QString::number(role));
     const auto& item = m_data[actualIndex];
     switch (role) {
         case IdRole:
@@ -120,7 +122,7 @@ void WallReel::Core::Image::Model::setCurrentSortReverse(bool reverse) {
 }
 
 void WallReel::Core::Image::Model::setSearchText(const QString& text) {
-    // Logger::debug("Search text changed: " + text);
+    // WR_DEBUG("Search text changed: " + text);
     if (m_searchText != text) {
         m_searchText = text;
         _applySearchFilter();
@@ -130,12 +132,12 @@ void WallReel::Core::Image::Model::setSearchText(const QString& text) {
 
 WallReel::Core::Image::Data* WallReel::Core::Image::Model::imageAt(int index) {
     if (index < 0 || index >= m_filteredIndices.count()) {
-        Logger::debug("Invalid index requested: " + QString::number(index));
+        WR_DEBUG("Invalid index requested: " + QString::number(index));
         return nullptr;
     }
     int actualIndex = _convertProxyIndex(index);
     if (actualIndex < 0 || actualIndex >= m_data.count()) {
-        Logger::debug("Actual index out of bounds: " + QString::number(actualIndex));
+        WR_DEBUG("Actual index out of bounds: " + QString::number(actualIndex));
         return nullptr;
     }
     return m_data[actualIndex];
@@ -147,13 +149,13 @@ WallReel::Core::Image::Data* WallReel::Core::Image::Model::focusedImage() {
 
 QVariant WallReel::Core::Image::Model::dataAt(int index, const QString& roleName) const {
     if (index < 0 || index >= m_filteredIndices.count()) {
-        Logger::debug("Invalid index requested: " + QString::number(index));
+        WR_DEBUG("Invalid index requested: " + QString::number(index));
         return QVariant();
     }
 
     int actualIndex = _convertProxyIndex(index);
     if (actualIndex < 0 || actualIndex >= m_data.count()) {
-        Logger::debug("Actual index out of bounds: " + QString::number(actualIndex));
+        WR_DEBUG("Actual index out of bounds: " + QString::number(actualIndex));
         return QVariant();
     }
     const auto& item = m_data[actualIndex];
@@ -172,7 +174,7 @@ QVariant WallReel::Core::Image::Model::dataAt(int index, const QString& roleName
 
 void WallReel::Core::Image::Model::loadAndProcess(const QStringList& paths) {
     if (m_isLoading) {
-        Logger::warn("Already loading images. Ignoring new load request.");
+        WR_WARN("Already loading images. Ignoring new load request.");
         return;
     }
     m_isLoading = true;
@@ -198,12 +200,12 @@ void WallReel::Core::Image::Model::loadAndProcess(const QStringList& paths) {
 
 void WallReel::Core::Image::Model::focusOnIndex(int index) {
     if (index < 0 || index >= m_filteredIndices.count()) {
-        Logger::debug("Invalid index to focus on: " + QString::number(index));
+        WR_DEBUG("Invalid index to focus on: " + QString::number(index));
         return;
     }
     int actualIndex = _convertProxyIndex(index);
     if (actualIndex < 0 || actualIndex >= m_data.count()) {
-        Logger::debug("Actual index out of bounds for focus: " + QString::number(actualIndex));
+        WR_DEBUG("Actual index out of bounds for focus: " + QString::number(actualIndex));
         return;
     }
     if (m_focusedIndex != index) {
@@ -215,16 +217,16 @@ void WallReel::Core::Image::Model::focusOnIndex(int index) {
 
 void WallReel::Core::Image::Model::stop() {
     if (m_isLoading) {
-        Logger::info("Stopping image loading...");
+        WR_INFO("Stopping image loading...");
         m_watcher.cancel();
     } else {
-        Logger::warn("No loading operation to stop.");
+        WR_WARN("No loading operation to stop.");
     }
 }
 
 int WallReel::Core::Image::Model::_convertProxyIndex(int proxyIndex) const {
     if (proxyIndex < 0 || proxyIndex >= m_filteredIndices.size()) {
-        Logger::debug("Invalid proxy index requested: " + QString::number(proxyIndex));
+        WR_DEBUG("Invalid proxy index requested: " + QString::number(proxyIndex));
         return -1;
     }
     return m_filteredIndices[proxyIndex];
@@ -331,7 +333,7 @@ void WallReel::Core::Image::Model::_onProcessingFinished() {
         if (data && data->isValid()) {
             m_data.append(data);
         } else {
-            Logger::warn("Failed to load image: " + (data ? data->getFullPath() : "null"));
+            WR_WARN("Failed to load image: " + (data ? data->getFullPath() : "null"));
             delete data;
             data = nullptr;
         }
@@ -345,7 +347,7 @@ void WallReel::Core::Image::Model::_onProcessingFinished() {
 
     endResetModel();
 
-    Logger::info("Finished loading images. Total valid images: " + QString::number(m_data.count()));
+    WR_INFO("Finished loading images. Total valid images: " + QString::number(m_data.count()));
 
     m_isLoading = false;
     m_progressUpdateTimer.stop();

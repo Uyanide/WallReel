@@ -5,6 +5,8 @@
 #include "logger.hpp"
 #include "predefined.hpp"
 
+WALLREEL_DECLARE_SENDER("PaletteManager")
+
 WallReel::Core::Palette::Manager::Manager(
     const Config::ThemeConfigItems& config,
     Image::Model& imageModel,
@@ -38,6 +40,8 @@ WallReel::Core::Palette::Manager::Manager(
             newP.colors.reserve(p.colors.size());
             for (const auto& c : p.colors) {
                 if (!c.value.isValid()) {
+                    WR_WARN(QString("Invalid color value '%1' for color '%2' in palette '%3', skipping this color")
+                                .arg(c.value.name(), c.name, p.name));
                     continue;
                 }
                 newP.colors.append({c.name, c.value});
@@ -72,6 +76,7 @@ void WallReel::Core::Palette::Manager::updateColor() {
     });
     auto imageData = m_imageModel.focusedImage();
     if (!imageData || !imageData->isValid()) {
+        WR_WARN("No valid focused image data. Cannot update palette color.");
         return;
     }
     // No palette selected, use dominant color
@@ -87,8 +92,8 @@ void WallReel::Core::Palette::Manager::updateColor() {
         if (cached.has_value()) {
             auto found = m_selectedPalette.value().getColorItem(cached.value());
             if (found.isValid()) {
-                Logger::debug("Using cached color match for image " + imageData->getFileName() +
-                              ": " + found.name);
+                WR_DEBUG("Using cached color match for image " + imageData->getFileName() +
+                         ": " + found.name);
                 m_displayColor     = found.color;
                 m_displayColorName = found.name;
                 hasResult          = true;
@@ -100,15 +105,15 @@ void WallReel::Core::Palette::Manager::updateColor() {
             m_selectedPalette.value().colors);
         // Use dominant color if no valid match found (possibly empty palette)
         if (!matched.isValid()) {
-            Logger::debug("No valid color match found for image " + imageData->getFileName() +
-                          ", using dominant color: " + imageData->getDominantColor().name());
+            WR_DEBUG("No valid color match found for image " + imageData->getFileName() +
+                     ", using dominant color: " + imageData->getDominantColor().name());
             m_displayColor     = imageData->getDominantColor();
             m_displayColorName = "";
             hasResult          = true;
             return;
         }
-        Logger::debug("Computed color match for image " + imageData->getFileName() + ": " +
-                      matched.name);
+        WR_DEBUG("Computed color match for image " + imageData->getFileName() + ": " +
+                 matched.name);
         imageData->cacheColor(m_selectedPalette->name, matched.name);
         m_displayColor     = matched.color;
         m_displayColorName = matched.name;

@@ -17,6 +17,8 @@
 
 using namespace WallReel::Core;
 
+WALLREEL_DECLARE_SENDER("Main")
+
 int main(int argc, char* argv[]) {
     AppOptions s_options;
 
@@ -33,6 +35,13 @@ int main(int argc, char* argv[]) {
 
     QQmlApplicationEngine engine;
 
+    auto cacheMgr = new Cache::Manager(Utils::getCacheDir());
+
+    if (s_options.clearCache) {
+        cacheMgr->clearCache();
+        return 0;
+    }
+
     auto config = new Config::Manager(
         Utils::getConfigDir(),
         s_options.appendDirs,
@@ -44,8 +53,6 @@ int main(int argc, char* argv[]) {
         MODULE_VERSION_MINOR,
         "Config",
         config);
-
-    auto cacheMgr = new Cache::Manager(Utils::getCacheDir());
 
     auto imageModel = new Image::Model(
         config->getSortConfig(),

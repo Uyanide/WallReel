@@ -39,8 +39,9 @@ class Manager : public QObject {
     }
 
     Q_INVOKABLE void selectWallpaper(int index) {
+        Logger::debug("ServiceManager", QString("Select wallpaper at index %1").arg(index));
         if (m_isProcessing) {
-            Logger::debug("Already processing an action, ignoring select request");
+            Logger::debug("ServiceManager", "Already processing an select action, ignoring new request");
             return;
         }
         m_isProcessing = true;
@@ -49,6 +50,7 @@ class Manager : public QObject {
         if (data) {
             m_wallpaperService->select(*data);
         } else {
+            Logger::warn("ServiceManager", QString("No image data at index %1. Skipping select action.").arg(index));
             m_isProcessing = false;
             emit isProcessingChanged();
             emit selectCompleted();
@@ -56,8 +58,9 @@ class Manager : public QObject {
     }
 
     Q_INVOKABLE void restore() {
+        Logger::debug("ServiceManager", "Restore states");
         if (m_isProcessing) {
-            Logger::debug("Already processing an action, ignoring restore request");
+            Logger::debug("ServiceManager", "Already processing an restore action, ignoring new request");
             return;
         }
         m_isProcessing = true;
@@ -66,6 +69,7 @@ class Manager : public QObject {
     }
 
     Q_INVOKABLE void cancel() {
+        Logger::debug("ServiceManager", "Cancel action");
         m_wallpaperService->stopAll();
         if (m_actionConfig.restoreOnCancel) {
             connect(m_wallpaperService, &WallpaperService::restoreCompleted, this, [this]() {
@@ -82,10 +86,12 @@ class Manager : public QObject {
   public slots:
 
     void previewWallpaper() {
+        Logger::debug("ServiceManager", "Preview wallpaper");
         const auto* data = m_imageModel.focusedImage();
         if (data) {
             m_wallpaperService->preview(*data);
         } else {
+            Logger::warn("ServiceManager", "No focused image data. Skipping preview action.");
             emit previewCompleted();
         }
     }
@@ -93,11 +99,13 @@ class Manager : public QObject {
   private slots:
 
     void _onSelectCompleted() {
+        Logger::debug("ServiceManager", "Select completed");
         _onProcessCompleted();
         emit selectCompleted();
     }
 
     void _onRestoreCompleted() {
+        Logger::debug("ServiceManager", "Restore completed");
         _onProcessCompleted();
         emit restoreCompleted();
     }

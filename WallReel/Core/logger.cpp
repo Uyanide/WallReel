@@ -105,20 +105,24 @@ void WallReel::Core::Logger::quiet() {
     QLoggingCategory::setFilterRules(QString("%1.debug=false\n%1.info=false\n%1.warning=false\n%1.critical=false\n%1.fatal=false").arg(APP_NAME));
 }
 
-void WallReel::Core::Logger::debug(const QString& msg) {
-    qCDebug(logMain).noquote() << msg;
+void WallReel::Core::Logger::debug(const QString& sender, const QString& msg) {
+    qCDebug(logMain) << QString("[%1] %2").arg(sender, msg);
 }
 
-void WallReel::Core::Logger::info(const QString& msg) {
-    qCInfo(logMain).noquote() << msg;
+void WallReel::Core::Logger::info(const QString& sender, const QString& msg) {
+    qCInfo(logMain) << QString("[%1] %2").arg(sender, msg);
 }
 
-void WallReel::Core::Logger::warn(const QString& msg) {
-    qCWarning(logMain).noquote() << msg;
+void WallReel::Core::Logger::warn(const QString& sender, const QString& msg) {
+    qCWarning(logMain) << QString("[%1] %2").arg(sender, msg);
 }
 
-void WallReel::Core::Logger::critical(const QString& msg) {
-    qCCritical(logMain).noquote() << msg;
+void WallReel::Core::Logger::critical(const QString& sender, const QString& msg) {
+    qCCritical(logMain) << QString("[%1] %2").arg(sender, msg);
+}
+
+void WallReel::Core::Logger::fatal(const QString& sender, const QString& msg) {
+    qCFatal(logMain) << QString("[%1] %2").arg(sender, msg);
 }
 
 // No fatal because qCFatal does not exist before Qt 6.5

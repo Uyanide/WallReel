@@ -13,6 +13,8 @@
 #include "Utils/misc.hpp"
 #include "logger.hpp"
 
+WALLREEL_DECLARE_SENDER("ConfigManager")
+
 WallReel::Core::Config::Manager::Manager(
     const QDir& configDir,
     const QStringList& searchDirs,
@@ -21,20 +23,20 @@ WallReel::Core::Config::Manager::Manager(
     : QObject(parent), m_configDir(configDir) {
     // Load configPath if not empty, otherwise load from default location (configDir + s_DefaultConfigFileName)
     if (configPath.isEmpty()) {
-        Logger::info(QString("Configuration directory: %1").arg(m_configDir.absolutePath()));
+        WR_INFO(QString("Configuration directory: %1").arg(m_configDir.absolutePath()));
         _loadConfig(m_configDir.absolutePath() + QDir::separator() + s_DefaultConfigFileName);
     } else {
         _loadConfig(configPath);
     }
     // Append additional search directories to the config
     if (!searchDirs.isEmpty()) {
-        Logger::info(QString("Additional search directories: %1").arg(searchDirs.join(", ")));
+        WR_INFO(QString("Additional search directories: %1").arg(searchDirs.join(", ")));
         for (const auto& dir : searchDirs) {
             m_wallpaperConfig.dirs.append({dir, false});
         }
     }
 
-    Logger::debug("Loading wallpapers ...");
+    WR_DEBUG("Loading wallpapers ...");
     _loadWallpapers();
 }
 
@@ -42,10 +44,10 @@ WallReel::Core::Config::Manager::~Manager() {
 }
 
 void WallReel::Core::Config::Manager::_loadConfig(const QString& configPath) {
-    Logger::info(QString("Loading configuration from: %1").arg(configPath));
+    WR_INFO(QString("Loading configuration from: %1").arg(configPath));
     QFile configFile(configPath);
     if (!configFile.open(QIODevice::ReadOnly)) {
-        Logger::critical(QString("Failed to open config file: %1").arg(configPath));
+        WR_CRITICAL(QString("Failed to open config file: %1").arg(configPath));
         return;
     }
     QByteArray configData = configFile.readAll();
@@ -53,7 +55,7 @@ void WallReel::Core::Config::Manager::_loadConfig(const QString& configPath) {
 
     QJsonDocument jsonDoc = QJsonDocument::fromJson(configData);
     if (jsonDoc.isNull() || !jsonDoc.isObject()) {
-        Logger::critical(QString("Invalid JSON format in config file"));
+        WR_CRITICAL(QString("Invalid JSON format in config file"));
         return;
     }
 
@@ -103,7 +105,7 @@ void WallReel::Core::Config::Manager::_loadWallpaperConfig(const QJsonObject& ro
             if (item.isString()) {
                 auto regex = QRegularExpression(item.toString());
                 if (!regex.isValid()) {
-                    Logger::warn(QString("Invalid regular expression in config: %1").arg(item.toString()));
+                    WR_WARN(QString("Invalid regular expression in config: %1").arg(item.toString()));
                 } else {
                     m_wallpaperConfig.excludes.append(regex);
                 }
@@ -146,7 +148,7 @@ void WallReel::Core::Config::Manager::_loadThemeConfig(const QJsonObject& root) 
                             if (color.isValid()) {
                                 colorConfig.value = color;
                             } else {
-                                Logger::warn(QString("Invalid color string in config: %1").arg(colorObj["value"].toString()));
+                                WR_WARN(QString("Invalid color string in config: %1").arg(colorObj["value"].toString()));
                             }
                         }
                     } else if (colorItem.isString()) {
@@ -154,7 +156,7 @@ void WallReel::Core::Config::Manager::_loadThemeConfig(const QJsonObject& root) 
                         if (color.isValid()) {
                             colorConfig.value = color;
                         } else {
-                            Logger::warn(QString("Invalid color string in config: %1").arg(colorItem.toString()));
+                            WR_WARN(QString("Invalid color string in config: %1").arg(colorItem.toString()));
                         }
                     }
                     if (colorConfig.value.isValid()) {
@@ -305,7 +307,7 @@ void WallReel::Core::Config::Manager::_loadSortConfig(const QJsonObject& root) {
             } else if (type == "size") {
                 m_sortConfig.type = SortType::Size;
             } else {
-                Logger::warn(QString("Unknown sort type: %1").arg(type));
+                WR_WARN(QString("Unknown sort type: %1").arg(type));
             }
         }
     }
@@ -324,12 +326,12 @@ void WallReel::Core::Config::Manager::_loadWallpapers() {
 
     QSet<QString> paths;
 
-    Logger::debug(QString("Loading wallpapers from %1 specified paths...").arg(m_wallpaperConfig.paths.size()));
+    WR_DEBUG(QString("Loading wallpapers from %1 specified paths...").arg(m_wallpaperConfig.paths.size()));
     for (const QString& path : std::as_const(m_wallpaperConfig.paths)) {
         paths.insert(path);
     }
 
-    Logger::debug(QString("Loading wallpapers from %1 specified directories...").arg(m_wallpaperConfig.dirs.size()));
+    WR_DEBUG(QString("Loading wallpapers from %1 specified directories...").arg(m_wallpaperConfig.dirs.size()));
     for (const auto& dirConfig : std::as_const(m_wallpaperConfig.dirs)) {
         if (Utils::checkDir(dirConfig.path)) {
             std::function<void(const QDir&)> scanDir;
@@ -342,7 +344,7 @@ void WallReel::Core::Config::Manager::_loadWallpapers() {
 
                 if (dirConfig.recursive) {
                     QStringList subDirs = d.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-                    Logger::debug(QString("Scanning directory '%1' for subdirectories... Found %2").arg(d.absolutePath()).arg(subDirs.size()));
+                    WR_DEBUG(QString("Scanning directory '%1' for subdirectories... Found %2").arg(d.absolutePath()).arg(subDirs.size()));
                     for (const QString& subDir : std::as_const(subDirs)) {
                         scanDir(QDir(d.filePath(subDir)));
                     }
@@ -350,19 +352,19 @@ void WallReel::Core::Config::Manager::_loadWallpapers() {
             };
             scanDir(QDir(dirConfig.path));
         } else {
-            Logger::warn(QString("Directory '%1' does not exist").arg(dirConfig.path));
+            WR_WARN(QString("Directory '%1' does not exist").arg(dirConfig.path));
         }
     }
 
     // Exclude paths that match any of the exclude regexes
 
-    Logger::debug(QString("Excluding %1 specified paths...").arg(m_wallpaperConfig.excludes.size()));
+    WR_DEBUG(QString("Excluding %1 specified paths...").arg(m_wallpaperConfig.excludes.size()));
     QStringList toRemove;
     for (const auto& exclude : std::as_const(m_wallpaperConfig.excludes)) {
         for (const QString& path : std::as_const(paths)) {
             if (exclude.match(path).hasMatch()) {
                 toRemove.append(path);
-                Logger::debug(QString("Excluded path '%1' matched by regex '%2'").arg(path).arg(exclude.pattern()));
+                WR_DEBUG(QString("Excluded path '%1' matched by regex '%2'").arg(path).arg(exclude.pattern()));
             }
         }
     }
@@ -375,16 +377,16 @@ void WallReel::Core::Config::Manager::_loadWallpapers() {
         if (Utils::checkImageFile(path)) {
             m_wallpapers.append(path);
         } else {
-            Logger::warn(QString("File '%1' is not recognized as a valid image file").arg(path));
+            WR_WARN(QString("File '%1' is not recognized as a valid image file").arg(path));
         }
     }
 
-    Logger::info(QString("Found %1 images").arg(paths.size()));
+    WR_INFO(QString("Found %1 images").arg(paths.size()));
 }
 
 void WallReel::Core::Config::Manager::captureState() {
     if (m_pendingCaptures > 0) {
-        Logger::warn("State capture already in progress, ignoring new capture request");
+        WR_WARN("State capture already in progress, ignoring new capture request");
         return;
     }
 
@@ -430,7 +432,7 @@ void WallReel::Core::Config::Manager::captureState() {
             process->disconnect();
 
             QString result = success ? output : defaultVal;
-            Logger::debug(QString("Capture result for key '%1': %2 (success: %3)").arg(key).arg(result).arg(success));
+            WR_DEBUG(QString("Capture result for key '%1': %2 (success: %3)").arg(key).arg(result).arg(success));
             if (result.isEmpty()) result = defaultVal;
 
             _onCaptureResult(key, result);
@@ -440,7 +442,7 @@ void WallReel::Core::Config::Manager::captureState() {
         if (timer) {
             // Timeout handler
             connect(timer, &QTimer::timeout, this, [process, onFinished, key]() {
-                Logger::warn(QString("Timeout capturing state for key '%1'").arg(key));
+                WR_WARN(QString("Timeout capturing state for key '%1'").arg(key));
                 if (process->state() != QProcess::NotRunning) {
                     process->kill();
                 } else {
@@ -462,7 +464,7 @@ void WallReel::Core::Config::Manager::captureState() {
         // Error handler
         connect(process, &QProcess::errorOccurred, this, [process, onFinished, key](QProcess::ProcessError error) {
             if (error == QProcess::FailedToStart) {
-                Logger::warn(QString("Failed to start state command for key '%1'").arg(key));
+                WR_WARN(QString("Failed to start state command for key '%1'").arg(key));
                 onFinished(QString(), false);
             }
         });

@@ -8,6 +8,8 @@
 #include "logger.hpp"
 #include "version.h"
 
+WALLREEL_DECLARE_SENDER("AppOptions")
+
 namespace WallReel::Core {
 
 // -v --version
@@ -28,21 +30,6 @@ void AppOptions::printHelp() {
             continue;
         }
         out << line << Qt::endl;
-    }
-    doReturn = true;
-}
-
-// -C --clear-cache
-void AppOptions::clearCache() {
-    QDir cacheDir = Utils::getCacheDir();
-    if (cacheDir.exists()) {
-        if (cacheDir.removeRecursively()) {
-            Logger::info("Cache cleared successfully.");
-        } else {
-            Logger::warn("Failed to clear cache.");
-        }
-    } else {
-        Logger::info("Cache directory does not exist, nothing to clear.");
     }
     doReturn = true;
 }
@@ -100,7 +87,7 @@ void AppOptions::parseArgs(QApplication& app) {
     }
 
     if (parser.isSet(clearCacheOption)) {
-        clearCache();
+        clearCache = true;
         return;
     }
 
@@ -110,7 +97,7 @@ void AppOptions::parseArgs(QApplication& app) {
         Logger::quiet();
     } else {
         // Default to INFO level
-        Logger::setLogLevel(QtDebugMsg);
+        Logger::setLogLevel(QtInfoMsg);
     }
 
     for (const QString& dir : parser.values(appendDirOption)) {

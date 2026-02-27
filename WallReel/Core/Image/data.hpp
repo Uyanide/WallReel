@@ -54,6 +54,9 @@ class Data {
     QColor m_dominantColor;                ///< Dominant color of the image, used for palette matching
     QHash<QString, QString> m_colorCache;  ///< Cache for palette color matching results, key is palette name, value is matched color name
 
+    QImage computeImage() const;
+    QColor computeDominantColor(const QImage& image) const;
+
     Data(const QString& path, const QSize& size, Cache::Manager& cacheMgr);
 
   public:

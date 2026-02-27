@@ -10,6 +10,8 @@
 
 #include "logger.hpp"
 
+WALLREEL_DECLARE_SENDER("CacheManager")
+
 using namespace Qt::StringLiterals;
 
 namespace WallReel::Core::Cache {
@@ -22,7 +24,7 @@ QString Manager::cacheKey(const QFileInfo& fileInfo, const QSize& imageSize) {
 
 Manager::Manager(const QDir& cacheDir)
     : m_cacheDir(cacheDir), m_dbPath(cacheDir.filePath(u"cache.db"_s)), m_connectionPrefix(u"WallReelCache:"_s + QString::fromLatin1(QCryptographicHash::hash(m_dbPath.toUtf8(), QCryptographicHash::Md5).toHex())) {
-    Logger::debug(u"Initializing cache db: %1"_s.arg(m_dbPath));
+    WR_DEBUG(u"Initializing cache db: %1"_s.arg(m_dbPath));
     // Open a connection on the constructing thread so the schema is
     // guaranteed to exist before any worker thread first calls _db().
     _db();
@@ -34,7 +36,7 @@ Manager::~Manager() {
         QMutexLocker lock(&m_connectionsMutex);
         names = std::move(m_connectionNames);
     }
-    Logger::debug(u"Closing %1 cache db connection(s)"_s.arg(names.size()));
+    WR_DEBUG(u"Closing %1 cache db connection(s)"_s.arg(names.size()));
     for (const QString& connName : std::as_const(names)) {
         {
             // Scope: release the QSqlDatabase copy before removeDatabase()
@@ -61,12 +63,12 @@ void Manager::clearCache(Type type) {
             }
         }
         QSqlQuery(db).exec(QStringLiteral("DELETE FROM image_cache"));
-        Logger::info(u"Cleared %1 image cache file(s)"_s.arg(removed));
+        WR_INFO(u"Cleared %1 image cache file(s)"_s.arg(removed));
     }
 
     if ((type & Type::Color) != Type::None) {
         QSqlQuery(db).exec(QStringLiteral("DELETE FROM color_cache"));
-        Logger::info(u"Cleared color cache"_s);
+        WR_INFO(u"Cleared color cache"_s);
     }
 }
 
@@ -79,7 +81,7 @@ QColor Manager::getColor(const QString& key, const std::function<QColor()>& comp
         query.bindValue(u":key"_s, key);
 
         if (query.exec() && query.next()) {
-            Logger::debug(u"Color cache hit [%1]"_s.arg(key));
+            WR_DEBUG(u"Color cache hit [%1]"_s.arg(key));
             return QColor(
                 query.value(0).toInt(),
                 query.value(1).toInt(),
@@ -88,11 +90,11 @@ QColor Manager::getColor(const QString& key, const std::function<QColor()>& comp
         }
     }
 
-    Logger::debug(u"Color cache miss [%1], computing"_s.arg(key));
+    WR_DEBUG(u"Color cache miss [%1], computing"_s.arg(key));
     const QColor color = computeFunc();
 
     if (!color.isValid()) {
-        Logger::warn(u"ComputeFunc returned invalid color for key [%1]"_s.arg(key));
+        WR_WARN(u"ComputeFunc returned invalid color for key [%1]"_s.arg(key));
         return color;
     }
 
@@ -107,10 +109,10 @@ QColor Manager::getColor(const QString& key, const std::function<QColor()>& comp
         insertQuery.bindValue(u":b"_s, color.blue());
         insertQuery.bindValue(u":a"_s, color.alpha());
         if (!insertQuery.exec())
-            Logger::warn(u"Failed to cache color [%1]: %2"_s
-                             .arg(key, insertQuery.lastError().text()));
+            WR_WARN(u"Failed to cache color [%1]: %2"_s
+                        .arg(key, insertQuery.lastError().text()));
         else
-            Logger::debug(u"Color cached [%1]"_s.arg(key));
+            WR_DEBUG(u"Color cached [%1]"_s.arg(key));
     }
 
     return color;
@@ -127,13 +129,13 @@ QFileInfo Manager::getImage(const QString& key, const std::function<QImage()>& c
         if (query.exec() && query.next()) {
             const QFileInfo cached(m_cacheDir.filePath(query.value(0).toString()));
             if (cached.exists()) {
-                Logger::debug(u"Image cache hit [%1] -> %2"_s
-                                  .arg(key, cached.absoluteFilePath()));
+                WR_DEBUG(u"Image cache hit [%1] -> %2"_s
+                             .arg(key, cached.absoluteFilePath()));
                 return cached;
             }
 
             // File was deleted externally — evict the stale DB record.
-            Logger::warn(u"Image cache stale, file missing [%1], evicting"_s.arg(key));
+            WR_WARN(u"Image cache stale, file missing [%1], evicting"_s.arg(key));
             QSqlQuery evict(db);
             evict.prepare(QStringLiteral("DELETE FROM image_cache WHERE key = :key"));
             evict.bindValue(u":key"_s, key);
@@ -141,10 +143,10 @@ QFileInfo Manager::getImage(const QString& key, const std::function<QImage()>& c
         }
     }
 
-    Logger::debug(u"Image cache miss [%1], computing"_s.arg(key));
+    WR_DEBUG(u"Image cache miss [%1], computing"_s.arg(key));
     const QImage image = computeFunc();
     if (image.isNull()) {
-        Logger::warn(u"ComputeFunc returned null image for key [%1]"_s.arg(key));
+        WR_WARN(u"ComputeFunc returned null image for key [%1]"_s.arg(key));
         return QFileInfo{};
     }
 
@@ -152,10 +154,10 @@ QFileInfo Manager::getImage(const QString& key, const std::function<QImage()>& c
     const QString filePath = m_cacheDir.filePath(fileName);
 
     if (!image.save(filePath, "PNG")) {
-        Logger::warn(u"Failed to save image to %1"_s.arg(filePath));
+        WR_WARN(u"Failed to save image to %1"_s.arg(filePath));
         return QFileInfo{};
     }
-    Logger::debug(u"Image saved to %1"_s.arg(filePath));
+    WR_DEBUG(u"Image saved to %1"_s.arg(filePath));
 
     if (db.isOpen()) {
         QSqlQuery insertQuery(db);
@@ -165,8 +167,8 @@ QFileInfo Manager::getImage(const QString& key, const std::function<QImage()>& c
         insertQuery.bindValue(u":key"_s, key);
         insertQuery.bindValue(u":file_name"_s, fileName);
         if (!insertQuery.exec())
-            Logger::warn(u"Failed to record image in db [%1]: %2"_s
-                             .arg(key, insertQuery.lastError().text()));
+            WR_WARN(u"Failed to record image in db [%1]: %2"_s
+                        .arg(key, insertQuery.lastError().text()));
     }
 
     return QFileInfo(filePath);
@@ -185,9 +187,9 @@ QSqlDatabase Manager::_db() const {
         if (db.isOpen())
             return db;
         // Reopen if closed externally.
-        Logger::debug(u"Reopening cache db connection [%1]"_s.arg(*it));
+        WR_DEBUG(u"Reopening cache db connection [%1]"_s.arg(*it));
         if (!db.open()) {
-            Logger::warn(u"Cannot reopen cache database: %1"_s.arg(db.lastError().text()));
+            WR_WARN(u"Cannot reopen cache database: %1"_s.arg(db.lastError().text()));
             return QSqlDatabase{};
         }
         QSqlQuery q(db);
@@ -204,13 +206,13 @@ QSqlDatabase Manager::_db() const {
     db.setDatabaseName(m_dbPath);
 
     if (!db.open()) {
-        Logger::warn(u"Cannot open cache database %1: %2"_s
-                         .arg(m_dbPath, db.lastError().text()));
+        WR_WARN(u"Cannot open cache database %1: %2"_s
+                    .arg(m_dbPath, db.lastError().text()));
         db = QSqlDatabase{};
         QSqlDatabase::removeDatabase(connName);
         return QSqlDatabase{};
     }
-    Logger::debug(u"Opened cache db connection [%1]"_s.arg(connName));
+    WR_DEBUG(u"Opened cache db connection [%1]"_s.arg(connName));
 
     tlsConns.insert(m_connectionPrefix, connName);
     {

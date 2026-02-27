@@ -6,6 +6,8 @@
 #include "Utils/texttemplate.hpp"
 #include "logger.hpp"
 
+WALLREEL_DECLARE_SENDER("WallpaperService")
+
 WallReel::Core::Service::WallpaperService::WallpaperService(
     const Config::ActionConfigItems& actionConfig,
     const Palette::Manager& paletteManager,
@@ -23,8 +25,7 @@ WallReel::Core::Service::WallpaperService::WallpaperService(
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
             [this](int exitCode, QProcess::ExitStatus exitStatus) {
-                Q_UNUSED(exitCode);
-                Q_UNUSED(exitStatus);
+                WR_DEBUG(QString("Preview process finished with exit code %1 and exit status %2").arg(exitCode).arg(exitStatus));
                 emit previewCompleted();
             });
 
@@ -33,8 +34,7 @@ WallReel::Core::Service::WallpaperService::WallpaperService(
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
             [this](int exitCode, QProcess::ExitStatus exitStatus) {
-                Q_UNUSED(exitCode);
-                Q_UNUSED(exitStatus);
+                WR_DEBUG(QString("Select process finished with exit code %1 and exit status %2").arg(exitCode).arg(exitStatus));
                 emit selectCompleted();
             });
 
@@ -43,13 +43,13 @@ WallReel::Core::Service::WallpaperService::WallpaperService(
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
             [this](int exitCode, QProcess::ExitStatus exitStatus) {
-                Q_UNUSED(exitCode);
-                Q_UNUSED(exitStatus);
+                WR_DEBUG(QString("Restore process finished with exit code %1 and exit status %2").arg(exitCode).arg(exitStatus));
                 emit restoreCompleted();
             });
 }
 
 void WallReel::Core::Service::WallpaperService::stopAll() {
+    WR_DEBUG("Stopping all wallpaper service processes");
     if (m_previewProcess->state() != QProcess::NotRunning) {
         m_previewProcess->kill();
         m_previewProcess->waitForFinished();
@@ -72,17 +72,19 @@ void WallReel::Core::Service::WallpaperService::preview(const Image::Data& image
 
 void WallReel::Core::Service::WallpaperService::select(const Image::Data& imageData) {
     if (m_selectProcess->state() != QProcess::NotRunning) {
-        Logger::warn("Previous select command is still running. Ignoring new command.");
+        WR_WARN("Previous select command is still running. Ignoring new command.");
         return;
     }
+    WR_DEBUG(QString("Select wallpaper: %1").arg(imageData.getFullPath()));
     _doSelect(imageData);
 }
 
 void WallReel::Core::Service::WallpaperService::restore() {
     if (m_restoreProcess->state() != QProcess::NotRunning) {
-        Logger::warn("Previous restore command is still running. Ignoring new command.");
+        WR_WARN("Previous restore command is still running. Ignoring new command.");
         return;
     }
+    WR_DEBUG("Restore state");
     _doRestore();
 }
 
@@ -116,6 +118,7 @@ void WallReel::Core::Service::WallpaperService::_doPreview(const Image::Data& im
     QString path = imageData.getFullPath();
 
     if (path.isEmpty()) {
+        WR_WARN("No valid image path for preview. Skipping preview action.");
         emit previewCompleted();
         return;
     }
@@ -127,10 +130,11 @@ void WallReel::Core::Service::WallpaperService::_doPreview(const Image::Data& im
     const auto variables = _generateVariables(imageData);
     auto command         = Utils::renderTemplate(m_actionConfig.onPreview, variables);
     if (command.isEmpty()) {
+        WR_DEBUG("No preview command configured. Skipping preview action.");
         emit previewCompleted();
         return;
     }
-    Logger::debug(QString("Executing preview command: %1").arg(command));
+    WR_DEBUG(QString("Executing preview command: %1").arg(command));
 
     if (m_previewProcess->state() != QProcess::NotRunning) {
         m_previewProcess->kill();
@@ -143,6 +147,7 @@ void WallReel::Core::Service::WallpaperService::_doSelect(const Image::Data& ima
     QString path = imageData.getFullPath();
 
     if (path.isEmpty()) {
+        WR_WARN("No valid image path for select. Skipping select action.");
         emit selectCompleted();
         return;
     }
@@ -154,24 +159,27 @@ void WallReel::Core::Service::WallpaperService::_doSelect(const Image::Data& ima
     const auto variables = _generateVariables(imageData);
     auto command         = Utils::renderTemplate(m_actionConfig.onSelected, variables);
     if (command.isEmpty()) {
+        WR_DEBUG("No select command configured. Skipping select action.");
         emit selectCompleted();
         return;
     }
-    Logger::debug(QString("Executing select command: %1").arg(command));
+    WR_DEBUG(QString("Executing select command: %1").arg(command));
     m_selectProcess->start("sh", QStringList() << "-c" << command);
 }
 
 void WallReel::Core::Service::WallpaperService::_doRestore() {
     if (m_actionConfig.onRestore.isEmpty()) {
+        WR_DEBUG("No restore command configured. Skipping restore action.");
         emit restoreCompleted();
         return;
     }
 
     const QString command = Utils::renderTemplate(m_actionConfig.onRestore, m_actionConfig.saveState);
     if (command.isEmpty()) {
+        WR_DEBUG("Restore command is empty after rendering. Skipping restore action.");
         emit restoreCompleted();
         return;
     }
-    Logger::debug(QString("Executing restore command: %1").arg(command));
+    WR_DEBUG(QString("Executing restore command: %1").arg(command));
     m_restoreProcess->start("sh", QStringList() << "-c" << command);
 }

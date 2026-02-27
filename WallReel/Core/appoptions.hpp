@@ -19,9 +19,6 @@ class AppOptions {
     // -h --help
     void printHelp();
 
-    // -C --clear-cache
-    void clearCache();
-
     // Print error message and help
     void printError();
 
@@ -29,7 +26,8 @@ class AppOptions {
     QString configPath;
     QStringList appendDirs;
     QString errorText;
-    bool doReturn = false;  ///< Indicates whether the application should exit after parsing arguments.
+    bool clearCache = false;  // -C --clear-cache
+    bool doReturn   = false;  ///< Indicates whether the application should exit after parsing arguments.
 
     AppOptions();
     void parseArgs(QApplication& app);

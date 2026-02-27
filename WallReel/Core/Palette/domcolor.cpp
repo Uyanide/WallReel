@@ -1,5 +1,9 @@
 #include "domcolor.hpp"
 
+#include "logger.hpp"
+
+WALLREEL_DECLARE_SENDER("DomColor")
+
 static constexpr int scaleMaxWidth  = 128;
 static constexpr int scaleMaxHeight = 128;
 // See /misc/ColorArgTest/index.html for visualizing the effect of different powers
@@ -24,7 +28,10 @@ static double getWeight(const QColor& color) {
 }
 
 static QColor getWeightedDominantColor(const QImage& image) {
-    if (image.isNull()) return QColor();
+    if (image.isNull()) {
+        WR_WARN("Image is null");
+        return QColor();
+    }
 
     // QImage scaledImg = image.scaled(128, 128, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     QImage* scaledImg = nullptr;
