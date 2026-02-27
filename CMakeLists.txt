@@ -25,7 +25,7 @@ endif()
 
 configure_file(WallReel/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick Widgets QuickControls2 Concurrent)
+find_package(Qt6 REQUIRED COMPONENTS Quick Widgets QuickControls2 Concurrent Sql)
 
 qt_standard_project_setup(REQUIRES 6.5)
 

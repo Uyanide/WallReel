@@ -2,6 +2,7 @@ qt_add_qml_module(${CORELIB_NAME}
     URI ${COREMODULE_URI}
     VERSION ${MODULE_VERSION_MAJOR}.${MODULE_VERSION_MINOR}
     SOURCES
+    Cache/manager.hpp Cache/manager.cpp
     Image/data.hpp Image/data.cpp
     Image/model.hpp Image/model.cpp
     Palette/data.hpp
@@ -21,6 +22,7 @@ target_link_libraries(${CORELIB_NAME} PUBLIC
     Qt6::Widgets
     Qt6::QuickControls2
     Qt6::Concurrent
+    Qt6::Sql
 )
 
 target_include_directories(${CORELIB_NAME} PUBLIC

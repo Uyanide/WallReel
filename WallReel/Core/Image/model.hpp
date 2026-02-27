@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <atomic>
 
+#include "Cache/manager.hpp"
 #include "Config/data.hpp"
 #include "data.hpp"
 
@@ -83,7 +84,7 @@ class Model : public QAbstractListModel {
 
     Model(
         const Config::SortConfigItems& sortConfig,
-        const QDir& cacheDir,
+        Cache::Manager& cacheMgr,
         const QSize& thumbnailSize,
         QObject* parent = nullptr);
 
@@ -161,7 +162,7 @@ class Model : public QAbstractListModel {
 
   private:
     const Config::SortConfigItems& m_sortConfig;
-    QDir m_cacheDir;
+    Cache::Manager& m_cacheMgr;
     QSize m_thumbnailSize;
 
     QList<Data*> m_data;

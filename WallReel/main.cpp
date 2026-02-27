@@ -4,6 +4,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 
+#include "Cache/manager.hpp"
 #include "Core/Config/manager.hpp"
 #include "Core/Image/model.hpp"
 #include "Core/Palette/data.hpp"
@@ -44,9 +45,11 @@ int main(int argc, char* argv[]) {
         "Config",
         config);
 
+    auto cacheMgr = new Cache::Manager(Utils::getCacheDir());
+
     auto imageModel = new Image::Model(
         config->getSortConfig(),
-        Utils::getCacheDir(),
+        *cacheMgr,
         config->getFocusImageSize(),
         config);
     qmlRegisterSingletonInstance(

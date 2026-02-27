@@ -8,14 +8,15 @@
 
 WallReel::Core::Image::Model::Model(
     const Config::SortConfigItems& sortConfig,
-    const QDir& cacheDir,
+    Cache::Manager& cacheMgr,
     const QSize& thumbnailSize,
     QObject* parent)
     : QAbstractListModel(parent),
       m_sortConfig(sortConfig),
-      m_cacheDir(cacheDir),
+      m_cacheMgr(cacheMgr),
       m_thumbnailSize(thumbnailSize),
-      m_currentSortType(sortConfig.type) {
+      m_currentSortType(sortConfig.type),
+      m_currentSortReverse(sortConfig.reverse) {
     connect(
         &m_watcher,
         &QFutureWatcher<Data*>::finished,
@@ -184,10 +185,10 @@ void WallReel::Core::Image::Model::loadAndProcess(const QStringList& paths) {
     // These are all small objects so capturing by value should be fine
     const auto thumbnailSize = m_thumbnailSize;
     const auto counterPtr    = &m_processedCount;
-    const auto cacheDir      = m_cacheDir;
+    const auto cacheMgr      = &m_cacheMgr;
     QFuture<Data*> future =
-        QtConcurrent::mapped(paths, [thumbnailSize, counterPtr, cacheDir](const QString& path) {
-            auto data = Data::create(path, thumbnailSize, cacheDir);
+        QtConcurrent::mapped(paths, [thumbnailSize, counterPtr, cacheMgr](const QString& path) {
+            auto data = Data::create(path, thumbnailSize, *cacheMgr);
             counterPtr->fetch_add(1, std::memory_order_relaxed);
             return data;
         });

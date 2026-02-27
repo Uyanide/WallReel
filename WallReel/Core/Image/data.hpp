@@ -6,6 +6,8 @@
 #include <QImage>
 #include <QUrl>
 
+#include "Cache/manager.hpp"
+
 // Development note
 /*
 Current implementation of image loading and caching:
@@ -34,10 +36,6 @@ Why this approach - Main purposes
     - Resizing during loading fundamentally eliminates the possibility of the frontend storing large
       images in memory. (and not all image formats support `sourceSize` property in the right way)
 
-Possible improvements:
-- Cache other properties of the image (dominant color for example) to entirely avoid processing the
-  image in loading stage. A simple key-value store should be sufficient.
-
 */
 
 namespace WallReel::Core::Image {
@@ -47,6 +45,8 @@ namespace WallReel::Core::Image {
  *
  */
 class Data {
+    Cache::Manager& m_cacheMgr;
+
     QString m_id;                          ///< Unique identifier for the image
     QFileInfo m_file;                      ///< File information of the image
     QFileInfo m_cachedFile;                ///< Cached file information for the loaded image
@@ -54,15 +54,7 @@ class Data {
     QColor m_dominantColor;                ///< Dominant color of the image, used for palette matching
     QHash<QString, QString> m_colorCache;  ///< Cache for palette color matching results, key is palette name, value is matched color name
 
-    Data(const QString& path, const QSize& size, const QDir& cacheDir);
-
-    bool _loadFromCache();
-
-    bool _loadFresh();
-
-    static QString _generateId(const QString& path, const QSize& size);
-
-    static QString _generateCacheFileName(const QString& id);
+    Data(const QString& path, const QSize& size, Cache::Manager& cacheMgr);
 
   public:
     /**
@@ -72,7 +64,7 @@ class Data {
      * @param size Target size for loaded image, the image will be scaled and cropped to this size and stored in memory
      * @return Data*
      */
-    static Data* create(const QString& path, const QSize& size, const QDir& cacheDir);
+    static Data* create(const QString& path, const QSize& size, Cache::Manager& cacheMgr);
 
     QSize getTargetSize() const { return m_targetSize; }
 
