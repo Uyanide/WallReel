@@ -14,17 +14,19 @@
 #include "logger.hpp"
 
 WallReel::Core::Config::Manager::Manager(
-    const QString& configDir,
+    const QDir& configDir,
     const QStringList& searchDirs,
     const QString& configPath,
     QObject* parent)
     : QObject(parent), m_configDir(configDir) {
+    // Load configPath if not empty, otherwise load from default location (configDir + s_DefaultConfigFileName)
     if (configPath.isEmpty()) {
-        Logger::info(QString("Configuration directory: %1").arg(configDir));
-        _loadConfig(configDir + QDir::separator() + s_DefaultConfigFileName);
+        Logger::info(QString("Configuration directory: %1").arg(m_configDir.absolutePath()));
+        _loadConfig(m_configDir.absolutePath() + QDir::separator() + s_DefaultConfigFileName);
     } else {
         _loadConfig(configPath);
     }
+    // Append additional search directories to the config
     if (!searchDirs.isEmpty()) {
         Logger::info(QString("Additional search directories: %1").arg(searchDirs.join(", ")));
         for (const auto& dir : searchDirs) {
@@ -73,7 +75,7 @@ void WallReel::Core::Config::Manager::_loadWallpaperConfig(const QJsonObject& ro
     if (config.contains("paths") && config["paths"].isArray()) {
         for (const auto& item : config["paths"].toArray()) {
             if (item.isString()) {
-                m_wallpaperConfig.paths.append(Utils::expandPath(item.toString()));
+                m_wallpaperConfig.paths.append(Utils::ensureAbsolutePath(Utils::expandPath(item.toString())));
             }
         }
     }
@@ -84,7 +86,7 @@ void WallReel::Core::Config::Manager::_loadWallpaperConfig(const QJsonObject& ro
                 QJsonObject obj = item.toObject();
                 if (obj.contains("path") && obj["path"].isString()) {
                     WallpaperConfigItems::WallpaperDirConfigItem dirConfig;
-                    dirConfig.path = Utils::expandPath(obj["path"].toString());
+                    dirConfig.path = Utils::ensureAbsolutePath(Utils::expandPath(obj["path"].toString()));
                     if (obj.contains("recursive") && obj["recursive"].isBool()) {
                         dirConfig.recursive = obj["recursive"].toBool();
                     } else {
@@ -193,8 +195,8 @@ void WallReel::Core::Config::Manager::_loadActionConfig(const QJsonObject& root)
                 if (obj.contains("default") && obj["default"].isString()) {
                     sItem.defaultVal = obj["default"].toString();
                 }
-                if (obj.contains("cmd") && obj["cmd"].isString()) {
-                    sItem.cmd = obj["cmd"].toString();
+                if (obj.contains("command") && obj["command"].isString()) {
+                    sItem.command = obj["command"].toString();
                 }
                 if (obj.contains("timeout") && obj["timeout"].isDouble()) {
                     sItem.timeout = obj["timeout"].toInt();
@@ -310,6 +312,8 @@ void WallReel::Core::Config::Manager::_loadSortConfig(const QJsonObject& root) {
 void WallReel::Core::Config::Manager::_loadWallpapers() {
     m_wallpapers.clear();
 
+    // Add paths first using a set to avoid duplicates
+
     QSet<QString> paths;
 
     Logger::debug(QString("Loading wallpapers from %1 specified paths...").arg(m_wallpaperConfig.paths.size()));
@@ -342,6 +346,8 @@ void WallReel::Core::Config::Manager::_loadWallpapers() {
         }
     }
 
+    // Exclude paths that match any of the exclude regexes
+
     Logger::debug(QString("Excluding %1 specified paths...").arg(m_wallpaperConfig.excludes.size()));
     QStringList toRemove;
     for (const auto& exclude : std::as_const(m_wallpaperConfig.excludes)) {
@@ -365,10 +371,15 @@ void WallReel::Core::Config::Manager::_loadWallpapers() {
         }
     }
 
-    Logger::info(QString("Found %1 files").arg(paths.size()));
+    Logger::info(QString("Found %1 images").arg(paths.size()));
 }
 
 void WallReel::Core::Config::Manager::captureState() {
+    if (m_pendingCaptures > 0) {
+        Logger::warn("State capture already in progress, ignoring new capture request");
+        return;
+    }
+
     m_pendingCaptures = 0;
 
     const auto& items = m_actionConfig.saveStateConfig;
@@ -378,7 +389,7 @@ void WallReel::Core::Config::Manager::captureState() {
     }
 
     for (const auto& item : items) {
-        if (!item.cmd.isEmpty()) {
+        if (!item.command.isEmpty()) {
             m_pendingCaptures++;
         }
     }
@@ -389,10 +400,10 @@ void WallReel::Core::Config::Manager::captureState() {
     }
 
     for (const auto& item : items) {
-        if (item.cmd.isEmpty()) continue;
+        if (item.command.isEmpty()) continue;
 
         QProcess* process = new QProcess(this);
-        QTimer* timer     = nullptr;
+        QTimer* timer     = nullptr;  // Remains nullptr if no timeout is set for this item
         if (item.timeout > 0) {
             timer = new QTimer(this);
             timer->setSingleShot(true);
@@ -451,7 +462,7 @@ void WallReel::Core::Config::Manager::captureState() {
         if (timer) {
             timer->start();
         }
-        process->start("sh", QStringList() << "-c" << item.cmd);
+        process->start("sh", QStringList() << "-c" << item.command);
     }
 }
 

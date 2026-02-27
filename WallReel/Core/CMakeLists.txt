@@ -4,7 +4,6 @@ qt_add_qml_module(${CORELIB_NAME}
     SOURCES
     Image/data.hpp Image/data.cpp
     Image/model.hpp Image/model.cpp
-    Image/provider.hpp Image/provider.cpp
     Palette/data.hpp
     Palette/manager.hpp Palette/manager.cpp
     Palette/domcolor.hpp Palette/domcolor.cpp

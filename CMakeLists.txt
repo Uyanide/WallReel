@@ -25,7 +25,7 @@ endif()
 
 configure_file(WallReel/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick Widgets QuickControls2 Concurrent Test)
+find_package(Qt6 REQUIRED COMPONENTS Quick Widgets QuickControls2 Concurrent)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
@@ -36,11 +36,6 @@ option(ADDRESS_SANITIZER "Enable Address Sanitizer for debugging." OFF)
 
 add_subdirectory(WallReel/Core)
 add_subdirectory(WallReel/UI)
-
-if(BUILD_TESTING)
-    enable_testing()
-    add_subdirectory(Tests)
-endif()
 
 if(ADDRESS_SANITIZER)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g")

@@ -72,16 +72,12 @@ void WallReel::Core::Palette::Manager::updateColor() {
     if (!m_selectedColor.has_value()) {
         auto cached = imageData->getCachedColor(m_selectedPalette->name);
         if (cached.has_value()) {
-            auto it = std::find_if(m_selectedPalette->colors.begin(),
-                                   m_selectedPalette->colors.end(),
-                                   [&](const ColorItem& item) {
-                                       return item.name == cached.value();
-                                   });
-            if (it != m_selectedPalette->colors.end()) {
+            auto found = m_selectedPalette.value().getColorItem(cached.value());
+            if (found.isValid()) {
                 Logger::debug("Using cached color match for image " + imageData->getFileName() +
-                              ": " + it->name);
-                m_displayColor     = it->color;
-                m_displayColorName = it->name;
+                              ": " + found.name);
+                m_displayColor     = found.color;
+                m_displayColorName = found.name;
                 hasResult          = true;
                 return;
             }
@@ -89,6 +85,15 @@ void WallReel::Core::Palette::Manager::updateColor() {
         auto matched = bestMatch(
             imageData->getDominantColor(),
             m_selectedPalette.value().colors);
+        // Use dominant color if no valid match found (possibly empty palette)
+        if (!matched.isValid()) {
+            Logger::debug("No valid color match found for image " + imageData->getFileName() +
+                          ", using dominant color: " + imageData->getDominantColor().name());
+            m_displayColor     = imageData->getDominantColor();
+            m_displayColorName = "";
+            hasResult          = true;
+            return;
+        }
         Logger::debug("Computed color match for image " + imageData->getFileName() + ": " +
                       matched.name);
         imageData->cacheColor(m_selectedPalette->name, matched.name);

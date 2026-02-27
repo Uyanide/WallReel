@@ -7,13 +7,13 @@
 #include "logger.hpp"
 
 WallReel::Core::Image::Model::Model(
-    Provider& provider,
     const Config::SortConfigItems& sortConfig,
-    QSize thumbnailSize,
+    const QDir& cacheDir,
+    const QSize& thumbnailSize,
     QObject* parent)
     : QAbstractListModel(parent),
-      m_provider(provider),
       m_sortConfig(sortConfig),
+      m_cacheDir(cacheDir),
       m_thumbnailSize(thumbnailSize),
       m_currentSortType(sortConfig.type) {
     connect(
@@ -67,6 +67,8 @@ QVariant WallReel::Core::Image::Model::data(const QModelIndex& index, int role) 
     switch (role) {
         case IdRole:
             return item->getId();
+        case UrlRole:
+            return item->getUrl();
         case PathRole:
             return item->getFullPath();
         case NameRole:
@@ -156,6 +158,8 @@ QVariant WallReel::Core::Image::Model::dataAt(int index, const QString& roleName
     const auto& item = m_data[actualIndex];
     if (roleName == "imgId") {
         return item->getId();
+    } else if (roleName == "imgUrl") {
+        return item->getUrl();
     } else if (roleName == "imgPath") {
         return item->getFullPath();
     } else if (roleName == "imgName") {
@@ -177,13 +181,16 @@ void WallReel::Core::Image::Model::loadAndProcess(const QStringList& paths) {
 
     m_processedCount = 0;
     m_progressUpdateTimer.start(s_ProgressUpdateIntervalMs);
+    // These are all small objects so capturing by value should be fine
     const auto thumbnailSize = m_thumbnailSize;
     const auto counterPtr    = &m_processedCount;
-    QFuture<Data*> future    = QtConcurrent::mapped(paths, [thumbnailSize, counterPtr](const QString& path) {
-        auto data = Data::create(path, thumbnailSize);
-        counterPtr->fetch_add(1, std::memory_order_relaxed);
-        return data;
-    });
+    const auto cacheDir      = m_cacheDir;
+    QFuture<Data*> future =
+        QtConcurrent::mapped(paths, [thumbnailSize, counterPtr, cacheDir](const QString& path) {
+            auto data = Data::create(path, thumbnailSize, cacheDir);
+            counterPtr->fetch_add(1, std::memory_order_relaxed);
+            return data;
+        });
     m_watcher.setFuture(future);
     emit totalCountChanged();
 }
@@ -224,7 +231,6 @@ int WallReel::Core::Image::Model::_convertProxyIndex(int proxyIndex) const {
 
 void WallReel::Core::Image::Model::_clearData() {
     beginResetModel();
-    m_provider.clear();
     qDeleteAll(m_data);
     m_data.clear();
     for (auto& i : m_sortIndices) {
@@ -323,7 +329,6 @@ void WallReel::Core::Image::Model::_onProcessingFinished() {
     for (auto& data : results) {
         if (data && data->isValid()) {
             m_data.append(data);
-            m_provider.insert(data);
         } else {
             Logger::warn("Failed to load image: " + (data ? data->getFullPath() : "null"));
             delete data;

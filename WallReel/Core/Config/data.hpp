@@ -33,7 +33,7 @@
 // action.saveState             array   []      Useful for restore command
 // action.saveState[].key       string  ""      Key of value to save, used as {{ key }} in onRestore command
 // action.saveState[].default   string  ""      Value to save, used when "cmd" is not set or command execution fails or output is empty
-// action.saveState[].cmd       string  ""      Command that outputs(to stdout) the value to save when executed
+// action.saveState[].command   string  ""      Command that outputs(to stdout) the value to save when executed
 // action.saveState[].timeout   number  3000    Timeout for executing "cmd" in milliseconds. 0 or negative means no timeout
 // action.onRestore             string  ""      Command to execute on restore ({{ key }} -> value defined or obtained in saveState)
 // action.quitOnSelected        boolean false   Whether to quit the application after confirming a wallpaper
@@ -91,8 +91,8 @@ struct ActionConfigItems {
     struct SaveStateItem {
         QString key;
         QString defaultVal;
-        QString cmd;
-        int timeout = 3000;
+        QString command;
+        int timeout = 3000;  // milliseconds, 0 or negative means no timeout
     };
 
     QList<SaveStateItem> saveStateConfig;

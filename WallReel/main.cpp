@@ -6,7 +6,6 @@
 
 #include "Core/Config/manager.hpp"
 #include "Core/Image/model.hpp"
-#include "Core/Image/provider.hpp"
 #include "Core/Palette/data.hpp"
 #include "Core/Palette/manager.hpp"
 #include "Core/Service/manager.hpp"
@@ -33,14 +32,11 @@ int main(int argc, char* argv[]) {
 
     QQmlApplicationEngine engine;
 
-    auto* imageProvider = new Image::Provider();
-    engine.addImageProvider(QLatin1String("processed"), imageProvider);
-
     auto config = new Config::Manager(
         Utils::getConfigDir(),
         s_options.appendDirs,
         s_options.configPath,
-        imageProvider);
+        &engine);
     qmlRegisterSingletonInstance(
         COREMODULE_URI,
         MODULE_VERSION_MAJOR,
@@ -49,8 +45,8 @@ int main(int argc, char* argv[]) {
         config);
 
     auto imageModel = new Image::Model(
-        *imageProvider,
         config->getSortConfig(),
+        Utils::getCacheDir(),
         config->getFocusImageSize(),
         config);
     qmlRegisterSingletonInstance(

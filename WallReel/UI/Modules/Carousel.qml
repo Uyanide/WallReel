@@ -66,7 +66,7 @@ Item {
                     id: img
 
                     anchors.fill: parent
-                    source: "image://processed/" + model.imgId
+                    source: model.imgUrl
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
                     cache: true

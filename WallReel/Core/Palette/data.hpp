@@ -22,6 +22,10 @@ struct ColorItem {
     bool operator==(const ColorItem& other) const {
         return name == other.name;
     }
+
+    bool isValid() const {
+        return !name.isEmpty() && color.isValid();
+    }
 };
 
 struct PaletteItem {
@@ -31,6 +35,8 @@ struct PaletteItem {
 
   public:
     QString name;
+    // We need to keep the order of colors, and the number of colors is usually limited,
+    // so a flat list and O(n) lookup should be fine here.
     QList<ColorItem> colors;
 
     Q_INVOKABLE QColor getColor(const QString& colorName) const {
@@ -40,8 +46,19 @@ struct PaletteItem {
         return QColor();
     }
 
+    ColorItem getColorItem(const QString& colorName) const {
+        for (const auto& entry : colors) {
+            if (entry.name == colorName) return entry;
+        }
+        return ColorItem();
+    }
+
     bool operator==(const PaletteItem& other) const {
         return name == other.name;
+    }
+
+    bool isValid() const {
+        return !name.isEmpty() && !colors.isEmpty();
     }
 };
 

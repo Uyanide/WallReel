@@ -1,28 +1,86 @@
 #ifndef WALLREEL_IMAGEDATA_HPP
 #define WALLREEL_IMAGEDATA_HPP
 
+#include <QDir>
 #include <QFileInfo>
 #include <QImage>
+#include <QUrl>
+
+// Development note
+/*
+Current implementation of image loading and caching:
+1. Generate a unique ID for the image based on:
+    - File path
+    - Last modified timestamp
+    - Target size (width x height)
+   and use it as the cache key.
+2. Check if a cached version of the image exists in the cache directory using the generated ID.
+    - If so, load the image from the cache and construct the Data object accordingly.
+    - If not:
+        a. Load the original image from disk.
+        b. Scale and crop it to the target size.
+        c. Save the processed image to the cache directory using the generated ID as the filename.
+        d. Construct the Data object with the new generated image.
+
+Why this approach - Main purposes
+- Fast decoding:
+    By resizing and caching the image at the loading stage, the frontend can directly load the image
+    at a smaller size and avoid the overhead of downsizing large (8K+ for example) images in memory,
+    which can lead to significant performance improvements and reduced memory usage on the frontend.
+- Memory efficiency:
+    - Avoid keeping pixel data in memory for all images, and only load on demand by the frontend. Even
+      keeping the resized image in memory can be costly if there are many, and the overhead of loading
+      small images from disk is generally negligible and acceptable.
+    - Resizing during loading fundamentally eliminates the possibility of the frontend storing large
+      images in memory. (and not all image formats support `sourceSize` property in the right way)
+
+Possible improvements:
+- Cache other properties of the image (dominant color for example) to entirely avoid processing the
+  image in loading stage. A simple key-value store should be sufficient.
+
+*/
 
 namespace WallReel::Core::Image {
 
+/**
+ * @brief A Model class representing an image file
+ *
+ */
 class Data {
-    QString m_id;
-    QFileInfo m_file;
-    QImage m_image;
-    QColor m_dominantColor;
-    QHash<QString, QString> m_colorCache;
+    QString m_id;                          ///< Unique identifier for the image
+    QFileInfo m_file;                      ///< File information of the image
+    QFileInfo m_cachedFile;                ///< Cached file information for the loaded image
+    QSize m_targetSize;                    ///< Target size for the loaded image
+    QColor m_dominantColor;                ///< Dominant color of the image, used for palette matching
+    QHash<QString, QString> m_colorCache;  ///< Cache for palette color matching results, key is palette name, value is matched color name
 
-    Data(const QString& path, const QSize& size);
+    Data(const QString& path, const QSize& size, const QDir& cacheDir);
+
+    bool _loadFromCache();
+
+    bool _loadFresh();
+
+    static QString _generateId(const QString& path, const QSize& size);
+
+    static QString _generateCacheFileName(const QString& id);
 
   public:
-    static Data* create(const QString& path, const QSize& size);
+    /**
+     * @brief Factory method to create a Data instance from a file path. Returns nullptr if loading fails.
+     *
+     * @param path File path of the image
+     * @param size Target size for loaded image, the image will be scaled and cropped to this size and stored in memory
+     * @return Data*
+     */
+    static Data* create(const QString& path, const QSize& size, const QDir& cacheDir);
 
-    const QImage& getImage() const { return m_image; }
+    QSize getTargetSize() const { return m_targetSize; }
 
-    const QString& getId() const { return m_id; }
+    QString getId() const { return m_id; }
 
-    bool isValid() const { return !m_image.isNull(); }
+    QUrl getUrl() const { return QUrl::fromLocalFile(m_cachedFile.absoluteFilePath()); }
+
+    bool isValid() const { return m_cachedFile.exists(); }
 
     QString getFullPath() const { return m_file.absoluteFilePath(); }
 
@@ -33,6 +91,8 @@ class Data {
     qint64 getSize() const { return m_file.size(); }
 
     const QFileInfo& getFileInfo() const { return m_file; }
+
+    QImage loadImage() const;
 
     const QColor& getDominantColor() const { return m_dominantColor; }
 

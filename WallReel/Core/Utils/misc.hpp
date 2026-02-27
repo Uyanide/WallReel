@@ -88,6 +88,25 @@ inline QString expandPath(const QString& path) {
 }
 
 /**
+ * @brief Convert the given path to an absolute path. If it's already absolute, return as is.
+ *        If it's relative, make it absolute based on the current working directory.
+ *
+ * @param path Input path
+ * @return QString Absolute path
+ *
+ * @note No guarantee that the returned path actually exists or is valid.
+ * @note Symbolic links are not resolved.
+ * @note The returned path is cleaned using QDir::cleanPath()
+ */
+inline QString ensureAbsolutePath(const QString& path) {
+    if (QDir::isAbsolutePath(path)) {
+        return path;
+    } else {
+        return QDir::cleanPath(QDir::current().filePath(path));
+    }
+}
+
+/**
  * @brief Split the file name from a given path.
  *
  * @param path
@@ -122,7 +141,12 @@ inline bool checkImageFile(const QString& filePath) {
     return formats.contains(ext.toUtf8());
 }
 
-inline QString getConfigDir() {
+/**
+ * @brief Get the configuration directory for the application, and create it if it doesn't exist.
+ *
+ * @return QDir The configuration directory, typically ~/.config/AppName
+ */
+inline QDir getConfigDir() {
     // This will be ~/.config/AppName, where AppName is the name of executable target in CMakeLists.txt
     auto configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
     if (configDir.isEmpty()) {
@@ -130,6 +154,21 @@ inline QString getConfigDir() {
     }
     QDir().mkpath(configDir);
     return configDir;
+}
+
+/**
+ * @brief Get the cache directory for the application, and create it if it doesn't exist.
+ *
+ * @return QDir The cache directory, typically ~/.cache/AppName
+ */
+inline QDir getCacheDir() {
+    // This will be ~/.cache/AppName, where AppName is the name of executable target in CMakeLists.txt
+    auto cacheDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    if (cacheDir.isEmpty()) {
+        cacheDir = QDir::homePath() + QDir::separator() + ".cache" + QDir::separator() + APP_NAME;
+    }
+    QDir().mkpath(cacheDir);
+    return QDir(cacheDir);
 }
 
 }  // namespace WallReel::Core::Utils

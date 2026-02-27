@@ -19,6 +19,9 @@ class AppOptions {
     // -h --help
     void printHelp();
 
+    // -C --clear-cache
+    void clearCache();
+
     // Print error message and help
     void printError();
 

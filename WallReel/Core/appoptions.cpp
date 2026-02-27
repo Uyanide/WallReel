@@ -32,6 +32,21 @@ void AppOptions::printHelp() {
     doReturn = true;
 }
 
+// -C --clear-cache
+void AppOptions::clearCache() {
+    QDir cacheDir = Utils::getCacheDir();
+    if (cacheDir.exists()) {
+        if (cacheDir.removeRecursively()) {
+            Logger::info("Cache cleared successfully.");
+        } else {
+            Logger::warn("Failed to clear cache.");
+        }
+    } else {
+        Logger::info("Cache directory does not exist, nothing to clear.");
+    }
+    doReturn = true;
+}
+
 // Print error message and help
 void AppOptions::printError() {
     if (!errorText.isEmpty()) {
@@ -53,6 +68,9 @@ void AppOptions::parseArgs(QApplication& app) {
     QCommandLineOption verboseOption(QStringList() << "V" << "verbose", "Set log level to DEBUG (default is INFO)");
     parser.addOption(verboseOption);
 
+    QCommandLineOption clearCacheOption(QStringList() << "C" << "clear-cache", "Clear the image cache and exit");
+    parser.addOption(clearCacheOption);
+
     QCommandLineOption quietOption(QStringList() << "q" << "quiet", "Suppress all log output");
     parser.addOption(quietOption);
 
@@ -71,13 +89,18 @@ void AppOptions::parseArgs(QApplication& app) {
         return;
     }
 
+    if (parser.isSet(helpOption)) {
+        printHelp();
+        return;
+    }
+
     if (parser.isSet(versionOption)) {
         printVersion();
         return;
     }
 
-    if (parser.isSet(helpOption)) {
-        printHelp();
+    if (parser.isSet(clearCacheOption)) {
+        clearCache();
         return;
     }
 

@@ -20,17 +20,15 @@ class Manager : public QObject {
             Image::Model& imageModel,
             QObject* parent = nullptr);
 
-    const QList<PaletteItem>& availablePalettes() const {
-        return m_palettes;
-    }
+    // Properties
 
-    const QColor& color() const {
-        return m_displayColor;
-    }
+    const QList<PaletteItem>& availablePalettes() const { return m_palettes; }
 
-    const QString& colorName() const {
-        return m_displayColorName;
-    }
+    const QColor& color() const { return m_displayColor; }
+
+    const QString& colorName() const { return m_displayColorName; }
+
+    // Setters
 
     Q_INVOKABLE void setSelectedPalette(const QVariant& paletteVar) {
         if (paletteVar.isNull() || !paletteVar.isValid()) {
@@ -50,14 +48,32 @@ class Manager : public QObject {
         updateColor();
     }
 
+    // Getters
+
+    /**
+     * @brief Get the name of the currently selected palette
+     *
+     * @return QString The name of the currently selected palette, or an empty string if no palette is selected
+     */
     QString getSelectedPaletteName() const {
         return m_selectedPalette ? m_selectedPalette->name : QString();
     }
 
+    /**
+     * @brief Get the name of the currently selected color
+     *
+     * @return QString The name of the currently selected color, or an empty string if the color does not have
+     *         a pretty name
+     */
     QString getCurrentColorName() const {
         return m_displayColorName;
     }
 
+    /**
+     * @brief Get the hex string of the currently selected color
+     *
+     * @return QString The hex string of the currently selected color, or an empty string if the color is invalid
+     */
     QString getCurrentColorHex() const {
         return m_displayColor.isValid()
                    ? m_displayColor.name()
@@ -65,7 +81,7 @@ class Manager : public QObject {
     }
 
   public slots:
-    void updateColor();
+    void updateColor();  // <- Image::Model::focusedImageChanged
 
   signals:
     void colorChanged();
@@ -75,6 +91,7 @@ class Manager : public QObject {
     Image::Model& m_imageModel;
 
     QList<PaletteItem> m_palettes;
+    // Null means auto
     std::optional<PaletteItem> m_selectedPalette = std::nullopt;
     std::optional<ColorItem> m_selectedColor     = std::nullopt;
 

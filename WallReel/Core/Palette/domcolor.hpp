@@ -5,6 +5,12 @@
 
 namespace WallReel::Core::Palette {
 
+/**
+ * @brief Get the dominant color of the given image.
+ *
+ * @param image The input image
+ * @return QColor An empty QColor() case error occurs, otherwise the dominant color of the image
+ */
 QColor getDominantColor(const QImage& image);
 
 }  // namespace WallReel::Core::Palette
