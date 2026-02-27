@@ -71,17 +71,12 @@ class Manager : public QObject {
     Q_INVOKABLE void cancel() {
         Logger::debug("ServiceManager", "Cancel action");
         m_wallpaperService->stopAll();
-        if (m_actionConfig.restoreOnCancel) {
-            connect(m_wallpaperService, &WallpaperService::restoreCompleted, this, [this]() {
-                emit cancelCompleted();
-            });
-            restore();
-        } else {
-            emit cancelCompleted();
-        }
+        emit cancelCompleted();
     }
 
     bool isProcessing() const { return m_isProcessing; }
+
+    bool hasSelected() const { return m_hasSelected; }
 
   public slots:
 
@@ -101,6 +96,7 @@ class Manager : public QObject {
     void _onSelectCompleted() {
         Logger::debug("ServiceManager", "Select completed");
         _onProcessCompleted();
+        m_hasSelected = true;
         emit selectCompleted();
     }
 
@@ -129,6 +125,7 @@ class Manager : public QObject {
     Palette::Manager& m_paletteManager;
 
     bool m_isProcessing = false;
+    bool m_hasSelected  = false;
 };
 
 }  // namespace WallReel::Core::Service

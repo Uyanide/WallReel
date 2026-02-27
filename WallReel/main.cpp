@@ -3,6 +3,10 @@
 #include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QtQml/QQmlExtensionPlugin>
+
+Q_IMPORT_QML_PLUGIN(WallReel_CorePlugin)
+Q_IMPORT_QML_PLUGIN(WallReel_UIPlugin)
 
 #include "Cache/manager.hpp"
 #include "Core/Config/manager.hpp"
@@ -25,6 +29,7 @@ int main(int argc, char* argv[]) {
     QApplication a(argc, argv);
     a.setApplicationName(APP_NAME);
     a.setApplicationVersion(APP_VERSION);
+    a.setWindowIcon(QIcon(QString(":/%1.svg").arg(APP_NAME)));
 
     Logger::init();
     s_options.parseArgs(a);
@@ -97,6 +102,17 @@ int main(int argc, char* argv[]) {
         &Service::Manager::cancelCompleted,
         &a,
         []() { QCoreApplication::quit(); });
+    if (config->getActionConfig().restoreOnClose) {
+        QObject::connect(
+            &a,
+            &QApplication::aboutToQuit,
+            Service,
+            [Service]() {
+                if (!Service->hasSelected()) {
+                    Service->restore();
+                }
+            });
+    }
 
     QObject::connect(
         &engine,

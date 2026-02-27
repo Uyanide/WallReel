@@ -38,7 +38,7 @@
 // action.saveState[].timeout   number  3000    Timeout for executing "cmd" in milliseconds. 0 or negative means no timeout
 // action.onRestore             string  ""      Command to execute on restore ({{ key }} -> value defined or obtained in saveState)
 // action.quitOnSelected        boolean false   Whether to quit the application after confirming a wallpaper
-// action.restoreOnCancel       boolean true    Whether to run the restore command after cancel without confirming a wallpaper
+// action.restoreOnClose        boolean true    Whether to run the restore command after closing the application without confirming a wallpaper
 //
 // style.image_width            number  320     Width of each image
 // style.image_height           number  200     Height of each image
@@ -106,7 +106,7 @@ struct ActionConfigItems {
     bool printSelected      = true;
     bool printPreview       = false;
     bool quitOnSelected     = false;
-    bool restoreOnCancel    = true;
+    bool restoreOnClose     = true;
 };
 
 struct StyleConfigItems {

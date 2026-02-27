@@ -60,7 +60,9 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
 
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE
     ${CORELIB_NAME}
+    ${CORELIB_NAME}plugin
     ${UILIB_NAME}
+    ${UILIB_NAME}plugin
 )
 
 target_include_directories(${EXECUTABLE_NAME} PRIVATE
@@ -74,6 +76,4 @@ install(TARGETS ${EXECUTABLE_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-install(FILES ${CMAKE_CURRENT_LIST_DIR}/app/${EXECUTABLE_NAME}.desktop
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications
-)
+add_subdirectory(WallReel/Assets)

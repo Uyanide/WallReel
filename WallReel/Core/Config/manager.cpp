@@ -242,10 +242,10 @@ void WallReel::Core::Config::Manager::_loadActionConfig(const QJsonObject& root)
             m_actionConfig.quitOnSelected = val.toBool();
         }
     }
-    if (config.contains("restoreOnCancel")) {
-        const auto& val = config["restoreOnCancel"];
+    if (config.contains("restoreOnClose")) {
+        const auto& val = config["restoreOnClose"];
         if (val.isBool()) {
-            m_actionConfig.restoreOnCancel = val.toBool();
+            m_actionConfig.restoreOnClose = val.toBool();
         }
     }
 }
