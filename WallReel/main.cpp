@@ -1,3 +1,4 @@
+#include <qapplication.h>
 #include <qobject.h>
 
 #include <QApplication>
@@ -95,13 +96,15 @@ int main(int argc, char* argv[]) {
             Service,
             &Service::Manager::selectCompleted,
             &a,
-            []() { QCoreApplication::quit(); });
+            &QApplication::quit,
+            Qt::QueuedConnection);
     }
     QObject::connect(
         Service,
         &Service::Manager::cancelCompleted,
         &a,
-        []() { QCoreApplication::quit(); });
+        &QApplication::quit,
+        Qt::QueuedConnection);
     if (config->getActionConfig().restoreOnClose) {
         QObject::connect(
             &a,
