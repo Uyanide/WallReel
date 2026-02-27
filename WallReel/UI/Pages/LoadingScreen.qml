@@ -19,7 +19,13 @@ Item {
 
         anchors.centerIn: parent
         width: parent.width * 0.8
-        value: totalValue > 0 ? currentValue / totalValue : 0
+
+        Binding {
+            target: loadingBar
+            property: "value"
+            value: totalValue > 0 ? currentValue / totalValue : 0
+        }
+
     }
 
 }

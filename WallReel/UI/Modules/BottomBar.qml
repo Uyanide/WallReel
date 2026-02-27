@@ -6,7 +6,7 @@ import WallReel.UI.Components
 Item {
     id: root
 
-    required property bool actionsEnabled
+    property bool actionsEnabled: true
     property alias availablePalettes: colorCtrl.availablePalettes
     property alias selectedPalette: colorCtrl.selectedPalette
     property alias availableColors: colorCtrl.availableColors
@@ -52,17 +52,33 @@ Item {
             Layout.alignment: Qt.AlignVCenter
 
             WRTextButton {
+                id: restoreButton
+
                 displayedText: "Restore"
                 onClicked: root.restoreClicked()
-                enabled: root.actionsEnabled
                 foregroundColor: "#fab387"
+
+                Binding {
+                    target: restoreButton
+                    property: "enabled"
+                    value: root.actionsEnabled
+                }
+
             }
 
             WRTextButton {
+                id: confirmButton
+
                 displayedText: "Confirm"
                 onClicked: root.confirmClicked()
-                enabled: root.actionsEnabled
                 foregroundColor: "#a6e3a1"
+
+                Binding {
+                    target: confirmButton
+                    property: "enabled"
+                    value: root.actionsEnabled
+                }
+
             }
 
             WRTextButton {

@@ -13,19 +13,19 @@ QtObject {
     readonly property int imageWidth: Config.imageWidth
     readonly property int imageHeight: Config.imageHeight
     readonly property real imageFocusScale: Config.imageFocusScale
-    // Shared carousel selection state
-    property int currentIndex: 0
+    // Carousel selection state
+    readonly property int currentIndex: ImageModel.currentIndex
     // Image name
     readonly property string focusedName: ImageModel.focusedName
     //// Sort
     readonly property var availableSortTypes: ["None", "Name", "Date", "Size"]
-    property string selectedSortType: ImageModel.currentSortType
-    property bool isSortReverse: ImageModel.currentSortReverse
+    readonly property string selectedSortType: ImageModel.currentSortType
+    readonly property bool isSortReverse: ImageModel.currentSortReverse
     //// Palette / Color
     readonly property var availablePalettes: PaletteManager.availablePalettes
-    property var selectedPalette: PaletteManager.selectedPalette // PaletteItem | null
+    readonly property var selectedPalette: PaletteManager.selectedPalette // PaletteItem | null
     readonly property var availableColors: selectedPalette ? selectedPalette.colors : []
-    property var selectedColor: PaletteManager.selectedColor // ColorItem | null  (null means "auto")
+    readonly property var selectedColor: PaletteManager.selectedColor // ColorItem | null  (null means "auto")
     readonly property string colorName: PaletteManager.colorName
     readonly property string colorHex: PaletteManager.color
     readonly property color colorValue: PaletteManager.color
@@ -43,6 +43,10 @@ QtObject {
 
     function cancel() {
         ServiceManager.cancel();
+    }
+
+    function setCurrentIndex(index) {
+        ImageModel.currentIndex = index;
     }
 
     function focusSearch() {
@@ -72,14 +76,4 @@ QtObject {
 
     }
 
-    onCurrentIndexChanged: () => {
-        if (!isLoading)
-            ImageModel.focusOnIndex(currentIndex);
-
-    }
-    Component.onCompleted: () => {
-        if (!isLoading)
-            ImageModel.focusOnIndex(currentIndex);
-
-    }
 }

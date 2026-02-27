@@ -210,6 +210,7 @@ void WallReel::Core::Image::Model::focusOnIndex(int index) {
     }
     if (m_focusedIndex != index) {
         m_focusedIndex = index;
+        emit focusedIndexChanged();
         emit focusedImageChanged();
         _updateFocusedProperties();
     }

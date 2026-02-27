@@ -49,6 +49,8 @@ class Model : public QAbstractListModel {
     Q_PROPERTY(int processedCount READ processedCount NOTIFY progressChanged)
     // Total count of images to be loaded, used to calculate the progress percentage
     Q_PROPERTY(int totalCount READ totalCount NOTIFY totalCountChanged)
+    // Current index
+    Q_PROPERTY(int currentIndex READ focusedIndex WRITE focusOnIndex NOTIFY focusedIndexChanged)
     // Sorting related properties
     // How this works:
     // 1. User interact with QML control components
@@ -104,6 +106,8 @@ class Model : public QAbstractListModel {
 
     int totalCount() const { return m_watcher.progressMaximum(); }
 
+    int focusedIndex() const { return m_focusedIndex; }
+
     QString currentSortType() const;
 
     void setCurrentSortType(const QString& type);
@@ -126,7 +130,7 @@ class Model : public QAbstractListModel {
 
     void loadAndProcess(const QStringList& paths);
 
-    Q_INVOKABLE void focusOnIndex(int index);
+    void focusOnIndex(int index);
 
     Q_INVOKABLE void stop();
 
@@ -146,6 +150,7 @@ class Model : public QAbstractListModel {
     void isLoadingChanged();
     void progressChanged();
     void totalCountChanged();
+    void focusedIndexChanged();
     void currentSortTypeChanged();     // -> _onSortMethodChanged
     void currentSortReverseChanged();  // -> _onSortMethodChanged
     void focusedNameChanged();

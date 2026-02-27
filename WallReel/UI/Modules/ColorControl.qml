@@ -37,8 +37,6 @@ Item {
             id: paletteCombo
 
             implicitWidth: 200
-            // -1 means nothing selected
-            currentIndex: -1
             displayText: currentIndex < 0 ? "— palette —" : currentText
             model: root.availablePalettes.map((p) => {
                 return p.name;
@@ -46,6 +44,15 @@ Item {
             onActivated: (idx) => {
                 root.paletteSelected(idx >= 0 ? root.availablePalettes[idx] : null);
             }
+
+            Binding {
+                target: paletteCombo
+                property: "currentIndex"
+                value: root.selectedPalette ? root.availablePalettes.findIndex((p) => {
+                    return p.name === root.selectedPalette.name;
+                }) : -1
+            }
+
         }
 
         ComboBox {
@@ -56,18 +63,24 @@ Item {
             model: ["Auto"].concat(root.availableColors.map((c) => {
                 return c.name;
             }))
-            currentIndex: {
-                if (!root.selectedColor)
-                    return 0;
-
-                const idx = root.availableColors.findIndex((c) => {
-                    return c.name === root.selectedColor.name;
-                });
-                return idx >= 0 ? idx + 1 : 0;
-            }
             onActivated: (idx) => {
                 root.colorSelected(idx === 0 ? null : root.availableColors[idx - 1]);
             }
+
+            Binding {
+                target: colorCombo
+                property: "currentIndex"
+                value: {
+                    if (!root.selectedColor)
+                        return 0;
+
+                    const idx = root.availableColors.findIndex((c) => {
+                        return c.name === root.selectedColor.name;
+                    });
+                    return idx >= 0 ? idx + 1 : 0;
+                }
+            }
+
         }
 
         Rectangle {
@@ -80,14 +93,27 @@ Item {
         }
 
         Label {
-            font.pixelSize: 11
-            text: {
-                if (root.colorHex.length > 0)
-                    return root.colorName.length > 0 ? root.colorName + "  " + root.colorHex : root.colorHex;
+            id: textLabel
 
-                return root.colorName;
+            font.pixelSize: 11
+
+            Binding {
+                target: textLabel
+                property: "text"
+                value: {
+                    if (root.colorHex.length > 0)
+                        return root.colorName.length > 0 ? root.colorName + "  " + root.colorHex : root.colorHex;
+
+                    return root.colorName;
+                }
             }
-            visible: root.colorName.length > 0 || root.colorHex.length > 0
+
+            Binding {
+                target: textLabel
+                property: "visible"
+                value: root.colorName.length > 0 || root.colorHex.length > 0
+            }
+
         }
 
     }

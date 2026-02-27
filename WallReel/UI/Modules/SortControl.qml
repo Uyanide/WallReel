@@ -31,8 +31,16 @@ Item {
 
             implicitWidth: 90
             model: root.availableSortTypes
-            currentIndex: root.availableSortTypes.indexOf(root.selectedSortType)
-            onActivated: root.sortTypeSelected(currentText)
+            onActivated: (index) => {
+                return root.sortTypeSelected(root.availableSortTypes[index]);
+            }
+
+            Binding {
+                target: sortCombo
+                property: "currentIndex"
+                value: root.availableSortTypes.indexOf(root.selectedSortType)
+            }
+
         }
 
         ToolButton {

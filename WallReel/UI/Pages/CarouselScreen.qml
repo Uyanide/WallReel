@@ -12,12 +12,12 @@ Item {
         if (e.key === Qt.Key_Slash) {
             topBar.requestSearchFocus();
         } else if (e.key === Qt.Key_Left) {
-            if (provider.currentIndex > 0)
-                provider.currentIndex--;
+            if (carousel.currentIndex > 0)
+                carousel.currentIndex--;
 
         } else if (e.key === Qt.Key_Right) {
-            if (provider.currentIndex < carousel.count - 1)
-                provider.currentIndex++;
+            if (carousel.currentIndex < carousel.count - 1)
+                carousel.currentIndex++;
 
         } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter)
             provider.confirm();
@@ -59,11 +59,9 @@ Item {
             id: topBar
 
             Layout.fillWidth: true
-            currentIndex: provider.currentIndex
             totalCount: carousel.count
             title: provider.focusedName
             availableSortTypes: provider.availableSortTypes
-            selectedSortType: provider.selectedSortType
             isSortReverse: provider.isSortReverse
             onSortTypeSelected: (t) => {
                 return provider.setSortType(t);
@@ -74,6 +72,19 @@ Item {
             onSearchTextChanged: () => {
                 return provider.setSearchText(topBar.searchText);
             }
+
+            Binding {
+                target: topBar
+                property: "currentIndex"
+                value: provider.currentIndex
+            }
+
+            Binding {
+                target: topBar
+                property: "selectedSortType"
+                value: provider.selectedSortType
+            }
+
         }
 
         Carousel {
@@ -88,7 +99,13 @@ Item {
             focusedItemHeight: provider.imageHeight * provider.imageFocusScale
             onCurrentIndexChanged: {
                 if (provider.currentIndex !== currentIndex)
-                    provider.currentIndex = currentIndex;
+                    provider.setCurrentIndex(currentIndex);
+
+            }
+            Component.onCompleted: {
+                // Sync initial index to provider from Carousel
+                if (provider.currentIndex !== currentIndex)
+                    provider.setCurrentIndex(currentIndex);
 
             }
 
@@ -129,14 +146,11 @@ Item {
         }
 
         BottomBar {
+            id: bottomBar
+
             Layout.fillWidth: true
             availablePalettes: provider.availablePalettes
-            selectedPalette: provider.selectedPalette
             availableColors: provider.availableColors
-            selectedColor: provider.selectedColor
-            colorName: provider.colorName
-            colorHex: provider.colorHex
-            colorValue: provider.colorValue
             onPaletteSelected: (p) => {
                 return provider.selectPalette(p);
             }
@@ -146,7 +160,43 @@ Item {
             onRestoreClicked: provider.restore()
             onConfirmClicked: provider.confirm()
             onCancelClicked: provider.cancel()
-            actionsEnabled: !provider.isProcessing
+
+            Binding {
+                target: bottomBar
+                property: "selectedPalette"
+                value: provider.selectedPalette
+            }
+
+            Binding {
+                target: bottomBar
+                property: "selectedColor"
+                value: provider.selectedColor
+            }
+
+            Binding {
+                target: bottomBar
+                property: "colorName"
+                value: provider.colorName
+            }
+
+            Binding {
+                target: bottomBar
+                property: "colorHex"
+                value: provider.colorHex
+            }
+
+            Binding {
+                target: bottomBar
+                property: "colorValue"
+                value: provider.colorValue
+            }
+
+            Binding {
+                target: bottomBar
+                property: "actionsEnabled"
+                value: !provider.isProcessing
+            }
+
         }
 
     }
