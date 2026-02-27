@@ -19,11 +19,12 @@
 // wallpaper.dirs[].recursive   boolean false   Whether to search the directory recursively.
 // wallpaper.excludes           array   []      Exclude patterns (regex)
 //
-// palettes                     array   []
-// palettes[].name              string  ""      Name of the palette
-// palettes[].colors            array   []      List of colors in the palette
-// palettes[].colors[].name     string  ""      Name of the color
-// palettes[].colors[].value    string  ""      Color value in hex format, e.g. "#ff0000" for red
+// theme.defaultPalette                 string  ""      Name of the default palette to use
+// theme.palettes                       array   []
+// theme.palettes[].name                string  ""      Name of the palette
+// theme.palettes[].colors              array   []      List of colors in the palette
+// theme.palettes[].colors[].name       string  ""      Name of the color
+// theme.palettes[].colors[].value      string  ""      Color value in hex format, e.g. "#ff0000" for red
 //
 // action.previewDebounceTime   number  300     Debounce time for preview action in milliseconds
 // action.printSelected         boolean true    Whether to print the selected wallpaper path to stdout on confirm
@@ -73,7 +74,7 @@ struct WallpaperConfigItems {
     QList<QRegularExpression> excludes;
 };
 
-struct PaletteConfigItems {
+struct ThemeConfigItems {
     struct PaletteColorConfigItem {
         QString name;
         QColor value;
@@ -85,6 +86,7 @@ struct PaletteConfigItems {
     };
 
     QList<PaletteConfigItem> palettes;
+    QString defaultPalette;
 };
 
 struct ActionConfigItems {

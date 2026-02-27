@@ -23,9 +23,9 @@ QtObject {
     property bool isSortReverse: ImageModel.currentSortReverse
     //// Palette / Color
     readonly property var availablePalettes: PaletteManager.availablePalettes
-    property var selectedPalette: null // PaletteItem | null
+    property var selectedPalette: PaletteManager.selectedPalette // PaletteItem | null
     readonly property var availableColors: selectedPalette ? selectedPalette.colors : []
-    property var selectedColor: null // ColorItem | null  (null means "auto")
+    property var selectedColor: PaletteManager.selectedColor // ColorItem | null  (null means "auto")
     readonly property string colorName: PaletteManager.colorName
     readonly property string colorHex: PaletteManager.color
     readonly property color colorValue: PaletteManager.color
@@ -58,12 +58,11 @@ QtObject {
     }
 
     function selectPalette(palette) {
-        selectedPalette = palette;
-        selectedColor = null; // reset color when palette changes
+        PaletteManager.selectedPalette = palette;
     }
 
     function selectColor(colorItem) {
-        selectedColor = colorItem;
+        PaletteManager.selectedColor = colorItem;
     }
 
     function setSearchText(text) {
@@ -82,11 +81,5 @@ QtObject {
         if (!isLoading)
             ImageModel.focusOnIndex(currentIndex);
 
-    }
-    onSelectedPaletteChanged: () => {
-        PaletteManager.setSelectedPalette(selectedPalette);
-    }
-    onSelectedColorChanged: () => {
-        PaletteManager.setSelectedColor(selectedColor);
     }
 }

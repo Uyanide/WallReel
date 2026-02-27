@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
         imageModel);
 
     auto paletteMgr = new Palette::Manager(
-        config->getPaletteConfig(),
+        config->getThemeConfig(),
         *imageModel,
         imageModel);
     engine.rootContext()->setContextProperty("PaletteManager", paletteMgr);

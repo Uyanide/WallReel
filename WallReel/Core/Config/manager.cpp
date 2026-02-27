@@ -60,7 +60,7 @@ void WallReel::Core::Config::Manager::_loadConfig(const QString& configPath) {
     const auto jsonObj = jsonDoc.object();
 
     _loadWallpaperConfig(jsonObj);
-    _loadPaletteConfig(jsonObj);
+    _loadThemeConfig(jsonObj);
     _loadActionConfig(jsonObj);
     _loadStyleConfig(jsonObj);
     _loadSortConfig(jsonObj);
@@ -112,22 +112,30 @@ void WallReel::Core::Config::Manager::_loadWallpaperConfig(const QJsonObject& ro
     }
 }
 
-void WallReel::Core::Config::Manager::_loadPaletteConfig(const QJsonObject& root) {
-    if (!root.contains("palettes") || !root["palettes"].isArray()) {
+void WallReel::Core::Config::Manager::_loadThemeConfig(const QJsonObject& root) {
+    if (!root.contains("theme") || !root["theme"].isObject()) {
         return;
     }
-    const QJsonArray& palettes = root["palettes"].toArray();
+    const QJsonObject& theme = root["theme"].toObject();
+    if (theme.contains("defaultPalette") && theme["defaultPalette"].isString()) {
+        m_themeConfig.defaultPalette = theme["defaultPalette"].toString();
+    }
+
+    if (!theme.contains("palettes") || !theme["palettes"].isArray()) {
+        return;
+    }
+    const QJsonArray& palettes = theme["palettes"].toArray();
 
     for (const auto& palItem : palettes) {
         if (palItem.isObject()) {
             QJsonObject palObj = palItem.toObject();
-            PaletteConfigItems::PaletteConfigItem palette;
+            ThemeConfigItems::PaletteConfigItem palette;
             if (palObj.contains("name") && palObj["name"].isString()) {
                 palette.name = palObj["name"].toString();
             }
             if (palObj.contains("colors") && palObj["colors"].isArray()) {
                 for (const auto& colorItem : palObj["colors"].toArray()) {
-                    PaletteConfigItems::PaletteColorConfigItem colorConfig;
+                    ThemeConfigItems::PaletteColorConfigItem colorConfig;
                     if (colorItem.isObject()) {
                         QJsonObject colorObj = colorItem.toObject();
                         if (colorObj.contains("name") && colorObj["name"].isString()) {
@@ -154,7 +162,7 @@ void WallReel::Core::Config::Manager::_loadPaletteConfig(const QJsonObject& root
                     }
                 }
             }
-            m_paletteConfig.palettes.append(palette);
+            m_themeConfig.palettes.append(palette);
         }
     }
 }

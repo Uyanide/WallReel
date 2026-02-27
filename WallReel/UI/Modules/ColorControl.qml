@@ -18,6 +18,14 @@ Item {
 
     implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight
+    Component.onCompleted: {
+        paletteCombo.currentIndex = selectedPalette ? availablePalettes.findIndex((p) => {
+            return p.name === selectedPalette.name;
+        }) : -1;
+        colorCombo.currentIndex = selectedColor ? availableColors.findIndex((c) => {
+            return c.name === selectedColor.name;
+        }) + 1 : 0;
+    }
 
     RowLayout {
         id: row

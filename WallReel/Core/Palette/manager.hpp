@@ -12,11 +12,13 @@ namespace WallReel::Core::Palette {
 class Manager : public QObject {
     Q_OBJECT
     Q_PROPERTY(QList<PaletteItem> availablePalettes READ availablePalettes CONSTANT)
+    Q_PROPERTY(QVariant selectedPalette READ selectedPalette WRITE setSelectedPalette NOTIFY selectedPaletteChanged)
+    Q_PROPERTY(QVariant selectedColor READ selectedColor WRITE setSelectedColor NOTIFY selectedColorChanged)
     Q_PROPERTY(QColor color READ color NOTIFY colorChanged)
     Q_PROPERTY(QString colorName READ colorName NOTIFY colorNameChanged)
 
   public:
-    Manager(const Config::PaletteConfigItems& config,
+    Manager(const Config::ThemeConfigItems& config,
             Image::Model& imageModel,
             QObject* parent = nullptr);
 
@@ -28,7 +30,19 @@ class Manager : public QObject {
 
     const QString& colorName() const { return m_displayColorName; }
 
-    // Setters
+    QVariant selectedPalette() const {
+        if (m_selectedPalette) {
+            return QVariant::fromValue(*m_selectedPalette);
+        }
+        return QVariant();
+    }
+
+    QVariant selectedColor() const {
+        if (m_selectedColor) {
+            return QVariant::fromValue(*m_selectedColor);
+        }
+        return QVariant();
+    }
 
     Q_INVOKABLE void setSelectedPalette(const QVariant& paletteVar) {
         if (paletteVar.isNull() || !paletteVar.isValid()) {
@@ -36,6 +50,9 @@ class Manager : public QObject {
         } else {
             m_selectedPalette = paletteVar.value<PaletteItem>();
         }
+        m_selectedColor = std::nullopt;
+        emit selectedPaletteChanged();
+        emit selectedColorChanged();
         updateColor();
     }
 
@@ -45,6 +62,7 @@ class Manager : public QObject {
         } else {
             m_selectedColor = colorVar.value<ColorItem>();
         }
+        emit selectedColorChanged();
         updateColor();
     }
 
@@ -84,6 +102,8 @@ class Manager : public QObject {
     void updateColor();  // <- Image::Model::focusedImageChanged
 
   signals:
+    void selectedPaletteChanged();
+    void selectedColorChanged();
     void colorChanged();
     void colorNameChanged();
 

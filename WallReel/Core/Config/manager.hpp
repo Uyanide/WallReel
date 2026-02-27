@@ -55,7 +55,7 @@ class Manager : public QObject {
 
     const WallpaperConfigItems& getWallpaperConfig() const { return m_wallpaperConfig; }
 
-    const PaletteConfigItems& getPaletteConfig() const { return m_paletteConfig; }
+    const ThemeConfigItems& getThemeConfig() const { return m_themeConfig; }
 
     const ActionConfigItems& getActionConfig() const { return m_actionConfig; }
 
@@ -96,7 +96,7 @@ class Manager : public QObject {
     // Parse config
     void _loadConfig(const QString& configPath);
     void _loadWallpaperConfig(const QJsonObject& config);
-    void _loadPaletteConfig(const QJsonObject& config);
+    void _loadThemeConfig(const QJsonObject& config);
     void _loadActionConfig(const QJsonObject& config);
     void _loadStyleConfig(const QJsonObject& config);
     void _loadSortConfig(const QJsonObject& config);
@@ -108,7 +108,7 @@ class Manager : public QObject {
   private:
     const QDir m_configDir;
     WallpaperConfigItems m_wallpaperConfig;
-    PaletteConfigItems m_paletteConfig;
+    ThemeConfigItems m_themeConfig;
     ActionConfigItems m_actionConfig;
     StyleConfigItems m_styleConfig;
     SortConfigItems m_sortConfig;

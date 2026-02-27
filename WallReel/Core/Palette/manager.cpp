@@ -6,7 +6,7 @@
 #include "predefined.hpp"
 
 WallReel::Core::Palette::Manager::Manager(
-    const Config::PaletteConfigItems& config,
+    const Config::ThemeConfigItems& config,
     Image::Model& imageModel,
     QObject* parent) : QObject(parent), m_imageModel(imageModel) {
     connect(&m_imageModel, &Image::Model::focusedImageChanged, this, &Manager::updateColor);
@@ -43,6 +43,19 @@ WallReel::Core::Palette::Manager::Manager(
                 newP.colors.append({c.name, c.value});
             }
             m_palettes.append(newP);
+        }
+    }
+
+    // Set default palette if specified
+    if (!config.defaultPalette.isEmpty()) {
+        for (const auto& p : m_palettes) {
+            if (p.name == config.defaultPalette) {
+                m_selectedColor   = std::nullopt;
+                m_selectedPalette = p;
+                emit selectedColorChanged();
+                emit selectedPaletteChanged();
+                break;
+            }
         }
     }
 }
