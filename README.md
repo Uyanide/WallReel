@@ -47,35 +47,6 @@ It might not be that worthy to build a Qt application from ground for such a sma
    cmake --install build
    ```
 
-## How to use
-
-The config file should be placed in `~/.config/wallreel/config.json`. Refer to [Configuration Reference](#configuration-reference) and [config.schema.json](config.schema.json) for more details on the format and available options.
-
-A minimum config file should at least contain the path(s) to wallpapers. The application is able to run without any wallpapers found, but it won't be very functional obviously.
-
-```json
-{
-  "wallpaper": {
-    "dirs": [{ "path": "/path/to/your/wallpapers" }]
-  }
-}
-```
-
-By default, the path of the selected wallpaper will be printed to stdout. If you want to apply the selected wallpaper automatically after selection, the `action.onSelected` entry should be set, e.g.
-
-```json
-{
-  "wallpaper": {
-    "dirs": [{ "path": "/path/to/your/wallpapers" }]
-  },
-  "action": {
-    "onSelected": "swww img {{ path }}"
-  }
-}
-```
-
-`action.onSelected` should be a shell command, where `{{ path }}` will be replaced with the path of the selected wallpaper.
-
 ## Configuration Reference
 
 Refer to [config.schema.json](config.schema.json) for a complete reference of the configuration file schema. Below is a summary of the available options.
@@ -84,7 +55,7 @@ The configuration file is divided into five main sections: `wallpaper`, `theme`,
 
 ### Wallpaper (`wallpaper`)
 
-Defines where WallReel looks for images and what to exclude.
+Defines where WallReel looks for images and what to exclude. If none of the `paths` or `dirs` are specified, the application will default to searching the user's Pictures directory (recursively) and consider all supported image files as wallpapers (which could create a huge cache and take a long time to process if you have a lot of images).
 
 | Property   | Type             | Default | Description                                                                                            |
 | :--------- | :--------------- | :------ | :----------------------------------------------------------------------------------------------------- |
@@ -232,12 +203,6 @@ A few things to notice:
 
 - It's generally not necessary to provide any CLI arguments, I would recommend using the config file to customize the behavior instead. However, it is still possible to control some essential options via CLI.
 
-- All logs are directed to stderr by default. Only the full path of the selected or previewed wallpaper (if any) will be sent to stdout. This allows easy piping of the output to other programs.
-
 - The `--append-dir` option can be used multiple times to add multiple directories.
 
 - It is quite obvious that some options conflicts with each other (e.g. `--verbose` and `--quiet`). Case mutually exclusive options are provided together, the behavior is un.. just please, don't do that.
-
-- Paths passed via CLI options are tested before any further operation is performed. That is to say, if an invalid path is provided, the program will exit with an error before any further action, and you won't even have a chance to see a window.
-
-  On the contrary, paths provided in the config file are only tested when they are actually used (e.g. when searching for wallpapers). And most errors will be ignored silently (possibly with a warning log).

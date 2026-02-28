@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(WallReel VERSION 0.1 LANGUAGES CXX)
+project(WallReel VERSION 2.0.0 LANGUAGES CXX)
 
 set(EXECUTABLE_NAME "wallreel")
 set(CORELIB_NAME "wallreel-core")
