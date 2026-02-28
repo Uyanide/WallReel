@@ -108,9 +108,9 @@ QHash<QString, QString> WallReel::Core::Service::WallpaperService::_generateVari
         {"width", QString::number(imageData.getTargetSize().width())},
         {"height", QString::number(imageData.getTargetSize().height())},
         {"palette", palette},
-        {"color", color},
+        {"colorName", color},
         {"colorHex", hex},
-        {"domColor", m_paletteManager.color().name()},
+        {"domColorHex", imageData.getDominantColor().name()},
     };
 }
 

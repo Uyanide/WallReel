@@ -4,22 +4,17 @@
 #include <qcolor.h>
 
 #include "Config/data.hpp"
-#include "Image/model.hpp"
+#include "Image/manager.hpp"
 #include "data.hpp"
 
 namespace WallReel::Core::Palette {
 
 class Manager : public QObject {
     Q_OBJECT
-    Q_PROPERTY(QList<PaletteItem> availablePalettes READ availablePalettes CONSTANT)
-    Q_PROPERTY(QVariant selectedPalette READ selectedPalette WRITE setSelectedPalette NOTIFY selectedPaletteChanged)
-    Q_PROPERTY(QVariant selectedColor READ selectedColor WRITE setSelectedColor NOTIFY selectedColorChanged)
-    Q_PROPERTY(QColor color READ color NOTIFY colorChanged)
-    Q_PROPERTY(QString colorName READ colorName NOTIFY colorNameChanged)
 
   public:
     Manager(const Config::ThemeConfigItems& config,
-            Image::Model& imageModel,
+            Image::Manager& imageManager,
             QObject* parent = nullptr);
 
     // Properties
@@ -44,7 +39,7 @@ class Manager : public QObject {
         return QVariant();
     }
 
-    Q_INVOKABLE void setSelectedPalette(const QVariant& paletteVar) {
+    void setSelectedPalette(const QVariant& paletteVar) {
         if (paletteVar.isNull() || !paletteVar.isValid()) {
             m_selectedPalette = std::nullopt;
         } else {
@@ -53,17 +48,15 @@ class Manager : public QObject {
         m_selectedColor = std::nullopt;
         emit selectedPaletteChanged();
         emit selectedColorChanged();
-        updateColor();
     }
 
-    Q_INVOKABLE void setSelectedColor(const QVariant& colorVar) {
+    void setSelectedColor(const QVariant& colorVar) {
         if (colorVar.isNull() || !colorVar.isValid()) {
             m_selectedColor = std::nullopt;
         } else {
             m_selectedColor = colorVar.value<ColorItem>();
         }
         emit selectedColorChanged();
-        updateColor();
     }
 
     // Getters
@@ -99,7 +92,7 @@ class Manager : public QObject {
     }
 
   public slots:
-    void updateColor();  // <- Image::Model::focusedImageChanged
+    void updateColor(const QString& imageId);
 
   signals:
     void selectedPaletteChanged();
@@ -108,7 +101,7 @@ class Manager : public QObject {
     void colorNameChanged();
 
   private:
-    Image::Model& m_imageModel;
+    Image::Manager& m_imageManager;
 
     QList<PaletteItem> m_palettes;
     // Null means auto

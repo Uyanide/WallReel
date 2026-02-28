@@ -3,9 +3,11 @@ qt_add_qml_module(${CORELIB_NAME}
     URI ${COREMODULE_URI}
     VERSION ${MODULE_VERSION_MAJOR}.${MODULE_VERSION_MINOR}
     SOURCES
+    Provider/carousel.hpp Provider/bootstrap.hpp
     Cache/manager.hpp Cache/manager.cpp
     Image/data.hpp Image/data.cpp
-    Image/model.hpp Image/model.cpp
+    Image/model.hpp Image/model.cpp Image/proxymodel.cpp
+    Image/manager.hpp Image/manager.cpp
     Palette/data.hpp
     Palette/manager.hpp Palette/manager.cpp
     Palette/domcolor.hpp Palette/domcolor.cpp

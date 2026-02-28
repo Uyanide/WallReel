@@ -7,10 +7,10 @@ Item {
 
     property var availableSortTypes: []
     property string selectedSortType: ""
-    property bool isReverse: false
+    property bool isDescending: false
 
     signal sortTypeSelected(string sortType)
-    signal isReverseToggled(bool reverse)
+    signal isDescendingToggled(bool descending)
 
     implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight
@@ -44,14 +44,14 @@ Item {
         }
 
         ToolButton {
-            icon.name: root.isReverse ? "view-sort-descending" : "view-sort-ascending"
+            icon.name: root.isDescending ? "view-sort-descending" : "view-sort-ascending"
             icon.width: 16
             icon.height: 16
             focusPolicy: Qt.NoFocus
-            onClicked: root.isReverseToggled(!root.isReverse)
+            onClicked: root.isDescendingToggled(!root.isDescending)
             ToolTip.visible: hovered
             ToolTip.delay: 600
-            ToolTip.text: root.isReverse ? "Descending order" : "Ascending order"
+            ToolTip.text: root.isDescending ? "Descending order" : "Ascending order"
         }
 
     }

@@ -1,5 +1,7 @@
 #include "manager.hpp"
 
+#include <qcontainerfwd.h>
+
 #include "Palette/matchcolor.hpp"
 #include "Utils/misc.hpp"
 #include "logger.hpp"
@@ -9,10 +11,8 @@ WALLREEL_DECLARE_SENDER("PaletteManager")
 
 WallReel::Core::Palette::Manager::Manager(
     const Config::ThemeConfigItems& config,
-    Image::Model& imageModel,
-    QObject* parent) : QObject(parent), m_imageModel(imageModel) {
-    connect(&m_imageModel, &Image::Model::focusedImageChanged, this, &Manager::updateColor);
-
+    Image::Manager& imageManager,
+    QObject* parent) : QObject(parent), m_imageManager(imageManager) {
     // The new ones overrides the old ones, use a hashtable to track
     // the latest index of each palette name, then only insert the
     // ones whose index matches the latest index in the hashtable
@@ -64,7 +64,7 @@ WallReel::Core::Palette::Manager::Manager(
     }
 }
 
-void WallReel::Core::Palette::Manager::updateColor() {
+void WallReel::Core::Palette::Manager::updateColor(const QString& imageId) {
     bool hasResult = false;
     Utils::Defer defer([&]() {
         if (!hasResult) {
@@ -74,7 +74,7 @@ void WallReel::Core::Palette::Manager::updateColor() {
         emit colorChanged();
         emit colorNameChanged();
     });
-    auto imageData = m_imageModel.focusedImage();
+    auto imageData = m_imageManager.imageAt(imageId);
     if (!imageData || !imageData->isValid()) {
         WR_WARN("No valid focused image data. Cannot update palette color.");
         return;

@@ -4,8 +4,8 @@ import WallReel.Core
 import WallReel.UI.Pages
 
 ApplicationWindow {
-    width: Config.windowWidth
-    height: Config.windowHeight
+    width: CarouselProvider.windowWidth
+    height: CarouselProvider.windowHeight
     // minimumWidth: width
     // maximumWidth: width
     // minimumHeight: height
@@ -14,15 +14,15 @@ ApplicationWindow {
     title: qsTr("WallReel")
 
     LoadingScreen {
-        visible: ImageModel.isLoading
+        visible: CarouselProvider.isLoading
         anchors.fill: parent
-        currentValue: ImageModel.processedCount
-        totalValue: ImageModel.totalCount
+        currentValue: CarouselProvider.processedCount
+        totalValue: CarouselProvider.totalCount
     }
 
     Loader {
         anchors.fill: parent
-        active: !ImageModel.isLoading
+        active: !CarouselProvider.isLoading
 
         sourceComponent: CarouselScreen {
         }

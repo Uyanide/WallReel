@@ -38,12 +38,6 @@ Manager::~Manager() {
     }
     WR_DEBUG(u"Closing %1 cache db connection(s)"_s.arg(names.size()));
     for (const QString& connName : std::as_const(names)) {
-        {
-            // Scope: release the QSqlDatabase copy before removeDatabase()
-            QSqlDatabase db = QSqlDatabase::database(connName, false);
-            if (db.isOpen())
-                db.close();
-        }
         QSqlDatabase::removeDatabase(connName);
     }
 }

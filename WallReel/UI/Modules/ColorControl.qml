@@ -38,11 +38,11 @@ Item {
 
             implicitWidth: 200
             displayText: currentIndex < 0 ? "— palette —" : currentText
-            model: root.availablePalettes.map((p) => {
+            model: ["(None)"].concat(root.availablePalettes.map((p) => {
                 return p.name;
-            })
+            }))
             onActivated: (idx) => {
-                root.paletteSelected(idx >= 0 ? root.availablePalettes[idx] : null);
+                root.paletteSelected(idx >= 0 ? root.availablePalettes[idx - 1] : null);
             }
 
             Binding {
@@ -50,7 +50,7 @@ Item {
                 property: "currentIndex"
                 value: root.selectedPalette ? root.availablePalettes.findIndex((p) => {
                     return p.name === root.selectedPalette.name;
-                }) : -1
+                }) + 1 : 0
             }
 
         }

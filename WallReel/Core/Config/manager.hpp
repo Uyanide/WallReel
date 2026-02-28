@@ -19,12 +19,6 @@ namespace WallReel::Core::Config {
 class Manager : public QObject {
     Q_OBJECT
 
-    Q_PROPERTY(int imageWidth READ getImageWidth CONSTANT)
-    Q_PROPERTY(int imageHeight READ getImageHeight CONSTANT)
-    Q_PROPERTY(double imageFocusScale READ getImageFocusScale CONSTANT)
-    Q_PROPERTY(int windowWidth READ getWindowWidth CONSTANT)
-    Q_PROPERTY(int windowHeight READ getWindowHeight CONSTANT)
-
   public:
     /**
      * @brief Construct a new Manager object
@@ -63,23 +57,6 @@ class Manager : public QObject {
 
     const SortConfigItems& getSortConfig() const { return m_sortConfig; }
 
-    // Getters for Q_PROPERTY
-
-    int getImageWidth() const { return m_styleConfig.imageWidth; }
-
-    int getImageHeight() const { return m_styleConfig.imageHeight; }
-
-    double getImageFocusScale() const { return m_styleConfig.imageFocusScale; }
-
-    int getWindowWidth() const { return m_styleConfig.windowWidth; }
-
-    int getWindowHeight() const { return m_styleConfig.windowHeight; }
-
-    /**
-     * @brief A quick snippet to get the focused image size as a QSize
-     *
-     * @return QSize
-     */
     QSize getFocusImageSize() const {
         return QSize{m_styleConfig.imageWidth, m_styleConfig.imageHeight} * m_styleConfig.imageFocusScale;
     }

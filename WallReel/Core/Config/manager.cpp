@@ -298,9 +298,7 @@ void WallReel::Core::Config::Manager::_loadSortConfig(const QJsonObject& root) {
         const auto& val = config["type"];
         if (val.isString()) {
             QString type = val.toString().toLower();
-            if (type == "none") {
-                m_sortConfig.type = SortType::None;
-            } else if (type == "name") {
+            if (type == "name") {
                 m_sortConfig.type = SortType::Name;
             } else if (type == "date") {
                 m_sortConfig.type = SortType::Date;
@@ -311,10 +309,10 @@ void WallReel::Core::Config::Manager::_loadSortConfig(const QJsonObject& root) {
             }
         }
     }
-    if (config.contains("reverse")) {
-        const auto& val = config["reverse"];
+    if (config.contains("descending")) {
+        const auto& val = config["descending"];
         if (val.isBool()) {
-            m_sortConfig.reverse = val.toBool();
+            m_sortConfig.descending = val.toBool();
         }
     }
 }

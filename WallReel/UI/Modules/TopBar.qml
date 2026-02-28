@@ -13,10 +13,10 @@ Item {
     readonly property string searchText: searchBar.typedText
     property alias availableSortTypes: sortCtrl.availableSortTypes
     property alias selectedSortType: sortCtrl.selectedSortType
-    property alias isSortReverse: sortCtrl.isReverse
+    property alias isSortDescending: sortCtrl.isDescending
 
     signal sortTypeSelected(string sortType)
-    signal sortReverseToggled(bool reverse)
+    signal sortDescendingToggled(bool descending)
     signal searchDismissed()
 
     function requestSearchFocus() {
@@ -58,8 +58,8 @@ Item {
             onSortTypeSelected: (t) => {
                 return root.sortTypeSelected(t);
             }
-            onIsReverseToggled: (r) => {
-                return root.sortReverseToggled(r);
+            onIsDescendingToggled: (r) => {
+                return root.sortDescendingToggled(r);
             }
         }
 

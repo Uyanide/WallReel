@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import WallReel.Core
 import WallReel.UI.Modules
-import WallReel.UI.Providers
 
 Item {
     id: root
@@ -20,9 +20,9 @@ Item {
                 carousel.currentIndex++;
 
         } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter)
-            provider.confirm();
+            CarouselProvider.confirm();
         else if (e.key === Qt.Key_Escape)
-            provider.cancel();
+            CarouselProvider.cancel();
         else
             e.accepted = false;
     }
@@ -35,21 +35,6 @@ Item {
         target: topBar
     }
 
-    CarouselProvider {
-        id: provider
-    }
-
-    // ViewModel → Carousel sync (assignment, not binding, to avoid breakage)
-    Connections {
-        function onCurrentIndexChanged() {
-            if (carousel.currentIndex !== provider.currentIndex)
-                carousel.currentIndex = provider.currentIndex;
-
-        }
-
-        target: provider
-    }
-
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 12
@@ -60,29 +45,29 @@ Item {
 
             Layout.fillWidth: true
             totalCount: carousel.count
-            title: provider.focusedName
-            availableSortTypes: provider.availableSortTypes
-            isSortReverse: provider.isSortReverse
+            title: carousel.currentImageName
+            availableSortTypes: CarouselProvider.availableSortTypes
+            isSortDescending: CarouselProvider.sortDescending
             onSortTypeSelected: (t) => {
-                return provider.setSortType(t);
+                return CarouselProvider.setSortType(t);
             }
-            onSortReverseToggled: (r) => {
-                return provider.setSortReverse(r);
+            onSortDescendingToggled: (r) => {
+                return CarouselProvider.setSortDescending(r);
             }
             onSearchTextChanged: () => {
-                return provider.setSearchText(topBar.searchText);
+                return CarouselProvider.setSearchText(searchText);
             }
 
             Binding {
                 target: topBar
                 property: "currentIndex"
-                value: provider.currentIndex
+                value: carousel.currentIndex
             }
 
             Binding {
                 target: topBar
                 property: "selectedSortType"
-                value: provider.selectedSortType
+                value: CarouselProvider.sortType
             }
 
         }
@@ -92,33 +77,22 @@ Item {
 
             Layout.fillWidth: true
             Layout.fillHeight: true
-            model: provider.imageModel
-            itemWidth: provider.imageWidth
-            itemHeight: provider.imageHeight
-            focusedItemWidth: provider.imageWidth * provider.imageFocusScale
-            focusedItemHeight: provider.imageHeight * provider.imageFocusScale
-            onCurrentIndexChanged: {
-                if (provider.currentIndex !== currentIndex)
-                    provider.setCurrentIndex(currentIndex);
-
-            }
-            Component.onCompleted: {
-                // Sync initial index to provider from Carousel
-                if (provider.currentIndex !== currentIndex)
-                    provider.setCurrentIndex(currentIndex);
-
-            }
+            model: CarouselProvider.imageModel
+            itemWidth: CarouselProvider.imageWidth
+            itemHeight: CarouselProvider.imageHeight
+            focusedItemWidth: CarouselProvider.imageWidth * CarouselProvider.imageFocusScale
+            focusedItemHeight: CarouselProvider.imageHeight * CarouselProvider.imageFocusScale
 
             MouseArea {
                 anchors.fill: parent
                 onWheel: (e) => {
                     if (e.angleDelta.y > 0) {
-                        if (provider.currentIndex > 0)
-                            provider.currentIndex--;
+                        if (carousel.currentIndex > 0)
+                            carousel.currentIndex--;
 
                     } else if (e.angleDelta.y < 0) {
-                        if (provider.currentIndex < carousel.count - 1)
-                            provider.currentIndex++;
+                        if (carousel.currentIndex < carousel.count - 1)
+                            carousel.currentIndex++;
 
                     }
                 }
@@ -141,64 +115,76 @@ Item {
             Layout.fillWidth: true
             from: 0
             to: Math.max(0, carousel.count - 1)
-            value: provider.currentIndex
-            onMoved: provider.currentIndex = Math.round(value)
+            value: carousel.currentIndex
+            onMoved: carousel.currentIndex = Math.round(value)
         }
 
         BottomBar {
             id: bottomBar
 
             Layout.fillWidth: true
-            availablePalettes: provider.availablePalettes
-            availableColors: provider.availableColors
+            availablePalettes: CarouselProvider.availablePalettes
+            availableColors: CarouselProvider.selectedPalette ? CarouselProvider.selectedPalette.colors : []
             onPaletteSelected: (p) => {
-                return provider.selectPalette(p);
+                return CarouselProvider.requestSelectPalette(p);
             }
             onColorSelected: (c) => {
-                return provider.selectColor(c);
+                return CarouselProvider.requestSelectColor(c);
             }
-            onRestoreClicked: provider.restore()
-            onConfirmClicked: provider.confirm()
-            onCancelClicked: provider.cancel()
+            onRestoreClicked: CarouselProvider.restore()
+            onConfirmClicked: CarouselProvider.confirm()
+            onCancelClicked: CarouselProvider.cancel()
 
             Binding {
                 target: bottomBar
                 property: "selectedPalette"
-                value: provider.selectedPalette
+                value: CarouselProvider.selectedPalette
             }
 
             Binding {
                 target: bottomBar
                 property: "selectedColor"
-                value: provider.selectedColor
+                value: CarouselProvider.selectedColor
             }
 
             Binding {
                 target: bottomBar
                 property: "colorName"
-                value: provider.colorName
+                value: CarouselProvider.colorName
             }
 
             Binding {
                 target: bottomBar
                 property: "colorHex"
-                value: provider.colorHex
+                value: CarouselProvider.color
             }
 
             Binding {
                 target: bottomBar
                 property: "colorValue"
-                value: provider.colorValue
+                value: CarouselProvider.color
             }
 
             Binding {
                 target: bottomBar
                 property: "actionsEnabled"
-                value: !provider.isProcessing
+                value: !CarouselProvider.isProcessing
             }
 
         }
 
+    }
+
+    Connections {
+        function onCurrentImageIdChanged() {
+            CarouselProvider.setCurrentImageId(carousel.currentImageId);
+        }
+
+        function onCurrentIndexChanged() {
+            CarouselProvider.setCurrentIndex(carousel.currentIndex);
+        }
+
+        target: carousel
     }
 
 }

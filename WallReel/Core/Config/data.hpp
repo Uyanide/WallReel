@@ -46,8 +46,8 @@
 // style.window_width           number  750     Initial window width
 // style.window_height          number  500     Initial window height
 //
-// sort.type                    string  "name"  Sorting type: "none", "name", "date", "size"
-// sort.reverse                 boolean false   Whether to reverse the sorting order
+// sort.type                    string  "date"  Sorting type: "name", "date", "size"
+// sort.descending              boolean true    Whether to reverse the sorting order
 //                                              Normal order: name: lexicographical, e.g. "a.jpg" before "b.jpg"
 //                                                            date: older before newer
 //                                                            size: smaller before larger
@@ -57,11 +57,37 @@ namespace WallReel::Core::Config {
 inline const QString s_DefaultConfigFileName = "config.json";
 
 enum class SortType : int {
-    None = 0,  // "none"
-    Name,      // "name"
-    Date,      // "date"
-    Size,      // "size"
+    Name,  // "name"
+    Date,  // "date"
+    Size,  // "size"
 };
+
+inline const QStringList s_availableSortTypes = {"Name", "Date", "Size"};
+
+inline QString sortTypeToString(SortType type) {
+    switch (type) {
+        case SortType::Name:
+            return "Name";
+        case SortType::Date:
+            return "Date";
+        case SortType::Size:
+            return "Size";
+        default:
+            return "Date";
+    }
+}
+
+inline SortType stringToSortType(const QString& str) {
+    if (str.compare("name", Qt::CaseInsensitive) == 0) {
+        return SortType::Name;
+    } else if (str.compare("date", Qt::CaseInsensitive) == 0) {
+        return SortType::Date;
+    } else if (str.compare("size", Qt::CaseInsensitive) == 0) {
+        return SortType::Size;
+    } else {
+        return SortType::Date;  // default
+    }
+}
 
 struct WallpaperConfigItems {
     struct WallpaperDirConfigItem {
@@ -118,8 +144,8 @@ struct StyleConfigItems {
 };
 
 struct SortConfigItems {
-    SortType type = SortType::Name;
-    bool reverse  = false;
+    SortType type   = SortType::Date;
+    bool descending = true;
 };
 
 }  // namespace WallReel::Core::Config

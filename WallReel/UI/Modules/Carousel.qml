@@ -12,11 +12,12 @@ Item {
     property int spacing: 0
     property int animDuration: 200
     property int count: view.count
+    property string currentImageId: view.currentItem ? view.currentItem.imgId : ""
+    property string currentImageName: view.currentItem ? view.currentItem.imgName : ""
 
     ListView {
         id: view
 
-        model: root.model
         anchors.fill: parent
         orientation: ListView.Horizontal
         spacing: root.spacing
@@ -36,6 +37,7 @@ Item {
             view.currentIndex = root.currentIndex;
             view.forceActiveFocus();
         }
+        model: root.model
 
         Connections {
             function onCurrentIndexChanged() {
@@ -51,6 +53,8 @@ Item {
             id: delegateItem
 
             property bool isFocused: ListView.isCurrentItem
+            property string imgName: model.imgName
+            property string imgId: model.imgId
 
             width: isFocused ? root.focusedItemWidth : root.itemWidth
             height: view.height
