@@ -17,7 +17,7 @@ void ProxyModel::setSearchText(const QString& text) {
         setFilterFixedString(text);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
         endFilterChange();
-#elif
+#else
         invalidateFilter();
 #endif
     }
