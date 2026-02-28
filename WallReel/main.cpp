@@ -4,10 +4,6 @@
 #include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-#include <QtQml/QQmlExtensionPlugin>
-
-Q_IMPORT_QML_PLUGIN(WallReel_CorePlugin)
-Q_IMPORT_QML_PLUGIN(WallReel_UIPlugin)
 
 #include "Core/Provider/bootstrap.hpp"
 #include "Core/Provider/carousel.hpp"

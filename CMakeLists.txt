@@ -27,9 +27,12 @@ configure_file(WallReel/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h)
 
 find_package(Qt6 REQUIRED COMPONENTS Quick Widgets QuickControls2 Concurrent Sql)
 
-qt_standard_project_setup(REQUIRES 6.5)
+qt_standard_project_setup(REQUIRES 6.4)
 
-qt_policy(SET QTP0004 NEW)
+if(COMMAND qt_policy)
+    qt_policy(SET QTP0001 NEW)
+    qt_policy(SET QTP0004 NEW)
+endif()
 
 option(BUILD_TESTING "Build the testing tree." ON)
 option(ADDRESS_SANITIZER "Enable Address Sanitizer for debugging." OFF)
@@ -61,8 +64,18 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE
     ${CORELIB_NAME}
     ${CORELIB_NAME}plugin
+
     ${UILIB_NAME}
     ${UILIB_NAME}plugin
+
+    ${UILIB_NAME}_Pages
+    ${UILIB_NAME}_Pagesplugin
+
+    ${UILIB_NAME}_Modules
+    ${UILIB_NAME}_Modulesplugin
+
+    ${UILIB_NAME}_Components
+    ${UILIB_NAME}_Componentsplugin
 )
 
 target_include_directories(${EXECUTABLE_NAME} PRIVATE

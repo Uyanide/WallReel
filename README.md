@@ -11,14 +11,20 @@ It might not be that worthy to build a Qt application from ground for such a sma
    e.g. On Arch-based systems:
 
    ```bash
-   sudo pacman -S --needed qt6-base cmake gcc
+   sudo pacman -S --needed qt6-base qt6-declarative cmake gcc
+   ```
+
+   on Debian-based systems:
+
+   ```bash
+   sudo apt install --no-install-recommends qt6-base-dev qt6-declarative-dev cmake g++
    ```
 
 2. Clone the repository:
 
    ```bash
-   git clone https://github.com/Uyanide/Wallpaper_Carousel.git && \
-   cd Wallpaper_Carousel
+   git clone https://github.com/Uyanide/WallReel.git && \
+   cd WallReel
    ```
 
 3. Build and install:
