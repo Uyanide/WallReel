@@ -208,22 +208,43 @@ class Carousel : public QObject {
         connect(m_serviceMgr, &Service::Manager::restoreCompleted, this, &Carousel::restoreCompleted);
         connect(m_serviceMgr, &Service::Manager::cancelCompleted, this, &Carousel::cancelCompleted);
 
+        // "Preview" is costly, but is (usually) protected by a debounce timer, so it seems fine
+        // to call it multiple times in a short period, and it simplifies the code a lot :)
+
         // Preview on imageid change
         connect(this, &Carousel::currentImageIdChanged, this, [this]() {
             if (!m_currentImageId.isEmpty()) {
                 m_serviceMgr->previewWallpaper(m_currentImageId);
             }
         });
-        // Update color when imageid changes
+        // Update displayed color when imageid changes
         connect(this, &Carousel::currentImageIdChanged, this, [this]() {
             if (!m_currentImageId.isEmpty()) {
                 m_paletteMgr->updateColor(m_currentImageId);
             }
         });
-        // Update color when selected color changes
+        // Update displayed color when selected color changes
         connect(this, &Carousel::selectedColorChanged, this, [this]() {
             if (!m_currentImageId.isEmpty()) {
                 m_paletteMgr->updateColor(m_currentImageId);
+            }
+        });
+        // Preview on selected palette change
+        connect(this, &Carousel::selectedPaletteChanged, this, [this]() {
+            if (!m_currentImageId.isEmpty()) {
+                m_serviceMgr->previewWallpaper(m_currentImageId);
+            }
+        });
+        // Preview on displayed color name change
+        connect(this, &Carousel::colorNameChanged, this, [this]() {
+            if (!m_currentImageId.isEmpty()) {
+                m_serviceMgr->previewWallpaper(m_currentImageId);
+            }
+        });
+        // Preview on displayed color hex change
+        connect(this, &Carousel::colorChanged, this, [this]() {
+            if (!m_currentImageId.isEmpty()) {
+                m_serviceMgr->previewWallpaper(m_currentImageId);
             }
         });
 
@@ -255,11 +276,6 @@ class Carousel : public QObject {
         // Initial value of sort method
         setSortType(m_configMgr->getSortConfig().type);
         setSortDescending(m_configMgr->getSortConfig().descending);
-    }
-
-    void start() {
-        m_configMgr->captureState();
-        m_imageMgr->loadAndProcess(m_configMgr->getWallpapers());
     }
 
   private:

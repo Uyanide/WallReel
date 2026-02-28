@@ -45,6 +45,11 @@ class Bootstrap {
             *paletteMgr);
     }
 
+    void start() {
+        configMgr->captureState();
+        imageMgr->loadAndProcess(configMgr->getWallpapers());
+    }
+
     ~Bootstrap() {
         delete ServiceMgr;
         delete paletteMgr;

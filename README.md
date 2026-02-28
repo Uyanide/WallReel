@@ -190,7 +190,7 @@ Initial sorting behavior for loaded images.
     "previewDebounceTime": 500,
     "quitOnSelected": true,
     "onPreview": "swww img {{ path }}",
-    "onSelected": "cp {{ path }} ~/.config/current_wallpaper.jpg",
+    "onSelected": "cp {{ path }} ~/.config/wallpaper/current/ && swww img {{ path }}",
     "saveState": [
       {
         "key": "current_wp",
