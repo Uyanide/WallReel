@@ -17,7 +17,7 @@ It might not be that worthy to build a Qt application from ground for such a sma
    on Debian-based systems:
 
    ```bash
-   sudo apt install --no-install-recommends qt6-base-dev qt6-declarative-dev cmake g++
+   sudo apt install --no-install-recommends qt6-base-dev qt6-declarative-dev qml6-module-qtquick qml6-module-qtquick-controls2 qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-qtqml-workerscript cmake g++
    ```
 
 2. Clone the repository:

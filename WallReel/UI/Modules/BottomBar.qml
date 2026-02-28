@@ -56,7 +56,7 @@ Item {
 
                 displayedText: "Restore"
                 onClicked: root.restoreClicked()
-                foregroundColor: "#fab387"
+                foregroundColor: "#D28A25"
 
                 Binding {
                     target: restoreButton
@@ -71,7 +71,7 @@ Item {
 
                 displayedText: "Confirm"
                 onClicked: root.confirmClicked()
-                foregroundColor: "#a6e3a1"
+                foregroundColor: "#459A4E"
 
                 Binding {
                     target: confirmButton
@@ -84,7 +84,7 @@ Item {
             WRTextButton {
                 displayedText: "Cancel"
                 onClicked: root.cancelClicked()
-                foregroundColor: "#f38ba8"
+                foregroundColor: "#D65555"
             }
 
         }

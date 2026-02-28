@@ -21,7 +21,7 @@ Item {
     Component.onCompleted: {
         paletteCombo.currentIndex = selectedPalette ? availablePalettes.findIndex((p) => {
             return p.name === selectedPalette.name;
-        }) : -1;
+        }) + 1 : 0;
         colorCombo.currentIndex = selectedColor ? availableColors.findIndex((c) => {
             return c.name === selectedColor.name;
         }) + 1 : 0;
