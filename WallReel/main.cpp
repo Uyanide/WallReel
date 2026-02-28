@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
 #elif QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
                 engine.loadFromModule(UIMODULE_URI, u"Main"_qs);
 #else
-                engine.addImportPath(u"qrc:/"_qs));
+                engine.addImportPath(u"qrc:/"_qs);
                 engine.load(QUrl(u"qrc:/WallReel/UI/Main.qml"_qs));
 #endif
 
