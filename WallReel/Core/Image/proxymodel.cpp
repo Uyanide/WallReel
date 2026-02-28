@@ -10,10 +10,16 @@ ProxyModel::ProxyModel(QObject* parent)
 
 void ProxyModel::setSearchText(const QString& text) {
     if (m_searchText != text) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
         beginFilterChange();
+#endif
         m_searchText = text;
         setFilterFixedString(text);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
         endFilterChange();
+#elif
+        invalidateFilter();
+#endif
     }
 }
 
