@@ -122,7 +122,11 @@ void WallReel::Core::Logger::critical(const QString& sender, const QString& msg)
 }
 
 void WallReel::Core::Logger::fatal(const QString& sender, const QString& msg) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     qCFatal(logMain) << QString("[%1] %2").arg(sender, msg);
+#else
+    qCCritical(logMain) << QString("[%1] %2").arg(sender, msg);
+#endif
 }
 
 // No fatal because qCFatal does not exist before Qt 6.5
