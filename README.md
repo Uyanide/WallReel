@@ -1,8 +1,8 @@
 ## What this is
 
-It might not be that worthy to write a QtWidget application for such a small feature, but I kind of enjoy the pain... So here it is.
+It might not be that worthy to build a Qt application from ground for such a small feature, but I kind of enjoy the pain... So here it is.
 
-<img src="https://github.com/Uyanide/backgrounds/blob/master/screenshots/desktop-alt.jpg?raw=true"/>
+<img src="https://io.uyani.de/s/s6t5JDMEfqZmADB/preview"/>
 
 ## How to build
 
@@ -41,19 +41,17 @@ It might not be that worthy to write a QtWidget application for such a small fea
    build/wallreel
    ```
 
-   Install to previously specified prefix:
+   Install it to the previously specified prefix. This step may require root permissions if the install prefix is set to a system directory like `/usr/local`.
 
    ```bash
    cmake --install build
    ```
 
-   This step may require root permissions if the install prefix is set to a system directory like `/usr/local`.
-
 ## How to use
 
 The config file should be placed in `~/.config/wallreel/config.json`. Refer to [Configuration Reference](#configuration-reference) and [config.schema.json](config.schema.json) for more details on the format and available options.
 
-A minimum config file should at least contain the path(s) to wallpapers, e.g.
+A minimum config file should at least contain the path(s) to wallpapers. The application is able to run without any wallpapers found, but it won't be very functional obviously.
 
 ```json
 {

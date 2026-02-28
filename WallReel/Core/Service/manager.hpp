@@ -95,7 +95,8 @@ class Manager : public QObject {
         m_wallpaperService->stopAll();
         QEventLoop loop;
         connect(m_wallpaperService, &WallpaperService::restoreCompleted, &loop, &QEventLoop::quit);
-        m_wallpaperService->restore();
+        // Call restore after the event loop starts
+        QTimer::singleShot(0, m_wallpaperService, &WallpaperService::restore);
         loop.exec();
     }
 
