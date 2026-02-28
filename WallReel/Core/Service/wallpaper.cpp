@@ -101,17 +101,18 @@ QHash<QString, QString> WallReel::Core::Service::WallpaperService::_generateVari
     if (hex.isEmpty()) {
         hex = "null";
     }
-    return {
+    QHash<QString, QString> ret{
         {"path", imageData.getFullPath()},
         {"name", imageData.getFileName()},
         {"size", QString::number(imageData.getSize())},
-        {"width", QString::number(imageData.getTargetSize().width())},
-        {"height", QString::number(imageData.getTargetSize().height())},
         {"palette", palette},
         {"colorName", color},
         {"colorHex", hex},
         {"domColorHex", imageData.getDominantColor().name()},
     };
+
+    ret.insert(m_actionConfig.savedState);
+    return ret;
 }
 
 void WallReel::Core::Service::WallpaperService::_doPreview(const Image::Data& imageData) {
@@ -174,7 +175,7 @@ void WallReel::Core::Service::WallpaperService::_doRestore() {
         return;
     }
 
-    const QString command = Utils::renderTemplate(m_actionConfig.onRestore, m_actionConfig.saveState);
+    const QString command = Utils::renderTemplate(m_actionConfig.onRestore, m_actionConfig.savedState);
     if (command.isEmpty()) {
         WR_DEBUG("Restore command is empty after rendering. Skipping restore action.");
         emit restoreCompleted();

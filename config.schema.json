@@ -1,0 +1,217 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "WallReel Configuration",
+    "type": "object",
+    "properties": {
+        "wallpaper": {
+            "type": "object",
+            "properties": {
+                "paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "description": "List of paths to images."
+                },
+                "dirs": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "path": {
+                                "type": "string",
+                                "default": "",
+                                "description": "Path to the directory."
+                            },
+                            "recursive": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Whether to search the directory recursively."
+                            }
+                        }
+                    },
+                    "default": [],
+                    "description": "Directories to search for images."
+                },
+                "excludes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "description": "Exclude patterns (regex)"
+                }
+            }
+        },
+        "theme": {
+            "type": "object",
+            "properties": {
+                "defaultPalette": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Name of the default palette to use"
+                },
+                "palettes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "default": "",
+                                "description": "Name of the palette"
+                            },
+                            "colors": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {
+                                            "type": "string",
+                                            "default": "",
+                                            "description": "Name of the color"
+                                        },
+                                        "value": {
+                                            "type": "string",
+                                            "default": "",
+                                            "description": "Color value in hex format, e.g. \"#ff0000\" for red"
+                                        }
+                                    }
+                                },
+                                "default": [],
+                                "description": "List of colors in the palette"
+                            }
+                        }
+                    },
+                    "default": []
+                }
+            }
+        },
+        "action": {
+            "type": "object",
+            "properties": {
+                "previewDebounceTime": {
+                    "type": "integer",
+                    "default": 300,
+                    "description": "Debounce time for preview action in milliseconds"
+                },
+                "printSelected": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to print the selected wallpaper path to stdout on confirm"
+                },
+                "printPreview": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to print the previewed wallpaper path to stdout on preview"
+                },
+                "onSelected": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Command to execute on confirmation"
+                },
+                "onPreview": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Command to execute on preview"
+                },
+                "saveState": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "key": {
+                                "type": "string",
+                                "default": "",
+                                "description": "Key of value to save, used as {{ key }} in onRestore command"
+                            },
+                            "default": {
+                                "type": "string",
+                                "default": "",
+                                "description": "Value to save, used when \"cmd\" is not set or command execution fails or output is empty"
+                            },
+                            "command": {
+                                "type": "string",
+                                "default": "",
+                                "description": "Command that outputs(to stdout) the value to save when executed"
+                            },
+                            "timeout": {
+                                "type": "integer",
+                                "default": 3000,
+                                "description": "Timeout for executing command in milliseconds. 0 or negative means no timeout"
+                            }
+                        }
+                    },
+                    "default": [],
+                    "description": "Useful for restore command"
+                },
+                "onRestore": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Command to execute on restore ({{ key }} -> value defined or obtained in saveState)"
+                },
+                "quitOnSelected": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to quit the application after confirming a wallpaper"
+                },
+                "restoreOnClose": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to run the restore command after closing the application without confirming a wallpaper"
+                }
+            }
+        },
+        "style": {
+            "type": "object",
+            "properties": {
+                "image_width": {
+                    "type": "integer",
+                    "default": 320,
+                    "description": "Width of each image"
+                },
+                "image_height": {
+                    "type": "integer",
+                    "default": 180,
+                    "description": "Height of each image"
+                },
+                "image_focus_scale": {
+                    "type": "number",
+                    "default": 1.5,
+                    "description": "Scale of the focused image (relative to unfocused image)"
+                },
+                "window_width": {
+                    "type": "integer",
+                    "default": 750,
+                    "description": "Initial window width"
+                },
+                "window_height": {
+                    "type": "integer",
+                    "default": 500,
+                    "description": "Initial window height"
+                }
+            }
+        },
+        "sort": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "name",
+                        "date",
+                        "size"
+                    ],
+                    "default": "date",
+                    "description": "Initial sorting type"
+                },
+                "descending": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Initial sorting order. Ascending: name: lexicographical, date: older before newer, size: smaller before larger"
+                }
+            }
+        }
+    }
+}

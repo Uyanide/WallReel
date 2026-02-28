@@ -41,16 +41,16 @@
 // action.restoreOnClose        boolean true    Whether to run the restore command after closing the application without confirming a wallpaper
 //
 // style.image_width            number  320     Width of each image
-// style.image_height           number  200     Height of each image
+// style.image_height           number  180     Height of each image
 // style.image_focus_scale      number  1.5     Scale of the focused image (relative to unfocused image)
 // style.window_width           number  750     Initial window width
 // style.window_height          number  500     Initial window height
 //
-// sort.type                    string  "date"  Sorting type: "name", "date", "size"
-// sort.descending              boolean true    Whether to reverse the sorting order
-//                                              Normal order: name: lexicographical, e.g. "a.jpg" before "b.jpg"
-//                                                            date: older before newer
-//                                                            size: smaller before larger
+// sort.type                    string  "date"  Initial sorting type: "name", "date", "size"
+// sort.descending              boolean true    Initial sorting order
+//                                              Ascending: name: lexicographical, e.g. "a.jpg" before "b.jpg"
+//                                                         date: older before newer
+//                                                         size: smaller before larger
 
 namespace WallReel::Core::Config {
 
@@ -124,7 +124,7 @@ struct ActionConfigItems {
     };
 
     QList<SaveStateItem> saveStateConfig;
-    QHash<QString, QString> saveState;
+    QHash<QString, QString> savedState;
     QString onSelected;
     QString onPreview;
     QString onRestore;
@@ -138,7 +138,7 @@ struct ActionConfigItems {
 struct StyleConfigItems {
     double imageFocusScale = 1.5;
     int imageWidth         = 320;
-    int imageHeight        = 200;
+    int imageHeight        = 180;
     int windowWidth        = 750;
     int windowHeight       = 500;
 };

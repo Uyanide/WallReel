@@ -213,7 +213,7 @@ void WallReel::Core::Config::Manager::_loadActionConfig(const QJsonObject& root)
                 }
                 if (!sItem.key.isEmpty()) {
                     m_actionConfig.saveStateConfig.append(sItem);
-                    m_actionConfig.saveState.insert(sItem.key, sItem.defaultVal);
+                    m_actionConfig.savedState.insert(sItem.key, sItem.defaultVal);
                 }
             }
         }
@@ -476,7 +476,7 @@ void WallReel::Core::Config::Manager::captureState() {
 
 void WallReel::Core::Config::Manager::_onCaptureResult(const QString& key, const QString& value) {
     // This is all in main thread, so no lock needed
-    m_actionConfig.saveState[key] = value;
+    m_actionConfig.savedState[key] = value;
     m_pendingCaptures--;
     if (m_pendingCaptures == 0) {
         emit stateCaptured();
