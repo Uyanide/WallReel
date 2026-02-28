@@ -17,6 +17,7 @@ WALLREEL_DECLARE_SENDER("ConfigManager")
 
 WallReel::Core::Config::Manager::Manager(
     const QDir& configDir,
+    const QDir& picturesDir,
     const QStringList& searchDirs,
     const QString& configPath,
     QObject* parent)
@@ -34,6 +35,12 @@ WallReel::Core::Config::Manager::Manager(
         for (const auto& dir : searchDirs) {
             m_wallpaperConfig.dirs.append({dir, false});
         }
+    }
+    // Add Pictures directory as default search directory if no dirs or paths are specified above
+    if (m_wallpaperConfig.dirs.isEmpty() && m_wallpaperConfig.paths.isEmpty()) {
+        QString picturesPath = picturesDir.absolutePath();
+        WR_INFO(QString("No search directories specified, using Pictures directory: %1").arg(picturesPath));
+        m_wallpaperConfig.dirs.append({picturesPath, true});
     }
 
     WR_DEBUG("Loading wallpapers ...");

@@ -171,6 +171,14 @@ inline QDir getCacheDir() {
     return QDir(cacheDir);
 }
 
+inline QDir getPicturesDir() {
+    auto picturesDir = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+    if (picturesDir.isEmpty()) {
+        picturesDir = QDir::homePath() + QDir::separator() + "Pictures";
+    }
+    return QDir(picturesDir);
+}
+
 }  // namespace WallReel::Core::Utils
 
 #endif  // WALLREEL_MISC_HPP

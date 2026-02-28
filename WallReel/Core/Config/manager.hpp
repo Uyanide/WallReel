@@ -26,12 +26,14 @@ class Manager : public QObject {
      * @param configDir The directory where the configuration file is located (should be the default location, i.e. $XDG_CONFIG_HOME/$appName)
      * @param searchDirs Additional directories to search for wallpapers (not recursive)
      * @param configPath Optional path to a specific configuration file (overrides the default config path)
+     * @param picturesDir The pictures directory (default location for user wallpapers)
      * @param parent QObject parent
      *
      * @note The constructor will load the configuration and scan for wallpapers immediately.
      */
     Manager(
         const QDir& configDir,
+        const QDir& picturesDir,
         const QStringList& searchDirs = {},
         const QString& configPath     = "",
         QObject* parent               = nullptr);

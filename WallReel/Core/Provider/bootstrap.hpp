@@ -26,6 +26,7 @@ class Bootstrap {
         }
         configMgr = new Config::Manager(
             Utils::getConfigDir(),
+            Utils::getPicturesDir(),
             options.appendDirs,
             options.configPath);
 
@@ -59,11 +60,11 @@ class Bootstrap {
     }
 
   private:
-    Cache::Manager* cacheMgr;
-    Config::Manager* configMgr;
-    Image::Manager* imageMgr;
-    Palette::Manager* paletteMgr;
-    Service::Manager* ServiceMgr;
+    Cache::Manager* cacheMgr{};
+    Config::Manager* configMgr{};
+    Image::Manager* imageMgr{};
+    Palette::Manager* paletteMgr{};
+    Service::Manager* ServiceMgr{};
 };
 
 }  // namespace WallReel::Core::Provider
