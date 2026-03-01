@@ -25,6 +25,7 @@ WallReel::Core::Image::Data::Data(const QString& path, const QSize& targetSize, 
     m_id            = cacheMgr.cacheKey(m_file, m_targetSize);
     m_cachedFile    = cacheMgr.getImage(m_id, [this]() { return computeImage(); });
     m_dominantColor = cacheMgr.getColor(m_id, [this]() { return computeDominantColor(loadImage()); });
+    m_isValid       = m_cachedFile.isFile() && m_dominantColor.isValid();
 }
 
 QImage WallReel::Core::Image::Data::loadImage() const {

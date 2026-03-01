@@ -54,6 +54,8 @@ class Data {
     QColor m_dominantColor;                ///< Dominant color of the image, used for palette matching
     QHash<QString, QString> m_colorCache;  ///< Cache for palette color matching results, key is palette name, value is matched color name
 
+    bool m_isValid = false;
+
     QImage computeImage() const;
     QColor computeDominantColor(const QImage& image) const;
 
@@ -75,7 +77,7 @@ class Data {
 
     QUrl getUrl() const { return QUrl::fromLocalFile(m_cachedFile.absoluteFilePath()); }
 
-    bool isValid() const { return m_cachedFile.exists(); }
+    bool isValid() const { return m_isValid; }
 
     QString getFullPath() const { return m_file.absoluteFilePath(); }
 

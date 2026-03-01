@@ -251,6 +251,12 @@ class Carousel : public QObject {
             }
         });
 
+        // Defer preview until state captured
+        connect(m_configMgr,
+                &Config::Manager::stateCaptured,
+                m_serviceMgr,
+                &Service::Manager::onStateCaptured);
+
         // Quit on selected
         if (m_configMgr->getActionConfig().quitOnSelected) {
             QObject::connect(
@@ -286,12 +292,12 @@ class Carousel : public QObject {
             setSortDescending(m_cacheMgr->getSetting(
                                   Cache::SettingsType::LastSortDescending,
                                   []() { return Config::CacheConfigItems::defaultSortDescending; }) == "true");
-            connect(this, &Carousel::sortTypeChanged, this, [this]() {
+            connect(app, &QApplication::aboutToQuit, this, [this]() {
                 m_cacheMgr->storeSetting(
                     Cache::SettingsType::LastSortType,
                     Config::sortTypeToString(m_imageMgr->sortType()));
             });
-            connect(this, &Carousel::sortDescendingChanged, this, [this]() {
+            connect(app, &QApplication::aboutToQuit, this, [this]() {
                 m_cacheMgr->storeSetting(
                     Cache::SettingsType::LastSortDescending,
                     m_imageMgr->sortDescending() ? "true" : "false");
@@ -301,7 +307,7 @@ class Carousel : public QObject {
             requestSelectPalette(m_cacheMgr->getSetting(
                 Cache::SettingsType::LastSelectedPalette,
                 []() { return Config::CacheConfigItems::defaultSelectedPalette; }));
-            connect(this, &Carousel::selectedPaletteChanged, this, [this]() {
+            connect(app, &QApplication::aboutToQuit, this, [this]() {
                 m_cacheMgr->storeSetting(
                     Cache::SettingsType::LastSelectedPalette,
                     m_paletteMgr->getSelectedPaletteName());

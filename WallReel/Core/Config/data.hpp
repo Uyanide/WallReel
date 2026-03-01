@@ -141,6 +141,7 @@ struct StyleConfigItems {
 struct CacheConfigItems {
     bool saveSortMethod = true;
     bool savePalette    = true;
+    int maxImageEntries = 1000;
 
     static const QString defaultSortType;
     static const QString defaultSortDescending;

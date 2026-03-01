@@ -28,6 +28,11 @@ Manager::Manager(
     const QString& configPath,
     QObject* parent)
     : QObject(parent), m_configDir(configDir) {
+    connect(this, &Manager::stateCaptured, this, [this]() {
+        m_stateCaptured = true;
+        WR_INFO("State capture completed");
+    });
+
     // Load configPath if not empty, otherwise load from default location (configDir + s_DefaultConfigFileName)
     if (configPath.isEmpty()) {
         WR_INFO(QString("Configuration directory: %1").arg(m_configDir.absolutePath()));
@@ -384,6 +389,11 @@ void Manager::_loadWallpapers() {
 }
 
 void Manager::captureState() {
+    if (m_stateCaptured) {
+        WR_DEBUG("State already captured, skipping capture");
+        emit stateCaptured();
+    }
+
     if (m_pendingCaptures > 0) {
         WR_WARN("State capture already in progress, ignoring new capture request");
         return;

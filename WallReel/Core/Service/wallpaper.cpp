@@ -1,25 +1,20 @@
 #include "Service/wallpaper.hpp"
 
 #include <QColor>
-#include <iostream>
 
-#include "Utils/texttemplate.hpp"
 #include "logger.hpp"
 
 WALLREEL_DECLARE_SENDER("WallpaperService")
 
 namespace WallReel::Core::Service {
 
-WallpaperService::WallpaperService(
-    const Config::ActionConfigItems& actionConfig,
-    const Palette::Manager& paletteManager,
-    QObject* parent)
-    : QObject(parent), m_actionConfig(actionConfig), m_paletteManager(paletteManager) {
+WallpaperService::WallpaperService(int previewDebounceTime, QObject* parent)
+    : QObject(parent) {
     m_previewDebounceTimer = new QTimer(this);
     m_previewDebounceTimer->setSingleShot(true);
-    m_previewDebounceTimer->setInterval(m_actionConfig.previewDebounceTime);
+    m_previewDebounceTimer->setInterval(previewDebounceTime);
     connect(m_previewDebounceTimer, &QTimer::timeout, this, [this]() {
-        _doPreview(*m_pendingImageData);
+        _doPreview(m_pendingPreviewCommand);
     });
 
     m_previewProcess = new QProcess(this);
@@ -67,71 +62,29 @@ void WallpaperService::stopAll() {
     m_previewDebounceTimer->stop();
 }
 
-void WallpaperService::preview(const Image::Data& imageData) {
-    m_pendingImageData = &imageData;
+void WallpaperService::preview(const QString& command) {
+    m_pendingPreviewCommand = command;
     m_previewDebounceTimer->start();
 }
 
-void WallpaperService::select(const Image::Data& imageData) {
+void WallpaperService::select(const QString& command) {
     if (m_selectProcess->state() != QProcess::NotRunning) {
         WR_WARN("Previous select command is still running. Ignoring new command.");
         return;
     }
-    WR_DEBUG(QString("Select wallpaper: %1").arg(imageData.getFullPath()));
-    _doSelect(imageData);
+    _doSelect(command);
 }
 
-void WallpaperService::restore() {
+void WallpaperService::restore(const QString& command) {
     if (m_restoreProcess->state() != QProcess::NotRunning) {
         WR_WARN("Previous restore command is still running. Ignoring new command.");
         return;
     }
     WR_DEBUG("Restore state");
-    _doRestore();
+    _doRestore(command);
 }
 
-QHash<QString, QString> WallpaperService::_generateVariables(const Image::Data& imageData) {
-    auto palette = m_paletteManager.getSelectedPaletteName();
-    if (palette.isEmpty()) {
-        palette = "null";
-    }
-    auto color = m_paletteManager.getCurrentColorName();
-    if (color.isEmpty()) {
-        color = "null";
-    }
-    auto hex = m_paletteManager.getCurrentColorHex();
-    if (hex.isEmpty()) {
-        hex = "null";
-    }
-    QHash<QString, QString> ret{
-        {"path", imageData.getFullPath()},
-        {"name", imageData.getFileName()},
-        {"size", QString::number(imageData.getSize())},
-        {"palette", palette},
-        {"colorName", color},
-        {"colorHex", hex},
-        {"domColorHex", imageData.getDominantColor().name()},
-    };
-
-    ret.insert(m_actionConfig.savedState);
-    return ret;
-}
-
-void WallpaperService::_doPreview(const Image::Data& imageData) {
-    QString path = imageData.getFullPath();
-
-    if (path.isEmpty()) {
-        WR_WARN("No valid image path for preview. Skipping preview action.");
-        emit previewCompleted();
-        return;
-    }
-
-    if (m_actionConfig.printPreview) {
-        std::cout << path.toStdString() << std::endl;
-    }
-
-    const auto variables = _generateVariables(imageData);
-    auto command         = Utils::renderTemplate(m_actionConfig.onPreview, variables);
+void WallpaperService::_doPreview(const QString& command) {
     if (command.isEmpty()) {
         WR_DEBUG("No preview command configured. Skipping preview action.");
         emit previewCompleted();
@@ -146,21 +99,7 @@ void WallpaperService::_doPreview(const Image::Data& imageData) {
     m_previewProcess->start("sh", QStringList() << "-c" << command);
 }
 
-void WallpaperService::_doSelect(const Image::Data& imageData) {
-    QString path = imageData.getFullPath();
-
-    if (path.isEmpty()) {
-        WR_WARN("No valid image path for select. Skipping select action.");
-        emit selectCompleted();
-        return;
-    }
-
-    if (m_actionConfig.printSelected) {
-        std::cout << path.toStdString() << std::endl;
-    }
-
-    const auto variables = _generateVariables(imageData);
-    auto command         = Utils::renderTemplate(m_actionConfig.onSelected, variables);
+void WallpaperService::_doSelect(const QString& command) {
     if (command.isEmpty()) {
         WR_DEBUG("No select command configured. Skipping select action.");
         emit selectCompleted();
@@ -170,16 +109,9 @@ void WallpaperService::_doSelect(const Image::Data& imageData) {
     m_selectProcess->start("sh", QStringList() << "-c" << command);
 }
 
-void WallpaperService::_doRestore() {
-    if (m_actionConfig.onRestore.isEmpty()) {
-        WR_DEBUG("No restore command configured. Skipping restore action.");
-        emit restoreCompleted();
-        return;
-    }
-
-    const QString command = Utils::renderTemplate(m_actionConfig.onRestore, m_actionConfig.savedState);
+void WallpaperService::_doRestore(const QString& command) {
     if (command.isEmpty()) {
-        WR_DEBUG("Restore command is empty after rendering. Skipping restore action.");
+        WR_DEBUG("Restore command is empty. Skipping restore action.");
         emit restoreCompleted();
         return;
     }

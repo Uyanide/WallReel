@@ -59,6 +59,8 @@ class Manager : public QObject {
 
     const CacheConfigItems& getCacheConfig() const { return m_cacheConfig; }
 
+    bool isStateCaptured() const { return m_stateCaptured; }
+
     QSize getFocusImageSize() const {
         return QSize{m_styleConfig.imageWidth, m_styleConfig.imageHeight} * m_styleConfig.imageFocusScale;
     }
@@ -95,6 +97,7 @@ class Manager : public QObject {
     QStringList m_wallpapers;
 
     int m_pendingCaptures = 0;
+    bool m_stateCaptured  = false;  // changed and accessed in main thread, no lock needed
 };
 
 }  // namespace WallReel::Core::Config
