@@ -2,7 +2,7 @@
 
 It might not be that worthy to build a Qt application from ground for such a small feature, but I kind of enjoy the pain... So here it is.
 
-<img src="https://raw.githubusercontent.com/Uyanide/WallReel/refs/head/master/misc/screenshot.webp"/>
+<img src="https://raw.githubusercontent.com/Uyanide/WallReel/refs/heads/master/misc/screenshot.webp"/>
 
 ## How to build
 
