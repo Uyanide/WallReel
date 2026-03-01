@@ -5,6 +5,8 @@
 
 #include <QApplication>
 
+#include "Cache/manager.hpp"
+#include "Cache/types.hpp"
 #include "Config/data.hpp"
 #include "Config/manager.hpp"
 #include "Image/manager.hpp"
@@ -190,6 +192,7 @@ class Carousel : public QObject {
              Bootstrap& bootstrap,
              QObject* parent = nullptr)
         : QObject(parent),
+          m_cacheMgr(bootstrap.cacheMgr),
           m_configMgr(bootstrap.configMgr),
           m_imageMgr(bootstrap.imageMgr),
           m_paletteMgr(bootstrap.paletteMgr),
@@ -273,12 +276,41 @@ class Carousel : public QObject {
                 &Service::Manager::restoreOnQuit);
         }
 
-        // Initial value of sort method
-        setSortType(m_configMgr->getSortConfig().type);
-        setSortDescending(m_configMgr->getSortConfig().descending);
+        // Restore last state if configured
+        // and store state on change if configured
+        // Note: connect after restoring state to avoid storing the restored state again
+        if (m_configMgr->getCacheConfig().saveSortMethod) {
+            setSortType(m_cacheMgr->getSetting(
+                Cache::SettingsType::LastSortType,
+                []() { return Config::CacheConfigItems::defaultSortType; }));
+            setSortDescending(m_cacheMgr->getSetting(
+                                  Cache::SettingsType::LastSortDescending,
+                                  []() { return Config::CacheConfigItems::defaultSortDescending; }) == "true");
+            connect(this, &Carousel::sortTypeChanged, this, [this]() {
+                m_cacheMgr->storeSetting(
+                    Cache::SettingsType::LastSortType,
+                    Config::sortTypeToString(m_imageMgr->sortType()));
+            });
+            connect(this, &Carousel::sortDescendingChanged, this, [this]() {
+                m_cacheMgr->storeSetting(
+                    Cache::SettingsType::LastSortDescending,
+                    m_imageMgr->sortDescending() ? "true" : "false");
+            });
+        }
+        if (m_configMgr->getCacheConfig().savePalette) {
+            requestSelectPalette(m_cacheMgr->getSetting(
+                Cache::SettingsType::LastSelectedPalette,
+                []() { return Config::CacheConfigItems::defaultSelectedPalette; }));
+            connect(this, &Carousel::selectedPaletteChanged, this, [this]() {
+                m_cacheMgr->storeSetting(
+                    Cache::SettingsType::LastSelectedPalette,
+                    m_paletteMgr->getSelectedPaletteName());
+            });
+        }
     }
 
   private:
+    Cache::Manager* m_cacheMgr;
     Config::Manager* m_configMgr;
     Image::Manager* m_imageMgr;
     Palette::Manager* m_paletteMgr;

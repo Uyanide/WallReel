@@ -8,7 +8,9 @@
 
 WALLREEL_DECLARE_SENDER("WallpaperService")
 
-WallReel::Core::Service::WallpaperService::WallpaperService(
+namespace WallReel::Core::Service {
+
+WallpaperService::WallpaperService(
     const Config::ActionConfigItems& actionConfig,
     const Palette::Manager& paletteManager,
     QObject* parent)
@@ -48,7 +50,7 @@ WallReel::Core::Service::WallpaperService::WallpaperService(
             });
 }
 
-void WallReel::Core::Service::WallpaperService::stopAll() {
+void WallpaperService::stopAll() {
     WR_DEBUG("Stopping all wallpaper service processes");
     if (m_previewProcess->state() != QProcess::NotRunning) {
         m_previewProcess->kill();
@@ -65,12 +67,12 @@ void WallReel::Core::Service::WallpaperService::stopAll() {
     m_previewDebounceTimer->stop();
 }
 
-void WallReel::Core::Service::WallpaperService::preview(const Image::Data& imageData) {
+void WallpaperService::preview(const Image::Data& imageData) {
     m_pendingImageData = &imageData;
     m_previewDebounceTimer->start();
 }
 
-void WallReel::Core::Service::WallpaperService::select(const Image::Data& imageData) {
+void WallpaperService::select(const Image::Data& imageData) {
     if (m_selectProcess->state() != QProcess::NotRunning) {
         WR_WARN("Previous select command is still running. Ignoring new command.");
         return;
@@ -79,7 +81,7 @@ void WallReel::Core::Service::WallpaperService::select(const Image::Data& imageD
     _doSelect(imageData);
 }
 
-void WallReel::Core::Service::WallpaperService::restore() {
+void WallpaperService::restore() {
     if (m_restoreProcess->state() != QProcess::NotRunning) {
         WR_WARN("Previous restore command is still running. Ignoring new command.");
         return;
@@ -88,7 +90,7 @@ void WallReel::Core::Service::WallpaperService::restore() {
     _doRestore();
 }
 
-QHash<QString, QString> WallReel::Core::Service::WallpaperService::_generateVariables(const Image::Data& imageData) {
+QHash<QString, QString> WallpaperService::_generateVariables(const Image::Data& imageData) {
     auto palette = m_paletteManager.getSelectedPaletteName();
     if (palette.isEmpty()) {
         palette = "null";
@@ -115,7 +117,7 @@ QHash<QString, QString> WallReel::Core::Service::WallpaperService::_generateVari
     return ret;
 }
 
-void WallReel::Core::Service::WallpaperService::_doPreview(const Image::Data& imageData) {
+void WallpaperService::_doPreview(const Image::Data& imageData) {
     QString path = imageData.getFullPath();
 
     if (path.isEmpty()) {
@@ -144,7 +146,7 @@ void WallReel::Core::Service::WallpaperService::_doPreview(const Image::Data& im
     m_previewProcess->start("sh", QStringList() << "-c" << command);
 }
 
-void WallReel::Core::Service::WallpaperService::_doSelect(const Image::Data& imageData) {
+void WallpaperService::_doSelect(const Image::Data& imageData) {
     QString path = imageData.getFullPath();
 
     if (path.isEmpty()) {
@@ -168,7 +170,7 @@ void WallReel::Core::Service::WallpaperService::_doSelect(const Image::Data& ima
     m_selectProcess->start("sh", QStringList() << "-c" << command);
 }
 
-void WallReel::Core::Service::WallpaperService::_doRestore() {
+void WallpaperService::_doRestore() {
     if (m_actionConfig.onRestore.isEmpty()) {
         WR_DEBUG("No restore command configured. Skipping restore action.");
         emit restoreCompleted();
@@ -184,3 +186,5 @@ void WallReel::Core::Service::WallpaperService::_doRestore() {
     WR_DEBUG(QString("Executing restore command: %1").arg(command));
     m_restoreProcess->start("sh", QStringList() << "-c" << command);
 }
+
+}  // namespace WallReel::Core::Service

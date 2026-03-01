@@ -42,8 +42,23 @@ class Manager : public QObject {
     void setSelectedPalette(const QVariant& paletteVar) {
         if (paletteVar.isNull() || !paletteVar.isValid()) {
             m_selectedPalette = std::nullopt;
-        } else {
+        } else if (paletteVar.canConvert<PaletteItem>()) {
             m_selectedPalette = paletteVar.value<PaletteItem>();
+        } else if (paletteVar.canConvert<QString>()) {
+            QString paletteName = paletteVar.toString();
+            auto it =
+                std::find_if(m_palettes.begin(),
+                             m_palettes.end(),
+                             [&paletteName](const PaletteItem& item) {
+                                 return item.name == paletteName;
+                             });
+            if (it != m_palettes.end()) {
+                m_selectedPalette = *it;
+            } else {
+                m_selectedPalette = std::nullopt;
+            }
+        } else {
+            m_selectedPalette = std::nullopt;
         }
         m_selectedColor = std::nullopt;
         emit selectedPaletteChanged();

@@ -19,7 +19,6 @@
 // wallpaper.dirs[].recursive   boolean false   Whether to search the directory recursively.
 // wallpaper.excludes           array   []      Exclude patterns (regex)
 //
-// theme.defaultPalette                 string  ""      Name of the default palette to use
 // theme.palettes                       array   []
 // theme.palettes[].name                string  ""      Name of the palette
 // theme.palettes[].colors              array   []      List of colors in the palette
@@ -33,9 +32,9 @@
 // action.onPreview             string  ""      Command to execute on preview
 // action.saveState             array   []      Useful for restore command
 // action.saveState[].key       string  ""      Key of value to save, used as {{ key }} in onRestore command
-// action.saveState[].default   string  ""      Value to save, used when "cmd" is not set or command execution fails or output is empty
+// action.saveState[].fallback  string  ""      Value to save, used when "command" is not set or command execution fails or output is empty
 // action.saveState[].command   string  ""      Command that outputs(to stdout) the value to save when executed
-// action.saveState[].timeout   number  3000    Timeout for executing "cmd" in milliseconds. 0 or negative means no timeout
+// action.saveState[].timeout   number  3000    Timeout for executing "command" in milliseconds. 0 or negative means no timeout
 // action.onRestore             string  ""      Command to execute on restore ({{ key }} -> value defined or obtained in saveState)
 // action.quitOnSelected        boolean false   Whether to quit the application after confirming a wallpaper
 // action.restoreOnClose        boolean true    Whether to run the restore command after closing the application without confirming a wallpaper
@@ -46,11 +45,8 @@
 // style.window_width           number  750     Initial window width
 // style.window_height          number  500     Initial window height
 //
-// sort.type                    string  "date"  Initial sorting type: "name", "date", "size"
-// sort.descending              boolean true    Initial sorting order
-//                                              Ascending: name: lexicographical, e.g. "a.jpg" before "b.jpg"
-//                                                         date: older before newer
-//                                                         size: smaller before larger
+// cache.saveSortMethod         boolean true    Whether to persist the sort type and order
+// cache.savePalette            bool    true    Whether to persist the selected palette
 
 namespace WallReel::Core::Config {
 
@@ -64,7 +60,7 @@ enum class SortType : int {
 
 inline const QStringList s_availableSortTypes = {"Name", "Date", "Size"};
 
-inline QString sortTypeToString(SortType type) {
+inline QString sortTypeToString(const SortType& type) {
     switch (type) {
         case SortType::Name:
             return "Name";
@@ -112,7 +108,6 @@ struct ThemeConfigItems {
     };
 
     QList<PaletteConfigItem> palettes;
-    QString defaultPalette;
 };
 
 struct ActionConfigItems {
@@ -143,9 +138,13 @@ struct StyleConfigItems {
     int windowHeight       = 500;
 };
 
-struct SortConfigItems {
-    SortType type   = SortType::Date;
-    bool descending = true;
+struct CacheConfigItems {
+    bool saveSortMethod = true;
+    bool savePalette    = true;
+
+    static const QString defaultSortType;
+    static const QString defaultSortDescending;
+    static const QString defaultSelectedPalette;
 };
 
 }  // namespace WallReel::Core::Config

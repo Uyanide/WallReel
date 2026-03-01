@@ -16,6 +16,15 @@ using namespace Qt::StringLiterals;
 
 namespace WallReel::Core::Cache {
 
+static QLatin1StringView settingKey(SettingsType type) {
+    switch (type) {
+        case SettingsType::LastSelectedPalette: return "last_selected_palette"_L1;
+        case SettingsType::LastSortType: return "last_sort_type"_L1;
+        case SettingsType::LastSortDescending: return "last_sort_descending"_L1;
+    }
+    Q_UNREACHABLE();
+}
+
 QString Manager::cacheKey(const QFileInfo& fileInfo, const QSize& imageSize) {
     const QString raw = fileInfo.absoluteFilePath() + QString::number(fileInfo.lastModified().toMSecsSinceEpoch()) + u'x' + QString::number(imageSize.width()) + u'x' + QString::number(imageSize.height());
     return QString::fromLatin1(
@@ -64,6 +73,11 @@ void Manager::clearCache(Type type) {
         QSqlQuery(db).exec(QStringLiteral("DELETE FROM color_cache"));
         WR_INFO(u"Cleared color cache"_s);
     }
+
+    if ((type & Type::Settings) != Type::None) {
+        QSqlQuery(db).exec(QStringLiteral("DELETE FROM settings_cache"));
+        WR_INFO(u"Cleared settings cache"_s);
+    }
 }
 
 QColor Manager::getColor(const QString& key, const std::function<QColor()>& computeFunc) {
@@ -85,6 +99,11 @@ QColor Manager::getColor(const QString& key, const std::function<QColor()>& comp
     }
 
     WR_DEBUG(u"Color cache miss [%1], computing"_s.arg(key));
+    if (!computeFunc) {
+        WR_WARN(u"No compute function provided for color cache miss [%1]"_s.arg(key));
+        return QColor();
+    }
+
     const QColor color = computeFunc();
 
     if (!color.isValid()) {
@@ -138,6 +157,11 @@ QFileInfo Manager::getImage(const QString& key, const std::function<QImage()>& c
     }
 
     WR_DEBUG(u"Image cache miss [%1], computing"_s.arg(key));
+    if (!computeFunc) {
+        WR_WARN(u"No compute function provided for image cache miss [%1]"_s.arg(key));
+        return QFileInfo{};
+    }
+
     const QImage image = computeFunc();
     if (image.isNull()) {
         WR_WARN(u"ComputeFunc returned null image for key [%1]"_s.arg(key));
@@ -166,6 +190,78 @@ QFileInfo Manager::getImage(const QString& key, const std::function<QImage()>& c
     }
 
     return QFileInfo(filePath);
+}
+
+QString Manager::getSetting(SettingsType key, const std::function<QString()>& computeFunc) {
+    QSqlDatabase db                = _db();
+    const QLatin1StringView keyStr = settingKey(key);
+
+    if (db.isOpen()) {
+        QSqlQuery query(db);
+        query.prepare(QStringLiteral(
+            "SELECT value FROM settings_cache WHERE key = :key"));
+        query.bindValue(u":key"_s, keyStr);
+
+        if (query.exec() && query.next()) {
+            WR_DEBUG(u"Settings cache hit [%1]"_s.arg(keyStr));
+            return query.value(0).toString();
+        }
+    }
+
+    WR_DEBUG(u"Settings cache miss [%1], computing"_s.arg(keyStr));
+    if (!computeFunc) {
+        WR_WARN(u"No compute function provided for settings cache miss [%1]"_s.arg(keyStr));
+        return QString{};
+    }
+
+    const QString value = computeFunc();
+
+    if (db.isOpen() && !value.isNull()) {
+        QSqlQuery insertQuery(db);
+        insertQuery.prepare(QStringLiteral(
+            "INSERT OR REPLACE INTO settings_cache (key, value) "
+            "VALUES (:key, :value)"));
+        insertQuery.bindValue(u":key"_s, keyStr);
+        insertQuery.bindValue(u":value"_s, value);
+        if (!insertQuery.exec())
+            WR_WARN(u"Failed to cache setting [%1]: %2"_s
+                        .arg(keyStr, insertQuery.lastError().text()));
+        else
+            WR_DEBUG(u"Setting cached [%1]"_s.arg(keyStr));
+    }
+
+    return value;
+}
+
+void Manager::storeSetting(SettingsType key, const QString& value) {
+    QSqlDatabase db                = _db();
+    const QLatin1StringView keyStr = settingKey(key);
+
+    if (db.isOpen()) {
+        if (value.isNull()) {
+            QSqlQuery deleteQuery(db);
+            deleteQuery.prepare(QStringLiteral(
+                "DELETE FROM settings_cache WHERE key = :key"));
+            deleteQuery.bindValue(u":key"_s, keyStr);
+            if (!deleteQuery.exec())
+                WR_WARN(u"Failed to delete setting [%1]: %2"_s
+                            .arg(keyStr, deleteQuery.lastError().text()));
+            else
+                WR_DEBUG(u"Setting deleted [%1]"_s.arg(keyStr));
+        } else {
+            QSqlQuery insertQuery(db);
+            insertQuery.prepare(QStringLiteral(
+                "INSERT OR REPLACE INTO settings_cache (key, value) "
+                "VALUES (:key, :value)"));
+            insertQuery.bindValue(u":key"_s, keyStr);
+            insertQuery.bindValue(u":value"_s, value);
+            if (!insertQuery.exec())
+                WR_WARN(u"Failed to store setting [%1]: %2"_s
+                            .arg(keyStr, insertQuery.lastError().text()));
+            else
+                WR_DEBUG(u"Setting stored [%1]"_s.arg(keyStr));
+        }
+    }
 }
 
 /// Returns an open QSqlDatabase for the calling thread, creating it on first use.
@@ -238,6 +334,11 @@ void Manager::_setupTables(QSqlDatabase& db) const {
         "  key       TEXT PRIMARY KEY NOT NULL,"
         "  file_name TEXT NOT NULL"
         ")"));
+    q.exec(QStringLiteral(
+        "CREATE TABLE IF NOT EXISTS settings_cache ("
+        "  key   TEXT PRIMARY KEY NOT NULL,"
+        "  value TEXT NOT NULL"
+        ");"));
 }
 
 }  // namespace WallReel::Core::Cache

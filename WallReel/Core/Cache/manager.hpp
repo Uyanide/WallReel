@@ -21,9 +21,13 @@ class Manager {
 
     void clearCache(Type type = Type::Image | Type::Color);
 
-    QColor getColor(const QString& key, const std::function<QColor()>& computeFunc);
+    QColor getColor(const QString& key, const std::function<QColor()>& computeFunc = nullptr);
 
-    QFileInfo getImage(const QString& key, const std::function<QImage()>& computeFunc);
+    QFileInfo getImage(const QString& key, const std::function<QImage()>& computeFunc = nullptr);
+
+    QString getSetting(SettingsType key, const std::function<QString()>& computeFunc = nullptr);
+
+    void storeSetting(SettingsType key, const QString& value);
 
   private:
     QDir m_cacheDir;

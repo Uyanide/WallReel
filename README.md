@@ -57,7 +57,7 @@ It might not be that worthy to build a Qt application from ground for such a sma
 
 Refer to [config.schema.json](config.schema.json) for a complete reference of the configuration file schema. Below is a summary of the available options.
 
-The configuration file is divided into five main sections: `wallpaper`, `theme`, `action`, `style`, and `sort`.
+The configuration file is divided into five main sections: `wallpaper`, `theme`, `action`, `style`, and `cache`.
 
 ### Wallpaper (`wallpaper`)
 
@@ -77,26 +77,25 @@ By default, a **dominant color** will be extracted from each wallpaper. If a pal
 
 There are a few embeded palettes available in the application, including "Catppuccin Frappe", "Catppuccin Latte", "Catppuccin Macchiato", and "Catppuccin Mocha". You can also define your own palettes or override the embeded ones by providing a custom configuration.
 
-| Property         | Type             | Default | Description                                                                                                                                 |
-| :--------------- | :--------------- | :------ | :------------------------------------------------------------------------------------------------------------------------------------------ |
-| `defaultPalette` | String           | `""`    | Name of the default palette to use.                                                                                                         |
-| `palettes`       | Array of Objects | `[]`    | List of defined palettes. Each contains a `name` (string) and an array of `colors` (each with a `name` and a hex `value` like `"#ff0000"`). |
+| Property   | Type             | Default | Description                                                                                                                                 |
+| :--------- | :--------------- | :------ | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| `palettes` | Array of Objects | `[]`    | List of defined palettes. Each contains a `name` (string) and an array of `colors` (each with a `name` and a hex `value` like `"#ff0000"`). |
 
 ### Action (`action`)
 
 Configures system commands to execute on specific events mapping to your window manager or wallpaper utility (e.g., `swaybg`, `feh`).
 
-| Property              | Type             | Default | Description                                                                                                                                                         |
-| :-------------------- | :--------------- | :------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `previewDebounceTime` | Integer          | `300`   | Debounce time (ms) for triggering the preview action.                                                                                                               |
-| `printSelected`       | Boolean          | `true`  | Print selected wallpaper path to stdout on confirm.                                                                                                                 |
-| `printPreview`        | Boolean          | `false` | Print previewed wallpaper path to stdout on preview.                                                                                                                |
-| `onSelected`          | String           | `""`    | Command to execute when a wallpaper is confirmed.                                                                                                                   |
-| `onPreview`           | String           | `""`    | Command to execute when a wallpaper is previewed.                                                                                                                   |
-| `saveState`           | Array of Objects | `[]`    | Commands to fetch system states before changing wallpapers. Each object defines: `key`, `default` (fallback value), `command` (stdout mapping), and `timeout` (ms). |
-| `onRestore`           | String           | `""`    | Command to execute on restore. Extracted states from `saveState` can be injected using `{{ key }}`.                                                                 |
-| `quitOnSelected`      | Boolean          | `false` | Quit the application after a selection is made.                                                                                                                     |
-| `restoreOnClose`      | Boolean          | `true`  | Run `onRestore` command if the application is closed without making a final selection.                                                                              |
+| Property              | Type             | Default | Description                                                                                                                                                          |
+| :-------------------- | :--------------- | :------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `previewDebounceTime` | Integer          | `300`   | Debounce time (ms) for triggering the preview action.                                                                                                                |
+| `printSelected`       | Boolean          | `true`  | Print selected wallpaper path to stdout on confirm.                                                                                                                  |
+| `printPreview`        | Boolean          | `false` | Print previewed wallpaper path to stdout on preview.                                                                                                                 |
+| `onSelected`          | String           | `""`    | Command to execute when a wallpaper is confirmed.                                                                                                                    |
+| `onPreview`           | String           | `""`    | Command to execute when a wallpaper is previewed.                                                                                                                    |
+| `saveState`           | Array of Objects | `[]`    | Commands to fetch system states before changing wallpapers. Each object defines: `key`, `fallback` (fallback value), `command` (stdout mapping), and `timeout` (ms). |
+| `onRestore`           | String           | `""`    | Command to execute on restore. Extracted states from `saveState` can be injected using `{{ key }}`.                                                                  |
+| `quitOnSelected`      | Boolean          | `false` | Quit the application after a selection is made.                                                                                                                      |
+| `restoreOnClose`      | Boolean          | `true`  | Run `onRestore` command if the application is closed without making a final selection.                                                                               |
 
 Available placeholders for `onSelected`, `onPreview` commands:
 
@@ -109,7 +108,7 @@ Available placeholders for `onSelected`, `onPreview` commands:
 | `{{ colorName }}`   | Name of the currently determined primary color. ("null" if none)                           |
 | `{{ colorHex }}`    | Hex code (starting with "#") of the currently determined primary color. ("null" if none)   |
 | `{{ domColorHex }}` | Hex code (starting with "#") of the dominant color in the selected or previewed wallpaper. |
-| `{{ key }}`         | Value of the saved state with the specified key.                                           |
+| `{{ <key> }}`       | Value of the saved state with the specified key.                                           |
 
 ### Style (`style`)
 
@@ -123,14 +122,14 @@ Controls the layout and dimensions of the application window and image items.
 | `window_width`      | Integer | `750`   | Initial application window width.        |
 | `window_height`     | Integer | `500`   | Initial application window height.       |
 
-### Sort (`sort`)
+### Cache (`cache`)
 
-Initial sorting behavior for loaded images.
+Controls what UI state is persisted between sessions.
 
-| Property     | Type    | Default  | Description                                                                      |
-| :----------- | :------ | :------- | :------------------------------------------------------------------------------- |
-| `type`       | String  | `"date"` | Defines sorting criteria. Acceptable values: `"name"`, `"date"`, `"size"`.       |
-| `descending` | Boolean | `true`   | If true, sorts in descending order (e.g. newer dates first, larger files first). |
+| Property         | Type    | Default | Description                                 |
+| :--------------- | :------ | :------ | :------------------------------------------ |
+| `saveSortMethod` | Boolean | `true`  | Whether to persist the sort type and order. |
+| `savePalette`    | Boolean | `true`  | Whether to persist the selected palette.    |
 
 ---
 
@@ -150,7 +149,6 @@ Initial sorting behavior for loaded images.
     "excludes": ["\\.gif$"]
   },
   "theme": {
-    "defaultPalette": "Dark",
     "palettes": [
       {
         "name": "Dark",
@@ -169,7 +167,7 @@ Initial sorting behavior for loaded images.
     "saveState": [
       {
         "key": "current_wp",
-        "default": "/home/user/Pictures/default.jpg",
+        "fallback": "/home/user/Pictures/default.jpg",
         "command": "find ~/.config/wallpaper/current -type f | head -n 1",
         "timeout": 1000
       }
@@ -183,9 +181,9 @@ Initial sorting behavior for loaded images.
     "window_width": 1280,
     "window_height": 720
   },
-  "sort": {
-    "type": "date",
-    "descending": true
+  "cache": {
+    "saveSortMethod": true,
+    "savePalette": true
   }
 }
 ```

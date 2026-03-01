@@ -15,7 +15,13 @@
 
 WALLREEL_DECLARE_SENDER("ConfigManager")
 
-WallReel::Core::Config::Manager::Manager(
+namespace WallReel::Core::Config {
+
+const QString CacheConfigItems::defaultSortType        = "Date";
+const QString CacheConfigItems::defaultSortDescending  = "true";
+const QString CacheConfigItems::defaultSelectedPalette = "";
+
+Manager::Manager(
     const QDir& configDir,
     const QDir& picturesDir,
     const QStringList& searchDirs,
@@ -47,10 +53,10 @@ WallReel::Core::Config::Manager::Manager(
     _loadWallpapers();
 }
 
-WallReel::Core::Config::Manager::~Manager() {
+Manager::~Manager() {
 }
 
-void WallReel::Core::Config::Manager::_loadConfig(const QString& configPath) {
+void Manager::_loadConfig(const QString& configPath) {
     WR_INFO(QString("Loading configuration from: %1").arg(configPath));
     QFile configFile(configPath);
     if (!configFile.open(QIODevice::ReadOnly)) {
@@ -72,10 +78,10 @@ void WallReel::Core::Config::Manager::_loadConfig(const QString& configPath) {
     _loadThemeConfig(jsonObj);
     _loadActionConfig(jsonObj);
     _loadStyleConfig(jsonObj);
-    _loadSortConfig(jsonObj);
+    _loadCacheConfig(jsonObj);
 }
 
-void WallReel::Core::Config::Manager::_loadWallpaperConfig(const QJsonObject& root) {
+void Manager::_loadWallpaperConfig(const QJsonObject& root) {
     if (!root.contains("wallpaper") || !root["wallpaper"].isObject()) {
         return;
     }
@@ -121,14 +127,11 @@ void WallReel::Core::Config::Manager::_loadWallpaperConfig(const QJsonObject& ro
     }
 }
 
-void WallReel::Core::Config::Manager::_loadThemeConfig(const QJsonObject& root) {
+void Manager::_loadThemeConfig(const QJsonObject& root) {
     if (!root.contains("theme") || !root["theme"].isObject()) {
         return;
     }
     const QJsonObject& theme = root["theme"].toObject();
-    if (theme.contains("defaultPalette") && theme["defaultPalette"].isString()) {
-        m_themeConfig.defaultPalette = theme["defaultPalette"].toString();
-    }
 
     if (!theme.contains("palettes") || !theme["palettes"].isArray()) {
         return;
@@ -176,7 +179,7 @@ void WallReel::Core::Config::Manager::_loadThemeConfig(const QJsonObject& root) 
     }
 }
 
-void WallReel::Core::Config::Manager::_loadActionConfig(const QJsonObject& root) {
+void Manager::_loadActionConfig(const QJsonObject& root) {
     if (!root.contains("action") || !root["action"].isObject()) {
         return;
     }
@@ -209,8 +212,8 @@ void WallReel::Core::Config::Manager::_loadActionConfig(const QJsonObject& root)
                 if (obj.contains("key") && obj["key"].isString()) {
                     sItem.key = obj["key"].toString();
                 }
-                if (obj.contains("default") && obj["default"].isString()) {
-                    sItem.defaultVal = obj["default"].toString();
+                if (obj.contains("fallback") && obj["fallback"].isString()) {
+                    sItem.defaultVal = obj["fallback"].toString();
                 }
                 if (obj.contains("command") && obj["command"].isString()) {
                     sItem.command = obj["command"].toString();
@@ -257,7 +260,7 @@ void WallReel::Core::Config::Manager::_loadActionConfig(const QJsonObject& root)
     }
 }
 
-void WallReel::Core::Config::Manager::_loadStyleConfig(const QJsonObject& root) {
+void Manager::_loadStyleConfig(const QJsonObject& root) {
     if (!root.contains("style") || !root["style"].isObject()) {
         return;
     }
@@ -295,36 +298,27 @@ void WallReel::Core::Config::Manager::_loadStyleConfig(const QJsonObject& root) 
     }
 }
 
-void WallReel::Core::Config::Manager::_loadSortConfig(const QJsonObject& root) {
-    if (!root.contains("sort") || !root["sort"].isObject()) {
+void Manager::_loadCacheConfig(const QJsonObject& root) {
+    if (!root.contains("cache") || !root["cache"].isObject()) {
         return;
     }
-    const QJsonObject& config = root["sort"].toObject();
+    const QJsonObject& config = root["cache"].toObject();
 
-    if (config.contains("type")) {
-        const auto& val = config["type"];
-        if (val.isString()) {
-            QString type = val.toString().toLower();
-            if (type == "name") {
-                m_sortConfig.type = SortType::Name;
-            } else if (type == "date") {
-                m_sortConfig.type = SortType::Date;
-            } else if (type == "size") {
-                m_sortConfig.type = SortType::Size;
-            } else {
-                WR_WARN(QString("Unknown sort type: %1").arg(type));
-            }
+    if (config.contains("saveSortMethod")) {
+        const auto& val = config["saveSortMethod"];
+        if (val.isBool()) {
+            m_cacheConfig.saveSortMethod = val.toBool();
         }
     }
-    if (config.contains("descending")) {
-        const auto& val = config["descending"];
+    if (config.contains("savePalette")) {
+        const auto& val = config["savePalette"];
         if (val.isBool()) {
-            m_sortConfig.descending = val.toBool();
+            m_cacheConfig.savePalette = val.toBool();
         }
     }
 }
 
-void WallReel::Core::Config::Manager::_loadWallpapers() {
+void Manager::_loadWallpapers() {
     m_wallpapers.clear();
 
     // Add paths first using a set to avoid duplicates
@@ -389,7 +383,7 @@ void WallReel::Core::Config::Manager::_loadWallpapers() {
     WR_INFO(QString("Found %1 images").arg(paths.size()));
 }
 
-void WallReel::Core::Config::Manager::captureState() {
+void Manager::captureState() {
     if (m_pendingCaptures > 0) {
         WR_WARN("State capture already in progress, ignoring new capture request");
         return;
@@ -481,7 +475,7 @@ void WallReel::Core::Config::Manager::captureState() {
     }
 }
 
-void WallReel::Core::Config::Manager::_onCaptureResult(const QString& key, const QString& value) {
+void Manager::_onCaptureResult(const QString& key, const QString& value) {
     // This is all in main thread, so no lock needed
     m_actionConfig.savedState[key] = value;
     m_pendingCaptures--;
@@ -489,3 +483,5 @@ void WallReel::Core::Config::Manager::_onCaptureResult(const QString& key, const
         emit stateCaptured();
     }
 }
+
+}  // namespace WallReel::Core::Config

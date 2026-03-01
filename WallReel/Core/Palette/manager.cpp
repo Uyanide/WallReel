@@ -49,19 +49,6 @@ WallReel::Core::Palette::Manager::Manager(
             m_palettes.append(newP);
         }
     }
-
-    // Set default palette if specified
-    if (!config.defaultPalette.isEmpty()) {
-        for (const auto& p : m_palettes) {
-            if (p.name == config.defaultPalette) {
-                m_selectedColor   = std::nullopt;
-                m_selectedPalette = p;
-                emit selectedColorChanged();
-                emit selectedPaletteChanged();
-                break;
-            }
-        }
-    }
 }
 
 void WallReel::Core::Palette::Manager::updateColor(const QString& imageId) {

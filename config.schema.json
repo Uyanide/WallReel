@@ -47,11 +47,6 @@
         "theme": {
             "type": "object",
             "properties": {
-                "defaultPalette": {
-                    "type": "string",
-                    "default": "",
-                    "description": "Name of the default palette to use"
-                },
                 "palettes": {
                     "type": "array",
                     "items": {
@@ -126,10 +121,10 @@
                                 "default": "",
                                 "description": "Key of value to save, used as {{ key }} in onRestore command"
                             },
-                            "default": {
+                            "fallback": {
                                 "type": "string",
                                 "default": "",
-                                "description": "Value to save, used when \"cmd\" is not set or command execution fails or output is empty"
+                                "description": "Value to save, used when \"command\" is not set or command execution fails or output is empty"
                             },
                             "command": {
                                 "type": "string",
@@ -179,6 +174,7 @@
                 "image_focus_scale": {
                     "type": "number",
                     "default": 1.5,
+                    "minimum": 1.0,
                     "description": "Scale of the focused image (relative to unfocused image)"
                 },
                 "window_width": {
@@ -193,23 +189,18 @@
                 }
             }
         },
-        "sort": {
+        "cache": {
             "type": "object",
             "properties": {
-                "type": {
-                    "type": "string",
-                    "enum": [
-                        "name",
-                        "date",
-                        "size"
-                    ],
-                    "default": "date",
-                    "description": "Initial sorting type"
-                },
-                "descending": {
+                "saveSortMethod": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Initial sorting order. Ascending: name: lexicographical, date: older before newer, size: smaller before larger"
+                    "description": "Whether to persist the sort type and order"
+                },
+                "savePalette": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to persist the selected palette"
                 }
             }
         }

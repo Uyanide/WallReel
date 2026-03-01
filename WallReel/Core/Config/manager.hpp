@@ -57,7 +57,7 @@ class Manager : public QObject {
 
     const StyleConfigItems& getStyleConfig() const { return m_styleConfig; }
 
-    const SortConfigItems& getSortConfig() const { return m_sortConfig; }
+    const CacheConfigItems& getCacheConfig() const { return m_cacheConfig; }
 
     QSize getFocusImageSize() const {
         return QSize{m_styleConfig.imageWidth, m_styleConfig.imageHeight} * m_styleConfig.imageFocusScale;
@@ -78,7 +78,7 @@ class Manager : public QObject {
     void _loadThemeConfig(const QJsonObject& config);
     void _loadActionConfig(const QJsonObject& config);
     void _loadStyleConfig(const QJsonObject& config);
-    void _loadSortConfig(const QJsonObject& config);
+    void _loadCacheConfig(const QJsonObject& config);
     // Load wallpapers
     void _loadWallpapers();
     // Callback for state capture results
@@ -90,7 +90,7 @@ class Manager : public QObject {
     ThemeConfigItems m_themeConfig;
     ActionConfigItems m_actionConfig;
     StyleConfigItems m_styleConfig;
-    SortConfigItems m_sortConfig;
+    CacheConfigItems m_cacheConfig;
 
     QStringList m_wallpapers;
 

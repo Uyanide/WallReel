@@ -10,10 +10,11 @@
 namespace WallReel::Core::Cache {
 
 enum class Type : uint32_t {
-    None  = 0,
-    Image = 1,       ///< Cache for processed images
-    Color = 1 << 1,  ///< Cache for palette color matching results
-    All   = ~0u
+    None     = 0,
+    Image    = 1,       ///< Cache for processed images
+    Color    = 1 << 1,  ///< Cache for dominant colors
+    Settings = 1 << 2,  ///< Cache for settings (simple key-value pairs)
+    All      = ~0u
 };
 
 inline constexpr Type operator|(Type a, Type b) {
@@ -27,6 +28,12 @@ inline constexpr Type operator&(Type a, Type b) {
 }
 
 using Data = std::variant<std::monostate, QFileInfo, QColor>;
+
+enum class SettingsType : uint32_t {
+    LastSelectedPalette = 0,
+    LastSortType,
+    LastSortDescending,
+};
 
 }  // namespace WallReel::Core::Cache
 
