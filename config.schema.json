@@ -201,6 +201,11 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Whether to persist the selected palette"
+                },
+                "maxImageEntries": {
+                    "type": "integer",
+                    "default": 1000,
+                    "description": "Maximum number of entries in the image cache (older entries will be evicted)"
                 }
             }
         }

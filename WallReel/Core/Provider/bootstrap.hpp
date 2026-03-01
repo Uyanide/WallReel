@@ -18,17 +18,20 @@ class Bootstrap {
 
   public:
     Bootstrap(const AppOptions& options) {
-        cacheMgr = new Cache::Manager(Utils::getCacheDir());
-
-        if (options.clearCache) {
-            cacheMgr->clearCache();
-            return;
-        }
         configMgr = new Config::Manager(
             Utils::getConfigDir(),
             Utils::getPicturesDir(),
             options.appendDirs,
             options.configPath);
+
+        cacheMgr = new Cache::Manager(
+            Utils::getCacheDir(),
+            configMgr->getCacheConfig().maxImageEntries);
+
+        if (options.clearCache) {
+            cacheMgr->clearCache();
+            return;
+        }
 
         imageMgr = new Image::Manager(
             *cacheMgr,
@@ -47,6 +50,7 @@ class Bootstrap {
     }
 
     void start() {
+        cacheMgr->evictOldEntries();
         configMgr->captureState();
         imageMgr->loadAndProcess(configMgr->getWallpapers());
     }

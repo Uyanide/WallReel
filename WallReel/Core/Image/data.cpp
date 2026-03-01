@@ -24,12 +24,13 @@ WallReel::Core::Image::Data::Data(const QString& path, const QSize& targetSize, 
     : m_cacheMgr(cacheMgr), m_file(path), m_targetSize(targetSize) {
     m_id            = cacheMgr.cacheKey(m_file, m_targetSize);
     m_cachedFile    = cacheMgr.getImage(m_id, [this]() { return computeImage(); });
-    m_dominantColor = cacheMgr.getColor(m_id, [this]() { return computeDominantColor(loadImage()); });
+    m_dominantColor = cacheMgr.getColor(m_id, [this]() { return computeDominantColor(loadImageFromCache()); });
     m_isValid       = m_cachedFile.isFile() && m_dominantColor.isValid();
 }
 
-QImage WallReel::Core::Image::Data::loadImage() const {
+QImage WallReel::Core::Image::Data::loadImageFromCache() const {
     QImageReader reader(m_cachedFile.absoluteFilePath());
+
     if (!reader.canRead()) {
         WR_WARN("Cannot read cached image: " + m_cachedFile.absoluteFilePath());
         return QImage();

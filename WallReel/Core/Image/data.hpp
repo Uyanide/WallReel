@@ -58,6 +58,7 @@ class Data {
 
     QImage computeImage() const;
     QColor computeDominantColor(const QImage& image) const;
+    QImage loadImageFromCache() const;
 
     Data(const QString& path, const QSize& size, Cache::Manager& cacheMgr);
 
@@ -88,8 +89,6 @@ class Data {
     qint64 getSize() const { return m_file.size(); }
 
     const QFileInfo& getFileInfo() const { return m_file; }
-
-    QImage loadImage() const;
 
     const QColor& getDominantColor() const { return m_dominantColor; }
 

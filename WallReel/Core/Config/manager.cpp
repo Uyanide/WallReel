@@ -321,6 +321,12 @@ void Manager::_loadCacheConfig(const QJsonObject& root) {
             m_cacheConfig.savePalette = val.toBool();
         }
     }
+    if (config.contains("maxImageEntries")) {
+        const auto& val = config["maxImageEntries"];
+        if (val.isDouble() && val.toDouble() > 0) {
+            m_cacheConfig.maxImageEntries = val.toInt();
+        }
+    }
 }
 
 void Manager::_loadWallpapers() {

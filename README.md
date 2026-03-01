@@ -126,10 +126,11 @@ Controls the layout and dimensions of the application window and image items.
 
 Controls what UI state is persisted between sessions.
 
-| Property         | Type    | Default | Description                                 |
-| :--------------- | :------ | :------ | :------------------------------------------ |
-| `saveSortMethod` | Boolean | `true`  | Whether to persist the sort type and order. |
-| `savePalette`    | Boolean | `true`  | Whether to persist the selected palette.    |
+| Property          | Type    | Default | Description                                                                   |
+| :---------------- | :------ | :------ | :---------------------------------------------------------------------------- |
+| `saveSortMethod`  | Boolean | `true`  | Whether to persist the sort type and order.                                   |
+| `savePalette`     | Boolean | `true`  | Whether to persist the selected palette.                                      |
+| `maxImageEntries` | Integer | `1000`  | Maximum number of entries in the image cache (older entries will be evicted). |
 
 ---
 
@@ -183,7 +184,8 @@ Controls what UI state is persisted between sessions.
   },
   "cache": {
     "saveSortMethod": true,
-    "savePalette": true
+    "savePalette": true,
+    "maxImageEntries": 300
   }
 }
 ```

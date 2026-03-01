@@ -7,6 +7,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QThread>
+#include <QtConcurrent>
 
 #include "logger.hpp"
 
@@ -26,20 +27,41 @@ static QLatin1StringView settingKey(SettingsType type) {
 }
 
 QString Manager::cacheKey(const QFileInfo& fileInfo, const QSize& imageSize) {
-    const QString raw = fileInfo.absoluteFilePath() + QString::number(fileInfo.lastModified().toMSecsSinceEpoch()) + u'x' + QString::number(imageSize.width()) + u'x' + QString::number(imageSize.height());
+    const QString raw = fileInfo.absoluteFilePath() +
+                        QString::number(fileInfo.lastModified().toMSecsSinceEpoch()) +
+                        u'x' + QString::number(imageSize.width()) +
+                        u'x' + QString::number(imageSize.height());
     return QString::fromLatin1(
         QCryptographicHash::hash(raw.toUtf8(), QCryptographicHash::Sha256).toHex());
 }
 
-Manager::Manager(const QDir& cacheDir)
-    : m_cacheDir(cacheDir), m_dbPath(cacheDir.filePath(u"cache.db"_s)), m_connectionPrefix(u"WallReelCache:"_s + QString::fromLatin1(QCryptographicHash::hash(m_dbPath.toUtf8(), QCryptographicHash::Md5).toHex())) {
+Manager::Manager(const QDir& cacheDir, int maxEntries)
+    : m_cacheDir(cacheDir),
+      m_maxEntries(maxEntries),
+      m_dbPath(cacheDir.filePath(u"cache.db"_s)),
+      m_connectionPrefix(u"WallReelCache:"_s +
+                         QString::fromLatin1(QCryptographicHash::hash(
+                                                 m_dbPath.toUtf8(),
+                                                 QCryptographicHash::Md5)
+                                                 .toHex())) {
     WR_DEBUG(u"Initializing cache db: %1"_s.arg(m_dbPath));
     // Open a connection on the constructing thread so the schema is
     // guaranteed to exist before any worker thread first calls _db().
     _db();
 }
 
+void Manager::evictOldEntries() {
+    if (m_maxEntries > 0)
+        m_cleanupFuture = QtConcurrent::run([this] { _runCleanup(); });
+}
+
 Manager::~Manager() {
+    // Wait for the background cleanup to finish before tearing down DB connections.
+    if (m_cleanupFuture.isValid() && !m_cleanupFuture.isFinished()) {
+        WR_DEBUG(u"Waiting for cache cleanup to finish..."_s);
+        m_cleanupFuture.waitForFinished();
+    }
+
     QSet<QString> names;
     {
         QMutexLocker lock(&m_connectionsMutex);
@@ -59,23 +81,23 @@ void Manager::clearCache(Type type) {
     if ((type & Type::Image) != Type::None) {
         int removed = 0;
         QSqlQuery selectQuery(db);
-        if (selectQuery.exec(QStringLiteral("SELECT file_name FROM image_cache"))) {
+        if (selectQuery.exec(u"SELECT file_name FROM image_cache"_s)) {
             while (selectQuery.next()) {
                 QFile::remove(m_cacheDir.filePath(selectQuery.value(0).toString()));
                 ++removed;
             }
         }
-        QSqlQuery(db).exec(QStringLiteral("DELETE FROM image_cache"));
+        QSqlQuery(db).exec(u"DELETE FROM image_cache"_s);
         WR_INFO(u"Cleared %1 image cache file(s)"_s.arg(removed));
     }
 
     if ((type & Type::Color) != Type::None) {
-        QSqlQuery(db).exec(QStringLiteral("DELETE FROM color_cache"));
+        QSqlQuery(db).exec(u"DELETE FROM color_cache"_s);
         WR_INFO(u"Cleared color cache"_s);
     }
 
     if ((type & Type::Settings) != Type::None) {
-        QSqlQuery(db).exec(QStringLiteral("DELETE FROM settings_cache"));
+        QSqlQuery(db).exec(u"DELETE FROM settings_cache"_s);
         WR_INFO(u"Cleared settings cache"_s);
     }
 }
@@ -84,17 +106,25 @@ QColor Manager::getColor(const QString& key, const std::function<QColor()>& comp
     QSqlDatabase db = _db();
     if (db.isOpen()) {
         QSqlQuery query(db);
-        query.prepare(QStringLiteral(
-            "SELECT r, g, b, a FROM color_cache WHERE key = :key"));
+        query.prepare(u"SELECT r, g, b, a FROM color_cache WHERE key = :key"_s);
         query.bindValue(u":key"_s, key);
 
         if (query.exec() && query.next()) {
             WR_DEBUG(u"Color cache hit [%1]"_s.arg(key));
-            return QColor(
+            QColor result(
                 query.value(0).toInt(),
                 query.value(1).toInt(),
                 query.value(2).toInt(),
                 query.value(3).toInt());
+            {
+                QMutexLocker lk(&m_hotKeysMutex);
+                m_hotColorKeys.insert(key);
+            }
+            QSqlQuery touchQuery(db);
+            touchQuery.prepare(u"UPDATE color_cache SET last_accessed = CURRENT_TIMESTAMP WHERE key = :key"_s);
+            touchQuery.bindValue(u":key"_s, key);
+            touchQuery.exec();
+            return result;
         }
     }
 
@@ -113,9 +143,9 @@ QColor Manager::getColor(const QString& key, const std::function<QColor()>& comp
 
     if (db.isOpen()) {
         QSqlQuery insertQuery(db);
-        insertQuery.prepare(QStringLiteral(
-            "INSERT OR REPLACE INTO color_cache (key, r, g, b, a) "
-            "VALUES (:key, :r, :g, :b, :a)"));
+        insertQuery.prepare(
+            u"INSERT OR REPLACE INTO color_cache (key, r, g, b, a, last_accessed) "
+            "VALUES (:key, :r, :g, :b, :a, CURRENT_TIMESTAMP)"_s);
         insertQuery.bindValue(u":key"_s, key);
         insertQuery.bindValue(u":r"_s, color.red());
         insertQuery.bindValue(u":g"_s, color.green());
@@ -135,8 +165,7 @@ QFileInfo Manager::getImage(const QString& key, const std::function<QImage()>& c
     QSqlDatabase db = _db();
     if (db.isOpen()) {
         QSqlQuery query(db);
-        query.prepare(QStringLiteral(
-            "SELECT file_name FROM image_cache WHERE key = :key"));
+        query.prepare(u"SELECT file_name FROM image_cache WHERE key = :key"_s);
         query.bindValue(u":key"_s, key);
 
         if (query.exec() && query.next()) {
@@ -144,13 +173,21 @@ QFileInfo Manager::getImage(const QString& key, const std::function<QImage()>& c
             if (cached.exists()) {
                 WR_DEBUG(u"Image cache hit [%1] -> %2"_s
                              .arg(key, cached.absoluteFilePath()));
+                {
+                    QMutexLocker lk(&m_hotKeysMutex);
+                    m_hotImageKeys.insert(key);
+                }
+                QSqlQuery touchQuery(db);
+                touchQuery.prepare(u"UPDATE image_cache SET last_accessed = CURRENT_TIMESTAMP WHERE key = :key"_s);
+                touchQuery.bindValue(u":key"_s, key);
+                touchQuery.exec();
                 return cached;
             }
 
             // File was deleted externally — evict the stale DB record.
             WR_WARN(u"Image cache stale, file missing [%1], evicting"_s.arg(key));
             QSqlQuery evict(db);
-            evict.prepare(QStringLiteral("DELETE FROM image_cache WHERE key = :key"));
+            evict.prepare(u"DELETE FROM image_cache WHERE key = :key"_s);
             evict.bindValue(u":key"_s, key);
             evict.exec();
         }
@@ -168,10 +205,10 @@ QFileInfo Manager::getImage(const QString& key, const std::function<QImage()>& c
         return QFileInfo{};
     }
 
-    const QString fileName = key + u".png"_s;
+    const QString fileName = key + u".jpg"_s;
     const QString filePath = m_cacheDir.filePath(fileName);
 
-    if (!image.save(filePath, "PNG")) {
+    if (!image.save(filePath, "JPEG", 85)) {
         WR_WARN(u"Failed to save image to %1"_s.arg(filePath));
         return QFileInfo{};
     }
@@ -179,14 +216,18 @@ QFileInfo Manager::getImage(const QString& key, const std::function<QImage()>& c
 
     if (db.isOpen()) {
         QSqlQuery insertQuery(db);
-        insertQuery.prepare(QStringLiteral(
-            "INSERT OR REPLACE INTO image_cache (key, file_name) "
-            "VALUES (:key, :file_name)"));
+        insertQuery.prepare(
+            u"INSERT OR REPLACE INTO image_cache (key, file_name, last_accessed) "
+            "VALUES (:key, :file_name, CURRENT_TIMESTAMP)"_s);
         insertQuery.bindValue(u":key"_s, key);
         insertQuery.bindValue(u":file_name"_s, fileName);
         if (!insertQuery.exec())
             WR_WARN(u"Failed to record image in db [%1]: %2"_s
                         .arg(key, insertQuery.lastError().text()));
+        else {
+            QMutexLocker lock(&m_hotKeysMutex);
+            m_hotImageKeys.insert(key);
+        }
     }
 
     return QFileInfo(filePath);
@@ -198,8 +239,7 @@ QString Manager::getSetting(SettingsType key, const std::function<QString()>& co
 
     if (db.isOpen()) {
         QSqlQuery query(db);
-        query.prepare(QStringLiteral(
-            "SELECT value FROM settings_cache WHERE key = :key"));
+        query.prepare(u"SELECT value FROM settings_cache WHERE key = :key"_s);
         query.bindValue(u":key"_s, keyStr);
 
         if (query.exec() && query.next()) {
@@ -218,9 +258,9 @@ QString Manager::getSetting(SettingsType key, const std::function<QString()>& co
 
     if (db.isOpen() && !value.isNull()) {
         QSqlQuery insertQuery(db);
-        insertQuery.prepare(QStringLiteral(
-            "INSERT OR REPLACE INTO settings_cache (key, value) "
-            "VALUES (:key, :value)"));
+        insertQuery.prepare(
+            u"INSERT OR REPLACE INTO settings_cache (key, value) "
+            "VALUES (:key, :value)"_s);
         insertQuery.bindValue(u":key"_s, keyStr);
         insertQuery.bindValue(u":value"_s, value);
         if (!insertQuery.exec())
@@ -240,8 +280,7 @@ void Manager::storeSetting(SettingsType key, const QString& value) {
     if (db.isOpen()) {
         if (value.isNull()) {
             QSqlQuery deleteQuery(db);
-            deleteQuery.prepare(QStringLiteral(
-                "DELETE FROM settings_cache WHERE key = :key"));
+            deleteQuery.prepare(u"DELETE FROM settings_cache WHERE key = :key"_s);
             deleteQuery.bindValue(u":key"_s, keyStr);
             if (!deleteQuery.exec())
                 WR_WARN(u"Failed to delete setting [%1]: %2"_s
@@ -250,9 +289,9 @@ void Manager::storeSetting(SettingsType key, const QString& value) {
                 WR_DEBUG(u"Setting deleted [%1]"_s.arg(keyStr));
         } else {
             QSqlQuery insertQuery(db);
-            insertQuery.prepare(QStringLiteral(
-                "INSERT OR REPLACE INTO settings_cache (key, value) "
-                "VALUES (:key, :value)"));
+            insertQuery.prepare(
+                u"INSERT OR REPLACE INTO settings_cache (key, value) "
+                "VALUES (:key, :value)"_s);
             insertQuery.bindValue(u":key"_s, keyStr);
             insertQuery.bindValue(u":value"_s, value);
             if (!insertQuery.exec())
@@ -321,24 +360,145 @@ QSqlDatabase Manager::_db() const {
 
 void Manager::_setupTables(QSqlDatabase& db) const {
     QSqlQuery q(db);
-    q.exec(QStringLiteral(
-        "CREATE TABLE IF NOT EXISTS color_cache ("
-        "  key  TEXT    PRIMARY KEY NOT NULL,"
-        "  r    INTEGER NOT NULL,"
-        "  g    INTEGER NOT NULL,"
-        "  b    INTEGER NOT NULL,"
-        "  a    INTEGER NOT NULL"
-        ")"));
-    q.exec(QStringLiteral(
-        "CREATE TABLE IF NOT EXISTS image_cache ("
-        "  key       TEXT PRIMARY KEY NOT NULL,"
-        "  file_name TEXT NOT NULL"
-        ")"));
-    q.exec(QStringLiteral(
-        "CREATE TABLE IF NOT EXISTS settings_cache ("
+    q.exec(
+        u"CREATE TABLE IF NOT EXISTS color_cache ("
+        "  key           TEXT    PRIMARY KEY NOT NULL,"
+        "  r             INTEGER NOT NULL,"
+        "  g             INTEGER NOT NULL,"
+        "  b             INTEGER NOT NULL,"
+        "  a             INTEGER NOT NULL,"
+        "  last_accessed TEXT"
+        ")"_s);
+    q.exec(
+        u"CREATE TABLE IF NOT EXISTS image_cache ("
+        "  key           TEXT PRIMARY KEY NOT NULL,"
+        "  file_name     TEXT NOT NULL,"
+        "  last_accessed TEXT"
+        ")"_s);
+    q.exec(
+        u"CREATE TABLE IF NOT EXISTS settings_cache ("
         "  key   TEXT PRIMARY KEY NOT NULL,"
         "  value TEXT NOT NULL"
-        ");"));
+        ");"_s);
+    // Migrate existing databases that predate the last_accessed column.
+    q.exec(u"ALTER TABLE color_cache ADD COLUMN last_accessed TEXT"_s);
+    q.exec(u"ALTER TABLE image_cache ADD COLUMN last_accessed TEXT"_s);
+}
+
+void Manager::_runCleanup() {
+    WR_DEBUG(u"Cache cleanup started (maxEntries=%1)"_s.arg(m_maxEntries));
+
+    QSqlDatabase db = _db();
+    if (!db.isOpen())
+        return;
+
+    // Evict image_cache rows whose backing file no longer exists
+    {
+        QSqlQuery sel(db);
+        if (sel.exec(u"SELECT key, file_name FROM image_cache"_s)) {
+            struct Stale {
+                QString key, fileName;
+            };
+
+            QList<Stale> stale;
+            while (sel.next()) {
+                const QString k    = sel.value(0).toString();
+                const QString file = sel.value(1).toString();
+                if (!QFileInfo::exists(m_cacheDir.filePath(file)))
+                    stale.push_back({k, file});
+            }
+            int evicted = 0;
+            for (const auto& s : std::as_const(stale)) {
+                {
+                    QMutexLocker lk(&m_hotKeysMutex);
+                    if (m_hotImageKeys.contains(s.key))
+                        continue;
+                }
+                QSqlQuery del(db);
+                del.prepare(u"DELETE FROM image_cache WHERE key = :key"_s);
+                del.bindValue(u":key"_s, s.key);
+                if (del.exec())
+                    ++evicted;
+            }
+            if (evicted)
+                WR_INFO(u"Cleanup evicted %1 stale image cache row(s)"_s.arg(evicted));
+        }
+    }
+
+    // Trim image_cache to m_maxEntries (oldest last_accessed first)
+    {
+        QSqlQuery countQ(db);
+        if (countQ.exec(u"SELECT COUNT(*) FROM image_cache"_s) && countQ.next()) {
+            int excess = countQ.value(0).toInt() - m_maxEntries;
+            if (excess > 0) {
+                QSqlQuery sel(db);
+                sel.exec(u"SELECT key, file_name FROM image_cache ORDER BY last_accessed ASC"_s);
+                QList<QPair<QString, QString>> toDelete;
+                while (sel.next() && excess > 0) {
+                    const QString k = sel.value(0).toString();
+                    QMutexLocker lk(&m_hotKeysMutex);
+                    if (!m_hotImageKeys.contains(k)) {
+                        toDelete.push_back({k, sel.value(1).toString()});
+                        --excess;
+                    }
+                }
+                int removed = 0;
+                for (const auto& [k, fileName] : std::as_const(toDelete)) {
+                    {
+                        QMutexLocker lk(&m_hotKeysMutex);
+                        if (m_hotImageKeys.contains(k))
+                            continue;
+                    }
+                    QFile::remove(m_cacheDir.filePath(fileName));
+                    QSqlQuery del(db);
+                    del.prepare(u"DELETE FROM image_cache WHERE key = :key"_s);
+                    del.bindValue(u":key"_s, k);
+                    if (del.exec())
+                        ++removed;
+                }
+                if (removed)
+                    WR_INFO(u"Cleanup trimmed %1 image cache entry(ies)"_s.arg(removed));
+            }
+        }
+    }
+
+    // Trim color_cache to m_maxEntries (oldest last_accessed first)
+    {
+        QSqlQuery countQ(db);
+        if (countQ.exec(u"SELECT COUNT(*) FROM color_cache"_s) && countQ.next()) {
+            int excess = countQ.value(0).toInt() - m_maxEntries;
+            if (excess > 0) {
+                QSqlQuery sel(db);
+                sel.exec(u"SELECT key FROM color_cache ORDER BY last_accessed ASC"_s);
+                QStringList toDelete;
+                while (sel.next() && excess > 0) {
+                    const QString k = sel.value(0).toString();
+                    QMutexLocker lk(&m_hotKeysMutex);
+                    if (!m_hotColorKeys.contains(k)) {
+                        toDelete << k;
+                        --excess;
+                    }
+                }
+                int removed = 0;
+                for (const QString& k : std::as_const(toDelete)) {
+                    {
+                        QMutexLocker lk(&m_hotKeysMutex);
+                        if (m_hotColorKeys.contains(k))
+                            continue;
+                    }
+                    QSqlQuery del(db);
+                    del.prepare(u"DELETE FROM color_cache WHERE key = :key"_s);
+                    del.bindValue(u":key"_s, k);
+                    if (del.exec())
+                        ++removed;
+                }
+                if (removed)
+                    WR_INFO(u"Cleanup trimmed %1 color cache entry(ies)"_s.arg(removed));
+            }
+        }
+    }
+
+    WR_DEBUG(u"Cache cleanup complete"_s);
 }
 
 }  // namespace WallReel::Core::Cache

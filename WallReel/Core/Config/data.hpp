@@ -47,6 +47,7 @@
 //
 // cache.saveSortMethod         boolean true    Whether to persist the sort type and order
 // cache.savePalette            bool    true    Whether to persist the selected palette
+// cache.maxImageEntries        number  1000    Maximum number of entries in the image cache (older entries will be evicted)
 
 namespace WallReel::Core::Config {
 

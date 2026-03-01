@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
     QApplication a(argc, argv);
     a.setApplicationName(APP_NAME);
     a.setApplicationVersion(APP_VERSION);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
     using namespace Qt::StringLiterals;
     a.setWindowIcon(QIcon(u":/%1.svg"_s.arg(APP_NAME)));
 #else
@@ -66,11 +66,9 @@ int main(int argc, char* argv[]) {
                     []() { QCoreApplication::exit(-1); },
                     Qt::QueuedConnection);
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
                 using namespace Qt::StringLiterals;
                 engine.loadFromModule(UIMODULE_URI, u"Main"_s);
-#elif QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-                engine.loadFromModule(UIMODULE_URI, u"Main"_qs);
 #else
                 engine.addImportPath(u"qrc:/"_qs);
                 engine.load(QUrl(u"qrc:/WallReel/UI/Main.qml"_qs));
