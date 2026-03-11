@@ -67,6 +67,9 @@ void AppOptions::parseArgs(QApplication& app) {
     QCommandLineOption configFileOption(QStringList() << "c" << "config-file", "Specify a custom configuration file", "file");
     parser.addOption(configFileOption);
 
+    QCommandLineOption applyOption(QStringList() << "a" << "apply", "Apply the specified image as wallpaper and exit", "file");
+    parser.addOption(applyOption);
+
     // Not parser.process(a->arguments()) because we want to handle exit logics ourselves.
     // parser.process(...) will do something like exit(...) that will terminate
     // the application brutally and produce unwanted warnings.
@@ -111,11 +114,22 @@ void AppOptions::parseArgs(QApplication& app) {
     }
 
     if (parser.isSet(configFileOption)) {
-        QString path = parser.value(configFileOption);
+        QString path = Utils::expandPath(parser.value(configFileOption));
         if (Utils::checkFile(path)) {
             configPath = path;
         } else {
             errorText = QString("Error: Config file does not exist or is not accessible: %1").arg(path);
+            printError();
+            return;
+        }
+    }
+
+    if (parser.isSet(applyOption)) {
+        QString path = Utils::expandPath(parser.value(applyOption));
+        if (Utils::checkImageFile(path)) {
+            applyPath = path;
+        } else {
+            errorText = QString("Error: Image file does not exist, is not accessible, or has an unsupported format: %1").arg(path);
             printError();
             return;
         }

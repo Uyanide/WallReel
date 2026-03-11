@@ -20,9 +20,9 @@ class WallpaperService : public QObject {
     void restore(const QString& command);  // execute immediately, ignore if already running
 
   signals:
-    void previewCompleted();
-    void selectCompleted();
-    void restoreCompleted();
+    void previewCompleted(bool success);
+    void selectCompleted(bool success);
+    void restoreCompleted(bool success);
 
   private:
     void _doPreview(const QString& command);

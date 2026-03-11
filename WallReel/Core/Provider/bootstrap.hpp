@@ -10,6 +10,7 @@
 #include "Service/manager.hpp"
 #include "Utils/misc.hpp"
 #include "appoptions.hpp"
+#include "logger.hpp"
 
 namespace WallReel::Core::Provider {
 
@@ -43,7 +44,7 @@ class Bootstrap {
         qRegisterMetaType<Palette::PaletteItem>("PaletteItem");
         qRegisterMetaType<Palette::ColorItem>("ColorItem");
 
-        ServiceMgr = new Service::Manager(
+        serviceMgr = new Service::Manager(
             configMgr->getActionConfig(),
             *imageMgr,
             *paletteMgr);
@@ -55,8 +56,64 @@ class Bootstrap {
         imageMgr->loadAndProcess(configMgr->getWallpapers());
     }
 
+    bool apply(const QString& path) {
+        QEventLoop loop;
+        bool successFlag = false;
+
+        paletteMgr->setSelectedPalette(cacheMgr->getSetting(
+            Cache::SettingsType::LastSelectedPalette,
+            []() { return Config::CacheConfigItems::defaultSelectedPalette; }));
+
+        QObject::connect(
+            configMgr,
+            &Config::Manager::stateCaptured,
+            &loop,
+            [&]() {
+                loop.quit();
+            },
+            Qt::SingleShotConnection);
+        configMgr->captureState();
+        loop.exec();
+
+        QMetaObject::Connection connection;
+
+        connection = QObject::connect(
+            imageMgr,
+            &Image::Manager::isLoadingChanged,
+            &loop,
+            [&]() {
+                if (!imageMgr->isLoading()) {
+                    QObject::disconnect(connection);
+                    QVariant idVar = imageMgr->model()->data(
+                        imageMgr->model()->index(0, 0),
+                        Image::Model::IdRole);
+                    if (idVar.isValid()) {
+                        auto id = idVar.toString();
+                        paletteMgr->updateColor(id);
+                        QObject::connect(
+                            serviceMgr,
+                            &Service::Manager::selectCompleted,
+                            &loop,
+                            [&](bool success) {
+                                successFlag = success;
+                                loop.quit();
+                            },
+                            Qt::SingleShotConnection);
+                        serviceMgr->selectWallpaper(id);
+                    } else {
+                        Logger::critical("Bootstrap", "No images loaded, cannot apply wallpaper");
+                        loop.quit();
+                    }
+                }
+            });
+
+        imageMgr->loadAndProcess({Utils::expandPath(path)});
+        loop.exec();
+        return successFlag;
+    }
+
     ~Bootstrap() {
-        delete ServiceMgr;
+        delete serviceMgr;
         delete paletteMgr;
         delete imageMgr;
         delete configMgr;
@@ -68,7 +125,7 @@ class Bootstrap {
     Config::Manager* configMgr{};
     Image::Manager* imageMgr{};
     Palette::Manager* paletteMgr{};
-    Service::Manager* ServiceMgr{};
+    Service::Manager* serviceMgr{};
 };
 
 }  // namespace WallReel::Core::Provider

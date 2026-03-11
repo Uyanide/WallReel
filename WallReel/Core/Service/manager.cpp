@@ -47,7 +47,8 @@ void Manager::selectWallpaper(const QString& id) {
         WR_WARN(QString("No valid image data at id %1. Skipping select action.").arg(id));
         m_isProcessing = false;
         emit isProcessingChanged();
-        emit selectCompleted();
+        emit selectCompleted(false);
+        return;
     }
 
     const auto command = _renderCommand(m_actionConfig.onSelected, _generateVariables(*data));
@@ -62,7 +63,7 @@ void Manager::restore() {
     }
     if (!m_stateCaptured) {
         WR_DEBUG("State not captured yet, skipping restore action");
-        emit restoreCompleted();
+        emit restoreCompleted(false);
         return;
     }
     m_isProcessing = true;
@@ -81,7 +82,7 @@ void Manager::previewWallpaper(const QString& id) {
     if (!m_stateCaptured) {
         WR_DEBUG("State not captured yet, deferring preview for id " + id);
         m_pendingPreviewId = id;
-        emit previewCompleted();
+        emit previewCompleted(false);
         return;
     }
 
@@ -91,7 +92,7 @@ void Manager::previewWallpaper(const QString& id) {
 
     if (!data || !data->isValid()) {
         WR_WARN(QString("No valid image data at id %1. Skipping preview action.").arg(id));
-        emit previewCompleted();
+        emit previewCompleted(false);
         return;
     }
 
@@ -106,23 +107,23 @@ void Manager::restoreOnQuit() {
     Logger::debug("ServiceManager", "Restore on quit");
     m_wallpaperService->stopAll();
     QEventLoop loop;
-    connect(m_wallpaperService, &WallpaperService::restoreCompleted, &loop, &QEventLoop::quit);
+    connect(this, &Manager::restoreCompleted, &loop, &QEventLoop::quit);
     // Call restore after the event loop starts
     QTimer::singleShot(0, this, &Manager::restore);
     loop.exec();
 }
 
-void Manager::_onSelectCompleted() {
+void Manager::_onSelectCompleted(bool success) {
     Logger::debug("ServiceManager", "Select completed");
     _onProcessCompleted();
-    m_hasSelected = true;
-    emit selectCompleted();
+    m_hasSelected = m_hasSelected || success;
+    emit selectCompleted(success);
 }
 
-void Manager::_onRestoreCompleted() {
+void Manager::_onRestoreCompleted(bool success) {
     Logger::debug("ServiceManager", "Restore completed");
     _onProcessCompleted();
-    emit restoreCompleted();
+    emit restoreCompleted(success);
 }
 
 void Manager::_onProcessCompleted() {

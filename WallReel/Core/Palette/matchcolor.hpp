@@ -10,9 +10,9 @@ namespace WallReel::Core::Palette {
  *
  * @param target
  * @param candidates
- * @return const ColorItem& The best matching color item, or an empty ColorItem if no candidates are provided
+ * @return ColorItem The best matching color item, or an empty ColorItem if no candidates are provided
  */
-const ColorItem& bestMatch(const QColor& target, const QList<ColorItem>& candidates);
+ColorItem bestMatch(const QColor& target, const QList<ColorItem>& candidates);
 
 }  // namespace WallReel::Core::Palette
 

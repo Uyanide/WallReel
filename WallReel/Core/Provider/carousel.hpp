@@ -1,8 +1,6 @@
 #ifndef WALLREEL_PROVIDER_CAROUSEL_HPP
 #define WALLREEL_PROVIDER_CAROUSEL_HPP
 
-#include <qapplication.h>
-
 #include <QApplication>
 
 #include "Cache/manager.hpp"
@@ -148,10 +146,6 @@ class Carousel : public QObject {
 
   signals:
     void isProcessingChanged();
-    void selectCompleted();
-    void previewCompleted();
-    void restoreCompleted();
-    void cancelCompleted();
 
     // Other states
 
@@ -196,7 +190,7 @@ class Carousel : public QObject {
           m_configMgr(bootstrap.configMgr),
           m_imageMgr(bootstrap.imageMgr),
           m_paletteMgr(bootstrap.paletteMgr),
-          m_serviceMgr(bootstrap.ServiceMgr) {
+          m_serviceMgr(bootstrap.serviceMgr) {
         // Simply forward signals
         connect(m_imageMgr, &Image::Manager::isLoadingChanged, this, &Carousel::isLoadingChanged);
         connect(m_imageMgr, &Image::Manager::processedCountChanged, this, &Carousel::processedCountChanged);
@@ -206,10 +200,6 @@ class Carousel : public QObject {
         connect(m_paletteMgr, &Palette::Manager::colorChanged, this, &Carousel::colorChanged);
         connect(m_paletteMgr, &Palette::Manager::colorNameChanged, this, &Carousel::colorNameChanged);
         connect(m_serviceMgr, &Service::Manager::isProcessingChanged, this, &Carousel::isProcessingChanged);
-        connect(m_serviceMgr, &Service::Manager::selectCompleted, this, &Carousel::selectCompleted);
-        connect(m_serviceMgr, &Service::Manager::previewCompleted, this, &Carousel::previewCompleted);
-        connect(m_serviceMgr, &Service::Manager::restoreCompleted, this, &Carousel::restoreCompleted);
-        connect(m_serviceMgr, &Service::Manager::cancelCompleted, this, &Carousel::cancelCompleted);
 
         // "Preview" is costly, but is (usually) protected by a debounce timer, so it seems fine
         // to call it multiple times in a short period, and it simplifies the code a lot :)
@@ -260,16 +250,16 @@ class Carousel : public QObject {
         // Quit on selected
         if (m_configMgr->getActionConfig().quitOnSelected) {
             QObject::connect(
-                this,
-                &Provider::Carousel::selectCompleted,
+                m_serviceMgr,
+                &Service::Manager::selectCompleted,
                 app,
                 &QApplication::quit,
                 Qt::QueuedConnection);
         }
         // Quit on cancel
         QObject::connect(
-            this,
-            &Provider::Carousel::cancelCompleted,
+            m_serviceMgr,
+            &Service::Manager::cancelCompleted,
             app,
             &QApplication::quit,
             Qt::QueuedConnection);

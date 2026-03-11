@@ -48,6 +48,10 @@ int main(int argc, char* argv[]) {
             return 0;
         }
 
+        if (!options.applyPath.isEmpty()) {
+            return bootstrap.apply(options.applyPath) ? 0 : 1;
+        }
+
         {
             Provider::Carousel provider(&a, bootstrap);
             qmlRegisterSingletonInstance(

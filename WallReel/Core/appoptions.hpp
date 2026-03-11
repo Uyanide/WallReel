@@ -26,6 +26,7 @@ class AppOptions {
     QString configPath;
     QStringList appendDirs;
     QString errorText;
+    QString applyPath;        // -a --apply
     bool clearCache = false;  // -C --clear-cache
     bool doReturn   = false;  ///< Indicates whether the application should exit after parsing arguments.
 

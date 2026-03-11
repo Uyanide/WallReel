@@ -1,5 +1,7 @@
 #include "Service/wallpaper.hpp"
 
+#include <qprocess.h>
+
 #include <QColor>
 
 #include "logger.hpp"
@@ -17,31 +19,81 @@ WallpaperService::WallpaperService(int previewDebounceTime, QObject* parent)
         _doPreview(m_pendingPreviewCommand);
     });
 
+    // There is a chance that a QProcess fails to start, changing its state from Starting to NotRunning without emitting finished signal,
+    // so we need to handle errorOccurred signal to catch that case and emit previewCompleted/selectCompleted/restoreCompleted with
+    // false to indicate failure.
+    // However, this is probably impossible since we use "sh" "-c" to execute commands and "sh" should always be available.
+
     m_previewProcess = new QProcess(this);
+    connect(m_previewProcess,
+            &QProcess::errorOccurred,
+            this,
+            [this](QProcess::ProcessError error) {
+                WR_WARN(QString("Preview command process error: %1").arg(error));
+                if (error == QProcess::FailedToStart) {
+                    WR_WARN("Failed to start preview command process.");
+                    emit previewCompleted(false);
+                }
+            });
     connect(m_previewProcess,
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
             [this](int exitCode, QProcess::ExitStatus exitStatus) {
-                WR_DEBUG(QString("Preview process finished with exit code %1 and exit status %2").arg(exitCode).arg(exitStatus));
-                emit previewCompleted();
+                bool success = exitCode == 0 && exitStatus == QProcess::NormalExit;
+                if (!success) {
+                    WR_WARN(QString("Preview command failed with exit code %1 and exit status %2").arg(exitCode).arg(exitStatus));
+                } else {
+                    WR_DEBUG("Preview command executed successfully");
+                }
+                emit previewCompleted(success);
             });
 
     m_selectProcess = new QProcess(this);
     connect(m_selectProcess,
+            &QProcess::errorOccurred,
+            this,
+            [this](QProcess::ProcessError error) {
+                WR_WARN(QString("Select command process error: %1").arg(error));
+                if (error == QProcess::FailedToStart) {
+                    WR_WARN("Failed to start select command process.");
+                    emit selectCompleted(false);
+                }
+            });
+    connect(m_selectProcess,
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
             [this](int exitCode, QProcess::ExitStatus exitStatus) {
-                WR_DEBUG(QString("Select process finished with exit code %1 and exit status %2").arg(exitCode).arg(exitStatus));
-                emit selectCompleted();
+                bool success = exitCode == 0 && exitStatus == QProcess::NormalExit;
+                if (!success) {
+                    WR_WARN(QString("Select command failed with exit code %1 and exit status %2").arg(exitCode).arg(exitStatus));
+                } else {
+                    WR_DEBUG("Select command executed successfully");
+                }
+                emit selectCompleted(success);
             });
 
     m_restoreProcess = new QProcess(this);
     connect(m_restoreProcess,
+            &QProcess::errorOccurred,
+            this,
+            [this](QProcess::ProcessError error) {
+                WR_WARN(QString("Restore command process error: %1").arg(error));
+                if (error == QProcess::FailedToStart) {
+                    WR_WARN("Failed to start restore command process.");
+                    emit restoreCompleted(false);
+                }
+            });
+    connect(m_restoreProcess,
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
             [this](int exitCode, QProcess::ExitStatus exitStatus) {
-                WR_DEBUG(QString("Restore process finished with exit code %1 and exit status %2").arg(exitCode).arg(exitStatus));
-                emit restoreCompleted();
+                bool success = exitCode == 0 && exitStatus == QProcess::NormalExit;
+                if (!success) {
+                    WR_WARN(QString("Restore command failed with exit code %1 and exit status %2").arg(exitCode).arg(exitStatus));
+                } else {
+                    WR_DEBUG("Restore command executed successfully");
+                }
+                emit restoreCompleted(success);
             });
 }
 
@@ -87,7 +139,7 @@ void WallpaperService::restore(const QString& command) {
 void WallpaperService::_doPreview(const QString& command) {
     if (command.isEmpty()) {
         WR_DEBUG("No preview command configured. Skipping preview action.");
-        emit previewCompleted();
+        emit previewCompleted(true);
         return;
     }
     WR_DEBUG(QString("Executing preview command: %1").arg(command));
@@ -102,7 +154,7 @@ void WallpaperService::_doPreview(const QString& command) {
 void WallpaperService::_doSelect(const QString& command) {
     if (command.isEmpty()) {
         WR_DEBUG("No select command configured. Skipping select action.");
-        emit selectCompleted();
+        emit selectCompleted(true);
         return;
     }
     WR_DEBUG(QString("Executing select command: %1").arg(command));
@@ -112,7 +164,7 @@ void WallpaperService::_doSelect(const QString& command) {
 void WallpaperService::_doRestore(const QString& command) {
     if (command.isEmpty()) {
         WR_DEBUG("Restore command is empty. Skipping restore action.");
-        emit restoreCompleted();
+        emit restoreCompleted(true);
         return;
     }
     WR_DEBUG(QString("Executing restore command: %1").arg(command));

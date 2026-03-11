@@ -50,8 +50,10 @@ It might not be that worthy to build a Qt application from ground for such a sma
    Install it to the previously specified prefix. This step may require root permissions if the install prefix is set to a system directory like `/usr/local`.
 
    ```bash
-   cmake --install build
+   cmake --install build --strip
    ```
+
+   `--strip` option is used to reduce the binary size by removing symbol information, which is generally not needed for normal usage.
 
 ## Configuration Reference
 
@@ -203,6 +205,7 @@ Options:
   -q, --quiet               Suppress all log output
   -d, --append-dir <dir>    Append an additional wallpaper search directory
   -c, --config-file <file>  Specify a custom configuration file
+  -a, --apply <file>        Apply the specified image as wallpaper and exit
 ```
 
 A few things to notice:
@@ -212,3 +215,5 @@ A few things to notice:
 - The `--append-dir` option can be used multiple times to add multiple directories.
 
 - It is quite obvious that some options conflicts with each other (e.g. `--verbose` and `--quiet`). Case mutually exclusive options are provided together, the behavior is un.. just please, don't do that.
+
+- Given `--apply`, the config file (default or specified with `--config-file`) will be parsed, and the `onSelected` action will be executed with the properties of the specified image available for placeholders. If `savePalette` is enabled and a palette is selected in the last session, `palette`, `colorName` and `colorHex` placeholders will also be available. `saveState` commands will also be executed to fetch states for placeholders. After the action is executed, the application will exit immediately without showing the UI. This allows you to use WallReel as a command-line wallpaper setter that also supports palette-based theming and state management.

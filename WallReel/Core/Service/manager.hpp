@@ -43,17 +43,17 @@ class Manager : public QObject {
 
   private slots:
 
-    void _onSelectCompleted();
+    void _onSelectCompleted(bool success);
 
-    void _onRestoreCompleted();
+    void _onRestoreCompleted(bool success);
 
     void _onProcessCompleted();
 
   signals:
     void isProcessingChanged();
-    void selectCompleted();
-    void previewCompleted();
-    void restoreCompleted();
+    void selectCompleted(bool success);
+    void previewCompleted(bool success);
+    void restoreCompleted(bool success);
     void cancelCompleted();
 
   private:
