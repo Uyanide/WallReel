@@ -1,9 +1,15 @@
-#include <qapplication.h>
 #include <qobject.h>
 
 #include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QSocketNotifier>
+
+extern "C" {
+#include <signal.h>
+#include <sys/signalfd.h>
+#include <unistd.h>
+}
 
 #include "Core/Provider/bootstrap.hpp"
 #include "Core/Provider/carousel.hpp"
@@ -20,7 +26,22 @@ int main(int argc, char* argv[]) {
     // 1. QQmlApplicationEngine (with all QML objects)
     // 2. provider (manages states and connections)
     // 3. bootstrap (manages lifecycle of all managers)
-    // 4. QApplication
+    // 4. QSocketNotifier (receives signals for graceful shutdown)
+    // 5. QApplication
+
+    // Mask signals for graceful shutdown
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGINT);
+    sigaddset(&mask, SIGHUP);
+    sigaddset(&mask, SIGTERM);
+    sigaddset(&mask, SIGUSR1);
+    sigaddset(&mask, SIGUSR2);
+    if (pthread_sigmask(SIG_BLOCK, &mask, nullptr) == -1) {
+        // Logger is yet to be initialized, but is still usable with default behavior
+        WR_CRITICAL(QString("Failed to block signals: %1").arg(strerror(errno)));
+        return 1;
+    }
 
     QApplication a(argc, argv);
     a.setApplicationName(APP_NAME);
@@ -34,6 +55,27 @@ int main(int argc, char* argv[]) {
 
     {
         Logger::init();
+
+        // Create signalfd to receive signals in the Qt event loop
+        int sfd = signalfd(-1, &mask, SFD_NONBLOCK | SFD_CLOEXEC);
+        if (sfd == -1) {
+            WR_CRITICAL(QString("Failed to create signalfd: %1").arg(strerror(errno)));
+            return 1;
+        }
+        QSocketNotifier notifier(sfd, QSocketNotifier::Read, &a);
+
+        QObject::connect(
+            &notifier,
+            &QSocketNotifier::activated,
+            &a,
+            [sfd, &a]() {
+                struct signalfd_siginfo fdsi;
+                ssize_t s = read(sfd, &fdsi, sizeof(struct signalfd_siginfo));
+                if (s == sizeof(struct signalfd_siginfo)) {
+                    WR_DEBUG(QString("Received signal: %1").arg(fdsi.ssi_signo));
+                    a.quit();
+                }
+            });
 
         AppOptions options;
         options.parseArgs(a);
