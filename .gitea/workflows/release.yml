@@ -68,8 +68,8 @@ jobs:
             chown -R builduser:builduser /workspace
             echo 'builduser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
             
-            su - builduser -c 'makepkg -sf --noconfirm'
-            su - builduser -c 'makepkg --printsrcinfo > .SRCINFO'
+            su - builduser -c 'cd /workspace && makepkg -sf --noconfirm'
+            su - builduser -c 'cd /workspace && makepkg --printsrcinfo > .SRCINFO'
             
             tar -cf - *.pkg.tar.zst PKGBUILD LICENSE .SRCINFO >&3
           " | tar -xf -
