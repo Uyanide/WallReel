@@ -1,0 +1,126 @@
+name: CI/CD
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Extract Version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Generate PKGBUILD
+        run: |
+          TAR_URL="https://git.uyani.de/Uyanide/WallReel/archive/v${{ env.VERSION }}.tar.gz"
+
+          wget -qO source.tar.gz "$TAR_URL"
+          SHA256=$(sha256sum source.tar.gz | awk '{print $1}')
+
+          cat << EOF > PKGBUILD
+          # Maintainer: Uyanide <me@uyani.de>
+          pkgname=wallreel
+          pkgver=${{ env.VERSION }}
+          pkgrel=1
+          pkgdesc="Choose and set desktop wallpapers with customizable themes and actions"
+          arch=('x86_64')
+          url="https://git.uyani.de/Uyanide/WallReel"
+          license=('MIT')
+          depends=('qt6-base' 'qt6-declarative' 'gcc-libs' 'glibc')
+          makedepends=('cmake' 'ninja')
+          source=("\${pkgname}-\${pkgver}.tar.gz::\$TAR_URL")
+          sha256sums=('\$SHA256')
+
+          build() {
+              cd "wallreel"
+              cmake -B build -S . -G Ninja \\
+                  -DCMAKE_BUILD_TYPE='Release' \\
+                  -DCMAKE_INSTALL_PREFIX='/usr' \\
+                  -Wno-dev
+              cmake --build build
+          }
+
+          package() {
+              cd "wallreel"
+              DESTDIR="\$pkgdir" cmake --install build
+              install -Dm644 LICENSE "\$pkgdir/usr/share/licenses/\$pkgname/LICENSE"
+          }
+          EOF
+
+      - name: Build and Generate AUR Meta
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace archlinux:latest /bin/bash -c "
+            pacman -Syu --noconfirm base-devel cmake ninja qt6-base qt6-declarative sudo
+            useradd -m builduser
+            chown -R builduser:builduser /workspace
+            echo 'builduser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+            su - builduser -c 'cd /workspace && makepkg -sf --noconfirm'
+            su - builduser -c 'cd /workspace && makepkg --printsrcinfo > .SRCINFO'
+          "
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            *.pkg.tar.zst
+            PKGBUILD
+            LICENSE
+            .SRCINFO
+
+  release:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract Version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: .
+
+      - name: Publish to Gitea Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: WallReel ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          files: "*.pkg.tar.zst"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to AUR
+        env:
+          AUR_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$AUR_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+
+          cat <<EOF > ~/.ssh/config
+          Host aur.archlinux.org
+            IdentityFile ~/.ssh/aur
+            User aur
+          EOF
+
+          git config --global user.name "Uyanide"
+          git config --global user.email "me@uyani.de"
+
+          git clone ssh://aur@aur.archlinux.org/wallreel.git aur-repo
+          cp PKGBUILD LICENSE .SRCINFO aur-repo/
+          cd aur-repo
+
+          git add PKGBUILD LICENSE .SRCINFO
+          git commit -m "Release v${{ env.VERSION }}"
+          git push origin master
