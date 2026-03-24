@@ -55,15 +55,24 @@ jobs:
 
       - name: Build and Generate AUR Meta
         run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace archlinux:latest /bin/bash -c "
-            pacman -Syu --noconfirm base-devel cmake ninja qt6-base qt6-declarative sudo
+          tar -cf - . | docker run --rm -i archlinux:latest /bin/bash -e -c "
+            mkdir -p /workspace && cd /workspace
+            tar -xf -
+            exec 3>&1 1>&2
+
+            pacman-key --init && pacman-key --populate
+            pacman -Sy --noconfirm archlinux-keyring
+            pacman -Su --noconfirm base-devel cmake ninja qt6-base qt6-declarative sudo
+            
             useradd -m builduser
             chown -R builduser:builduser /workspace
             echo 'builduser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-
-            su - builduser -c 'cd /workspace && makepkg -sf --noconfirm'
-            su - builduser -c 'cd /workspace && makepkg --printsrcinfo > .SRCINFO'
-          "
+            
+            su - builduser -c 'makepkg -sf --noconfirm'
+            su - builduser -c 'makepkg --printsrcinfo > .SRCINFO'
+            
+            tar -cf - *.pkg.tar.zst PKGBUILD LICENSE .SRCINFO >&3
+          " | tar -xf -
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
