@@ -23,7 +23,7 @@ jobs:
           wget -qO source.tar.gz "$TAR_URL"
           SHA256=$(sha256sum source.tar.gz | awk '{print $1}')
 
-          cat << EOF > PKGBUILD
+          cat << 'EOF' > PKGBUILD
           # Maintainer: Uyanide <me@uyani.de>
           pkgname=wallreel
           pkgver=${{ env.VERSION }}
@@ -34,24 +34,26 @@ jobs:
           license=('MIT')
           depends=('qt6-base' 'qt6-declarative' 'gcc-libs' 'glibc')
           makedepends=('cmake' 'ninja')
-          source=("\${pkgname}-\${pkgver}.tar.gz::https://git.uyani.de/Uyanide/WallReel/archive/v\${pkgver}.tar.gz")
-          sha256sums=('\$SHA256')
+          source=("${pkgname}-${pkgver}.tar.gz::https://git.uyani.de/Uyanide/WallReel/archive/v${pkgver}.tar.gz")
+          sha256sums=('INSERT_SHA256_HERE')
 
           build() {
               cd "wallreel"
-              cmake -B build -S . -G Ninja \\
-                  -DCMAKE_BUILD_TYPE='Release' \\
-                  -DCMAKE_INSTALL_PREFIX='/usr' \\
+              cmake -B build -S . -G Ninja \
+                  -DCMAKE_BUILD_TYPE='Release' \
+                  -DCMAKE_INSTALL_PREFIX='/usr' \
                   -Wno-dev
               cmake --build build
           }
 
           package() {
               cd "wallreel"
-              DESTDIR="\$pkgdir" cmake --install build
-              install -Dm644 LICENSE "\$pkgdir/usr/share/licenses/\$pkgname/LICENSE"
+              DESTDIR="$pkgdir" cmake --install build
+              install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
           }
           EOF
+
+          sed -i "s/INSERT_SHA256_HERE/$SHA256/" PKGBUILD
 
       - name: Build and Generate AUR Meta
         run: |
@@ -63,14 +65,14 @@ jobs:
             pacman-key --init && pacman-key --populate
             pacman -Sy --noconfirm archlinux-keyring
             pacman -Su --noconfirm base-devel cmake ninja qt6-base qt6-declarative sudo
-            
+
             useradd -m builduser
             chown -R builduser:builduser /workspace
             echo 'builduser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-            
+
             su - builduser -c 'cd /workspace && makepkg -sf --noconfirm'
             su - builduser -c 'cd /workspace && makepkg --printsrcinfo > .SRCINFO'
-            
+
             tar -cf - *.pkg.tar.zst PKGBUILD LICENSE .SRCINFO >&3
           " | tar -xf -
 
