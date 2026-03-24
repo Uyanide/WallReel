@@ -34,7 +34,7 @@ jobs:
           license=('MIT')
           depends=('qt6-base' 'qt6-declarative' 'gcc-libs' 'glibc')
           makedepends=('cmake' 'ninja')
-          source=("\${pkgname}-\${pkgver}.tar.gz::\$TAR_URL")
+          source=("\${pkgname}-\${pkgver}.tar.gz::https://git.uyani.de/Uyanide/WallReel/archive/v\${pkgver}.tar.gz")
           sha256sums=('\$SHA256')
 
           build() {
