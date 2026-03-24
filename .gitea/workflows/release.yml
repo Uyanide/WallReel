@@ -71,9 +71,9 @@ jobs:
             echo 'builduser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
             su - builduser -c 'cd /workspace && makepkg -sf --noconfirm'
-            su - builduser -c 'cd /workspace && makepkg --printsrcinfo > .SRCINFO'
-
-            tar -cf - *.pkg.tar.zst PKGBUILD LICENSE .SRCINFO >&3
+            su - builduser -c 'cd /workspace && makepkg --printsrcinfo' > SRCINFO.txt
+            
+            tar -cf - *.pkg.tar.zst PKGBUILD LICENSE SRCINFO.txt >&3
           " | tar -xf -
 
       - name: Upload Artifacts
@@ -84,7 +84,7 @@ jobs:
             *.pkg.tar.zst
             PKGBUILD
             LICENSE
-            .SRCINFO
+            SRCINFO.txt
 
   release:
     name: Publish
@@ -129,7 +129,8 @@ jobs:
           git config --global user.email "me@uyani.de"
 
           git clone ssh://aur@aur.archlinux.org/wallreel.git aur-repo
-          cp PKGBUILD LICENSE .SRCINFO aur-repo/
+          cp PKGBUILD LICENSE aur-repo/
+          cp SRCINFO.txt aur-repo/.SRCINFO
           cd aur-repo
 
           git add PKGBUILD LICENSE .SRCINFO
