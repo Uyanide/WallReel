@@ -27,6 +27,7 @@ class Manager : public QObject {
      * @param searchDirs Additional directories to search for wallpapers (not recursive)
      * @param configPath Optional path to a specific configuration file (overrides the default config path)
      * @param picturesDir The pictures directory (default location for user wallpapers)
+     * @param disableActions Whether to disable actions
      * @param parent QObject parent
      *
      * @note The constructor will load the configuration and scan for wallpapers immediately.
@@ -36,6 +37,7 @@ class Manager : public QObject {
         const QDir& picturesDir,
         const QStringList& searchDirs = {},
         const QString& configPath     = "",
+        bool disableActions           = false,
         QObject* parent               = nullptr);
 
     ~Manager();
@@ -88,6 +90,8 @@ class Manager : public QObject {
 
   private:
     const QDir m_configDir;
+    bool m_disableActions = false;
+
     WallpaperConfigItems m_wallpaperConfig;
     ThemeConfigItems m_themeConfig;
     ActionConfigItems m_actionConfig;

@@ -2,7 +2,7 @@
 title: WALLREEL
 section: 1
 header: User Commands
-footer: WallReel 2.0.1
+footer: WallReel 2.0.2
 date: 2026-03-24
 ---
 

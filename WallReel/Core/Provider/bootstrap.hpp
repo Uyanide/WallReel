@@ -18,12 +18,13 @@ class Bootstrap {
     friend class Carousel;
 
   public:
-    Bootstrap(const AppOptions& options) {
+    Bootstrap(const AppOptions& options) : options(options) {
         configMgr = new Config::Manager(
             Utils::getConfigDir(),
             Utils::getPicturesDir(),
             options.appendDirs,
-            options.configPath);
+            options.configPath,
+            options.disableActions);
 
         cacheMgr = new Cache::Manager(
             Utils::getCacheDir(),
@@ -58,6 +59,11 @@ class Bootstrap {
     }
 
     bool apply(const QString& path) {
+        if (options.disableActions) {
+            Logger::warn("Bootstrap", "Actions are disabled, cannot apply wallpaper");
+            return false;
+        }
+
         QEventLoop loop;
         bool successFlag = false;
 
@@ -122,6 +128,7 @@ class Bootstrap {
     }
 
   private:
+    const AppOptions& options;
     Cache::Manager* cacheMgr{};
     Config::Manager* configMgr{};
     Image::Manager* imageMgr{};

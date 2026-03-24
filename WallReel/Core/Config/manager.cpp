@@ -26,8 +26,9 @@ Manager::Manager(
     const QDir& picturesDir,
     const QStringList& searchDirs,
     const QString& configPath,
+    bool disableActions,
     QObject* parent)
-    : QObject(parent), m_configDir(configDir) {
+    : QObject(parent), m_configDir(configDir), m_disableActions(disableActions) {
     connect(this, &Manager::stateCaptured, this, [this]() {
         m_stateCaptured = true;
         WR_INFO("State capture completed");
@@ -398,6 +399,13 @@ void Manager::captureState() {
     if (m_stateCaptured) {
         WR_DEBUG("State already captured, skipping capture");
         emit stateCaptured();
+        return;
+    }
+
+    if (m_disableActions) {
+        WR_DEBUG("Actions are disabled, skipping state capture");
+        emit stateCaptured();
+        return;
     }
 
     if (m_pendingCaptures > 0) {
