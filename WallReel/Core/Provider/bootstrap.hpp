@@ -47,7 +47,8 @@ class Bootstrap {
         serviceMgr = new Service::Manager(
             configMgr->getActionConfig(),
             *imageMgr,
-            *paletteMgr);
+            *paletteMgr,
+            options.disableActions);
     }
 
     void start() {

@@ -1,5 +1,7 @@
 #include "appoptions.hpp"
 
+#include <qcommandlineoption.h>
+
 #include <QApplication>
 #include <QCommandLineOption>
 #include <QTextStream>
@@ -67,6 +69,9 @@ void AppOptions::parseArgs(QApplication& app) {
     QCommandLineOption configFileOption(QStringList() << "c" << "config-file", "Specify a custom configuration file", "file");
     parser.addOption(configFileOption);
 
+    QCommandLineOption disableActionsOption(QStringList() << "D" << "disable-actions", "Disable actions set in configuration file");
+    parser.addOption(disableActionsOption);
+
     QCommandLineOption applyOption(QStringList() << "a" << "apply", "Apply the specified image as wallpaper and exit", "file");
     parser.addOption(applyOption);
 
@@ -122,6 +127,10 @@ void AppOptions::parseArgs(QApplication& app) {
             printError();
             return;
         }
+    }
+
+    if (parser.isSet(disableActionsOption)) {
+        disableActions = true;
     }
 
     if (parser.isSet(applyOption)) {

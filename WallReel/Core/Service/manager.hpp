@@ -21,7 +21,8 @@ class Manager : public QObject {
         const Config::ActionConfigItems& actionConfig,
         Image::Manager& imageManager,
         Palette::Manager& paletteManager,
-        QObject* parent = nullptr);
+        bool disableActions = false,
+        QObject* parent     = nullptr);
 
     bool isProcessing() const { return m_isProcessing; }
 
@@ -65,6 +66,7 @@ class Manager : public QObject {
     const Config::ActionConfigItems& m_actionConfig;
     Image::Manager& m_imageManager;
     Palette::Manager& m_paletteManager;
+    bool m_disableActions;
 
     bool m_isProcessing = false;
     bool m_hasSelected  = false;

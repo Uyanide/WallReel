@@ -11,7 +11,12 @@ Manager::Manager(
     const Config::ActionConfigItems& actionConfig,
     Image::Manager& imageManager,
     Palette::Manager& paletteManager,
-    QObject* parent) : m_actionConfig(actionConfig), m_imageManager(imageManager), m_paletteManager(paletteManager) {
+    bool disableActions,
+    QObject* parent)
+    : m_actionConfig(actionConfig),
+      m_imageManager(imageManager),
+      m_paletteManager(paletteManager),
+      m_disableActions(disableActions) {
     m_wallpaperService = new WallpaperService(m_actionConfig.previewDebounceTime, this);
 
     // Forward signals
@@ -35,6 +40,11 @@ void Manager::onStateCaptured() {
 
 void Manager::selectWallpaper(const QString& id) {
     WR_DEBUG("Select action triggered for id " + id);
+    if (m_disableActions) {
+        WR_DEBUG("Actions are disabled, skipping select for id " + id);
+        emit selectCompleted(true);
+        return;
+    }
     if (m_isProcessing) {
         WR_DEBUG("Already processing an select action, ignoring new request");
         return;
@@ -57,6 +67,11 @@ void Manager::selectWallpaper(const QString& id) {
 
 void Manager::restore() {
     WR_DEBUG("Restore action triggered");
+    if (m_disableActions) {
+        WR_DEBUG("Actions are disabled, skipping restore");
+        emit restoreCompleted(true);
+        return;
+    }
     if (m_isProcessing) {
         WR_DEBUG("Already processing an restore action, ignoring new request");
         return;
@@ -74,11 +89,21 @@ void Manager::restore() {
 
 void Manager::cancel() {
     WR_DEBUG("Cancel action triggered");
+    if (m_disableActions) {
+        WR_DEBUG("Actions are disabled, skipping cancel");
+        emit cancelCompleted();
+        return;
+    }
     m_wallpaperService->stopAll();
     emit cancelCompleted();
 }
 
 void Manager::previewWallpaper(const QString& id) {
+    if (m_disableActions) {
+        WR_DEBUG("Actions are disabled, skipping preview for id " + id);
+        emit previewCompleted(true);
+        return;
+    }
     if (!m_stateCaptured) {
         WR_DEBUG("State not captured yet, deferring preview for id " + id);
         m_pendingPreviewId = id;
@@ -101,11 +126,15 @@ void Manager::previewWallpaper(const QString& id) {
 
 void Manager::restoreOnQuit() {
     if (m_hasSelected) {
-        Logger::debug("ServiceManager", "Quit with selected wallpaper, no need to restore");
+        WR_DEBUG("Quit with selected wallpaper, no need to restore");
         return;
     }
-    Logger::debug("ServiceManager", "Restore on quit");
+    WR_DEBUG("Restore on quit");
     m_wallpaperService->stopAll();
+    if (m_disableActions) {
+        WR_DEBUG("Actions are disabled, skipping restore on quit");
+        return;
+    }
     QEventLoop loop;
     connect(this, &Manager::restoreCompleted, &loop, &QEventLoop::quit);
     // Call restore after the event loop starts
@@ -114,14 +143,14 @@ void Manager::restoreOnQuit() {
 }
 
 void Manager::_onSelectCompleted(bool success) {
-    Logger::debug("ServiceManager", "Select completed");
+    WR_DEBUG("Select completed");
     _onProcessCompleted();
     m_hasSelected = m_hasSelected || success;
     emit selectCompleted(success);
 }
 
 void Manager::_onRestoreCompleted(bool success) {
-    Logger::debug("ServiceManager", "Restore completed");
+    WR_DEBUG("Restore completed");
     _onProcessCompleted();
     emit restoreCompleted(success);
 }
