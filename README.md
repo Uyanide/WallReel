@@ -1,20 +1,20 @@
 ## What this is
 
-It might not be that worthy to build a Qt application from ground for such a small feature, but I kind of enjoy the pain... So here it is.
+It might be a bit overkill to build a Qt application from ground for such a small feature, but I kind of enjoy the pain... So here it is.
 
-<img src="https://raw.githubusercontent.com/Uyanide/WallReel/refs/heads/master/misc/screenshot.webp"/>
+![WallReel screenshot](misc/screenshot.webp)
 
 ## How to build
 
-1. Make sure you have Qt6 libraries, CMake and a C++ compiler installed.
+1. Make sure Qt6 libraries, CMake, and a C++ compiler are installed.
 
-   e.g. On Arch-based systems:
+   On Arch-based systems:
 
    ```bash
    sudo pacman -S --needed qt6-base qt6-declarative cmake gcc
    ```
 
-   on Debian-based systems:
+   On Debian-based systems:
 
    ```bash
    sudo apt install --no-install-recommends qt6-base-dev qt6-declarative-dev qml6-module-qtquick qml6-module-qtquick-controls2 qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-qtqml-workerscript cmake g++
@@ -29,31 +29,57 @@ It might not be that worthy to build a Qt application from ground for such a sma
 
 3. Build and install:
 
-   This is a standard CMake managed project, so the build process is pretty normal and straightforward. First, configure the project:
+   This is a standard CMake project. First, configure it. Adjust the install prefix as needed.
 
    ```bash
    cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/usr/local
    ```
 
-   Adjust install prefix to your needs. Start building:
+   Then build.
 
    ```bash
    cmake --build build -- -j$(nproc)
    ```
 
-   The binary will be located at `build/wallreel` and can be run directly for testing:
+   The binary will be located at `build/wallreel` and can be run directly for testing.
 
    ```bash
    build/wallreel
    ```
 
-   Install it to the previously specified prefix. This step may require root permissions if the install prefix is set to a system directory like `/usr/local`.
+   Install to the configured prefix. This step may require root permissions if the prefix is set to a system path such as `/usr/local`.
 
    ```bash
    cmake --install build --strip
    ```
 
-   `--strip` option is used to reduce the binary size by removing symbol information, which is generally not needed for normal usage.
+   `--strip` reduces binary size by removing symbol information that is usually unnecessary for normal usage.
+
+## Man Pages
+
+This project ships man pages and installs them through `cmake --install`.
+
+- `wallreel(1)` for CLI usage
+- `wallreel(5)` for configuration
+
+The source files are maintained in Markdown for easier editing:
+
+- `docs/man/man.1.md`
+- `docs/man/man.5.md`
+
+Generated man files are committed for packaging and normal installation without extra tool dependencies:
+
+- `WallReel/Assets/man/man.1`
+- `WallReel/Assets/man/man.5`
+
+To regenerate them, run:
+
+```bash
+for src in docs/man/man.*.md; do
+    dst="WallReel/Assets/man/$(basename "${src%.md}")"
+    pandoc --from gfm --to man --standalone -o "$dst" "$src"
+done
+```
 
 ## Configuration Reference
 
@@ -75,9 +101,9 @@ Defines where WallReel looks for images and what to exclude. If none of the `pat
 
 Configures the color palettes.
 
-By default, a **dominant color** will be extracted from each wallpaper. If a palette is **selected**, the color that matches the dominant color the best will be selected as the **primary color**. This might be convinient if you prefer to set your desktop theme to match the wallpaper using a predefined palette (e.g. Catppuccin, Tokyo Night) instead of generating a custom one (e.g. using matugen).
+By default, a **dominant color** is extracted from each wallpaper. If a palette is **selected**, the closest palette color is used as the **primary color**. This is useful when you want your desktop theme to follow a predefined palette (for example Catppuccin or Tokyo Night) instead of generating a custom one (for example with matugen).
 
-There are a few embeded palettes available in the application, including "Catppuccin Frappe", "Catppuccin Latte", "Catppuccin Macchiato", and "Catppuccin Mocha". You can also define your own palettes or override the embeded ones by providing a custom configuration.
+Several embedded palettes are available, including "Catppuccin Frappe", "Catppuccin Latte", "Catppuccin Macchiato", and "Catppuccin Mocha". You can also define custom palettes or override embedded ones via configuration.
 
 | Property   | Type             | Default | Description                                                                                                                                 |
 | :--------- | :--------------- | :------ | :------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -194,26 +220,27 @@ Controls what UI state is persisted between sessions.
 
 ## CLI
 
-```
+```text
 Usage: wallreel [options]
 
 Options:
-  -h, --help                Displays help on commandline options.
-  -v, --version             Displays version information.
-  -V, --verbose             Set log level to DEBUG (default is INFO)
-  -C, --clear-cache         Clear the cache and exit
-  -q, --quiet               Suppress all log output
-  -d, --append-dir <dir>    Append an additional wallpaper search directory
-  -c, --config-file <file>  Specify a custom configuration file
-  -a, --apply <file>        Apply the specified image as wallpaper and exit
+  -h, --help                 Displays help on commandline options.
+  -v, --version              Displays version information.
+  -V, --verbose              Set log level to DEBUG (default is INFO)
+  -C, --clear-cache          Clear the image cache and exit
+  -q, --quiet                Suppress all log output
+  -d, --append-dir <dir>     Append an additional wallpaper search directory
+  -c, --config-file <file>   Specify a custom configuration file
+  -D, --disable-actions      Disable actions set in configuration file
+  -a, --apply <file>         Apply the specified image as wallpaper and exit
 ```
 
 A few things to notice:
 
-- It's generally not necessary to provide any CLI arguments, I would recommend using the config file to customize the behavior instead. However, it is still possible to control some essential options via CLI.
+- In most cases you do not need CLI arguments; configuration is usually the better place to customize behavior. CLI flags are still useful for quick overrides and one-shot runs though.
 
 - The `--append-dir` option can be used multiple times to add multiple directories.
 
 - It is quite obvious that some options conflicts with each other (e.g. `--verbose` and `--quiet`). Case mutually exclusive options are provided together, the behavior is un.. just please, don't do that.
 
-- Given `--apply`, the config file (default or specified with `--config-file`) will be parsed, and the `onSelected` action will be executed with the properties of the specified image available for placeholders. If `savePalette` is enabled and a palette is selected in the last session, `palette`, `colorName` and `colorHex` placeholders will also be available. `saveState` commands will also be executed to fetch states for placeholders. After the action is executed, the application will exit immediately without showing the UI. This allows you to use WallReel as a command-line wallpaper setter that also supports palette-based theming and state management.
+- With `--apply`, WallReel still parses the configuration (default path or `--config-file`) and executes `onSelected` with placeholders resolved from the specified image. If `savePalette` is enabled and a palette was selected in the last session, `palette`, `colorName`, and `colorHex` placeholders are also available. `saveState` commands are executed as well. The application exits immediately after executing the action, without opening the UI. This mode allows WallReel to be used as a command-line wallpaper setter with palette-aware theming and state placeholders.
