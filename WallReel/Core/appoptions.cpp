@@ -1,7 +1,5 @@
 #include "appoptions.hpp"
 
-#include <qcommandlineoption.h>
-
 #include <QApplication>
 #include <QCommandLineOption>
 #include <QTextStream>

@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
     a.setApplicationVersion(APP_VERSION);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
     using namespace Qt::StringLiterals;
-    a.setWindowIcon(QIcon(u":/%1.svg"_s.arg(APP_NAME)));
+    a.setWindowIcon(QIcon(u":/icon.svg"_s));
 #else
     a.setWindowIcon(QIcon(u":/%1.svg"_qs.arg(APP_NAME)));
 #endif

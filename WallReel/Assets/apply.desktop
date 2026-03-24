@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Apply with WallReel
+Icon=wallreel
+NoDisplay=true
+GenericName=Animated wallpaper selector
+TryExec=wallreel
+Exec=wallreel -a %f
+Comment=A small wallpaper utility made with Qt
+Terminal=false
+Categories=Application;Utility;DesktopSettings;
+StartupNotify=true
+Keywords=wallpaper;animated;utility;qt;
+MimeType=image/jpeg;image/png;image/webp;image/bmp;image/gif;image/heic;image/heif;
