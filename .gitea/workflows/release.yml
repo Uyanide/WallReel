@@ -6,8 +6,8 @@ on:
       - 'v*'
 
 jobs:
-  build:
-    name: Package
+  build-arch:
+    name: Build ArchLinux Package
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -34,6 +34,7 @@ jobs:
           license=('MIT')
           depends=('qt6-base' 'qt6-declarative' 'gcc-libs' 'glibc')
           makedepends=('cmake')
+          options=('!debug')
           source=("${pkgname}-${pkgver}.tar.gz::https://git.uyani.de/Uyanide/WallReel/archive/v${pkgver}.tar.gz")
           sha256sums=('INSERT_SHA256_HERE')
 
@@ -78,27 +79,27 @@ jobs:
             tar -cf - *.pkg.tar.zst PKGBUILD SRCINFO.txt >&3
           " | tar -xf -
 
-      - name: Upload Artifacts
+      - name: Upload Arch Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: release-artifacts
+          name: arch-artifacts
           path: |
             *.pkg.tar.zst
             PKGBUILD
             SRCINFO.txt
 
-  release:
-    name: Publish
-    needs: build
+  publish-gitea:
+    name: Publish to Gitea Release
+    needs: [build-arch]
     runs-on: ubuntu-latest
     steps:
       - name: Extract Version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-      - name: Download Artifacts
+      - name: Download Arch Artifacts
         uses: actions/download-artifact@v3
         with:
-          name: release-artifacts
+          name: arch-artifacts
           path: .
 
       - name: Publish to Gitea Release
@@ -110,6 +111,20 @@ jobs:
           files: "*.pkg.tar.zst"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-aur:
+    name: Publish to AUR
+    needs: [build-arch]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract Version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Download Arch Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: arch-artifacts
+          path: .
 
       - name: Publish to AUR
         env:
