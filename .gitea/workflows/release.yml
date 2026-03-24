@@ -14,20 +14,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract Version
-        run: |
-          RAW_VERSION="${GITHUB_REF#refs/tags/v}"
-          if [[ "$RAW_VERSION" == *-* ]]; then
-            echo "PKGVER=${RAW_VERSION%-*}" >> $GITHUB_ENV
-            echo "PKGREL=${RAW_VERSION##*-}" >> $GITHUB_ENV
-          else
-            echo "PKGVER=$RAW_VERSION" >> $GITHUB_ENV
-            echo "PKGREL=1" >> $GITHUB_ENV
-          fi
-          echo "FULL_TAG=$RAW_VERSION" >> $GITHUB_ENV
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Generate PKGBUILD
         run: |
-          TAR_URL="https://git.uyani.de/Uyanide/WallReel/archive/v${{ env.FULL_TAG }}.tar.gz"
+          TAR_URL="https://git.uyani.de/Uyanide/WallReel/archive/v${{ env.VERSION }}.tar.gz"
 
           wget -qO source.tar.gz "$TAR_URL"
           SHA256=$(sha256sum source.tar.gz | awk '{print $1}')
@@ -35,20 +26,20 @@ jobs:
           cat << 'EOF' > PKGBUILD
           # Maintainer: Uyanide <me@uyani.de>
           pkgname=wallreel
-          pkgver=${{ env.PKGVER }}
-          pkgrel=${{ env.PKGREL }}
+          pkgver=${{ env.VERSION }}
+          pkgrel=1
           pkgdesc="Choose and set desktop wallpapers with customizable themes and actions"
           arch=('x86_64')
           url="https://git.uyani.de/Uyanide/WallReel"
           license=('MIT')
           depends=('qt6-base' 'qt6-declarative' 'gcc-libs' 'glibc')
-          makedepends=('cmake' 'ninja')
-          source=("${pkgname}-${pkgver}.tar.gz::https://git.uyani.de/Uyanide/WallReel/archive/v${{ env.FULL_TAG }}.tar.gz")
+          makedepends=('cmake')
+          source=("${pkgname}-${pkgver}.tar.gz::https://git.uyani.de/Uyanide/WallReel/archive/v${pkgver}.tar.gz")
           sha256sums=('INSERT_SHA256_HERE')
 
           build() {
               cd "wallreel"
-              cmake -B build -S . -G Ninja \
+              cmake -B build -S . \
                   -DCMAKE_BUILD_TYPE='Release' \
                   -DCMAKE_INSTALL_PREFIX='/usr' \
                   -Wno-dev
@@ -73,7 +64,7 @@ jobs:
 
             pacman-key --init && pacman-key --populate
             pacman -Sy --noconfirm archlinux-keyring
-            pacman -Su --noconfirm base-devel cmake ninja qt6-base qt6-declarative sudo
+            pacman -Su --noconfirm base-devel cmake qt6-base qt6-declarative sudo
 
             useradd -m builduser
             chown -R builduser:builduser /workspace
@@ -100,16 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Extract Version
-        run: |
-          RAW_VERSION="${GITHUB_REF#refs/tags/v}"
-          if [[ "$RAW_VERSION" == *-* ]]; then
-            echo "PKGVER=${RAW_VERSION%-*}" >> $GITHUB_ENV
-            echo "PKGREL=${RAW_VERSION##*-}" >> $GITHUB_ENV
-          else
-            echo "PKGVER=$RAW_VERSION" >> $GITHUB_ENV
-            echo "PKGREL=1" >> $GITHUB_ENV
-          fi
-          echo "FULL_TAG=$RAW_VERSION" >> $GITHUB_ENV
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Download Artifacts
         uses: actions/download-artifact@v3
@@ -120,7 +102,7 @@ jobs:
       - name: Publish to Gitea Release
         uses: softprops/action-gh-release@v1
         with:
-          name: WallReel ${{ env.FULL_TAG }}
+          name: WallReel ${{ env.VERSION }}
           draft: false
           prerelease: false
           files: "*.pkg.tar.zst"
@@ -159,5 +141,5 @@ jobs:
           EOF
 
           git add PKGBUILD LICENSE .SRCINFO
-          git commit -m "Release v${{ env.FULL_TAG }}"
+          git commit -m "Release v${{ env.VERSION }}"
           git push origin master

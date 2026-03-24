@@ -2,7 +2,7 @@
 title: WALLREEL
 section: 5
 header: File Formats Manual
-footer: WallReel 2.0.0
+footer: WallReel 2.0.1
 date: 2026-03-24
 ---
 
