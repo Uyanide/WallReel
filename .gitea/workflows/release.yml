@@ -66,6 +66,8 @@ jobs:
             pacman -Sy --noconfirm archlinux-keyring
             pacman -Su --noconfirm base-devel cmake qt6-base qt6-declarative sudo
 
+            echo 'MAKEFLAGS="-j$(nproc)"' >> /etc/makepkg.conf
+
             useradd -m builduser
             chown -R builduser:builduser /workspace
             echo 'builduser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
