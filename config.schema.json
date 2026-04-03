@@ -143,7 +143,7 @@
                 },
                 "quitOnSelected": {
                     "type": "boolean",
-                    "default": false,
+                    "default": true,
                     "description": "Whether to quit the application after confirming a wallpaper"
                 },
                 "restoreOnClose": {

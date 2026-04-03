@@ -121,7 +121,7 @@ Configures system commands to execute on specific events mapping to your window 
 | `onPreview`           | String           | `""`    | Command to execute when a wallpaper is previewed.                                                                                                                    |
 | `saveState`           | Array of Objects | `[]`    | Commands to fetch system states before changing wallpapers. Each object defines: `key`, `fallback` (fallback value), `command` (stdout mapping), and `timeout` (ms). |
 | `onRestore`           | String           | `""`    | Command to execute on restore. Extracted states from `saveState` can be injected using `{{ key }}`.                                                                  |
-| `quitOnSelected`      | Boolean          | `false` | Quit the application after a selection is made.                                                                                                                      |
+| `quitOnSelected`      | Boolean          | `true`  | Quit the application after a selection is made.                                                                                                                      |
 | `restoreOnClose`      | Boolean          | `true`  | Run `onRestore` command if the application is closed without making a final selection.                                                                               |
 
 Available placeholders for `onSelected`, `onPreview` commands:

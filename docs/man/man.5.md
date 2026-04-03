@@ -98,7 +98,7 @@ Each item has:
 `onRestore` (string, default: `""`)
 : Command executed on restore. Saved state keys are usable as placeholders.
 
-`quitOnSelected` (boolean, default: `false`)
+`quitOnSelected` (boolean, default: `true`)
 : Exit application immediately after confirming a selection.
 
 `restoreOnClose` (boolean, default: `true`)
