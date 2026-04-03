@@ -27,7 +27,6 @@
 //
 // action.previewDebounceTime   number  300     Debounce time for preview action in milliseconds
 // action.printSelected         boolean true    Whether to print the selected wallpaper path to stdout on confirm
-// action.printPreview          boolean false   Whether to print the previewed wallpaper path to stdout on preview
 // action.onSelected            string  ""      Command to execute on confirmation
 // action.onPreview             string  ""      Command to execute on preview
 // action.saveState             array   []      Useful for restore command
@@ -126,7 +125,6 @@ struct ActionConfigItems {
     QString onRestore;
     int previewDebounceTime = 300;  // milliseconds
     bool printSelected      = true;
-    bool printPreview       = false;
     bool quitOnSelected     = false;
     bool restoreOnClose     = true;
 };

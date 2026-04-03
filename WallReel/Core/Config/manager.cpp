@@ -203,12 +203,6 @@ void Manager::_loadActionConfig(const QJsonObject& root) {
             m_actionConfig.printSelected = val.toBool();
         }
     }
-    if (config.contains("printPreview")) {
-        const auto& val = config["printPreview"];
-        if (val.isBool()) {
-            m_actionConfig.printPreview = val.toBool();
-        }
-    }
     if (config.contains("saveState") && config["saveState"].isArray()) {
         const QJsonArray& arr = config["saveState"].toArray();
         for (const auto& item : arr) {

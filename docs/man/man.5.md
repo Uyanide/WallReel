@@ -79,9 +79,6 @@ Configures commands executed for preview, selection, and restore behavior.
 `printSelected` (boolean, default: `true`)
 : Print selected wallpaper path to stdout on confirmation.
 
-`printPreview` (boolean, default: `false`)
-: Print previewed wallpaper path to stdout on preview.
-
 `onSelected` (string, default: `""`)
 : Command executed when a wallpaper is confirmed.
 

@@ -96,11 +96,6 @@
                     "default": true,
                     "description": "Whether to print the selected wallpaper path to stdout on confirm"
                 },
-                "printPreview": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Whether to print the previewed wallpaper path to stdout on preview"
-                },
                 "onSelected": {
                     "type": "string",
                     "default": "",
