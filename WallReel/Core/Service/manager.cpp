@@ -1,5 +1,6 @@
 #include "manager.hpp"
 
+#include "Utils/misc.hpp"
 #include "Utils/texttemplate.hpp"
 #include "logger.hpp"
 
@@ -60,6 +61,8 @@ void Manager::selectWallpaper(const QString& id) {
         emit selectCompleted(false);
         return;
     }
+
+    Utils::printPath(data->getFullPath());
 
     const auto command = _renderCommand(m_actionConfig.onSelected, _generateVariables(*data));
     m_wallpaperService->select(command);

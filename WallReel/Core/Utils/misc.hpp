@@ -179,6 +179,24 @@ inline QDir getPicturesDir() {
     return QDir(picturesDir);
 }
 
+inline void printPath(const QString& path, std::FILE* out = stdout) {
+    if (path.isEmpty()) {
+        return;
+    }
+
+    const QByteArray bytes = QFile::encodeName(path);
+
+    const size_t n = static_cast<size_t>(bytes.size());
+    if (std::fwrite(bytes.constData(), 1, n, out) != n) {
+        return;
+    }
+    if (std::fputc('\n', out) == EOF) {
+        return;
+    }
+    std::fflush(out);
+    return;
+}
+
 }  // namespace WallReel::Core::Utils
 
 #endif  // WALLREEL_MISC_HPP
