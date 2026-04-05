@@ -171,6 +171,10 @@ class Carousel : public QObject {
         }
     }
 
+    Q_INVOKABLE void requestReload() {
+        m_imageMgr->loadAndProcess();
+    }
+
   signals:
     void currentImageIdChanged();
     void currentIndexChanged();

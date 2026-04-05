@@ -14,10 +14,12 @@ Item {
     property alias availableSortTypes: sortCtrl.availableSortTypes
     property alias selectedSortType: sortCtrl.selectedSortType
     property alias isSortDescending: sortCtrl.isDescending
+    property alias isLoading: reloadBtn.isLoading
 
     signal sortTypeSelected(string sortType)
     signal sortDescendingToggled(bool descending)
     signal searchDismissed()
+    signal reloadRequested()
 
     function requestSearchFocus() {
         searchBar.requestFocus();
@@ -61,6 +63,13 @@ Item {
             onIsDescendingToggled: (r) => {
                 return root.sortDescendingToggled(r);
             }
+        }
+
+        ReloadButton {
+            id: reloadBtn
+
+            Layout.alignment: Qt.AlignVCenter
+            onClicked: root.reloadRequested()
         }
 
     }

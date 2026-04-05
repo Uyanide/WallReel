@@ -28,6 +28,7 @@ qt_add_qml_module(${UILIB_NAME}_Modules
     Modules/ColorControl.qml
     Modules/TopBar.qml
     Modules/BottomBar.qml
+    Modules/ReloadButton.qml
 )
 qt_add_qml_module(${UILIB_NAME}_Components
     STATIC

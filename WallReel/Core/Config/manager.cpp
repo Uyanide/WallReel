@@ -54,9 +54,6 @@ Manager::Manager(
         WR_INFO(QString("No search directories specified, using Pictures directory: %1").arg(picturesPath));
         m_wallpaperConfig.dirs.append({picturesPath, true});
     }
-
-    WR_DEBUG("Loading wallpapers ...");
-    _loadWallpapers();
 }
 
 Manager::~Manager() {
@@ -324,7 +321,7 @@ void Manager::_loadCacheConfig(const QJsonObject& root) {
     }
 }
 
-void Manager::_loadWallpapers() {
+void Manager::scanWallpapers() {
     m_wallpapers.clear();
 
     // Add paths first using a set to avoid duplicates

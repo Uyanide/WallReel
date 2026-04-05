@@ -8,6 +8,7 @@
 #include <atomic>
 
 #include "Cache/manager.hpp"
+#include "Config/manager.hpp"
 #include "data.hpp"
 #include "model.hpp"
 
@@ -20,6 +21,7 @@ class Manager : public QObject {
     // Constructor / Destructor
 
     Manager(
+        Config::Manager& configMgr,
         Cache::Manager& cacheMgr,
         const QSize& thumbnailSize,
         QObject* parent = nullptr);
@@ -32,6 +34,8 @@ class Manager : public QObject {
 
     int processedCount() const { return m_processedCount.load(std::memory_order_relaxed); }
 
+    // Total count of processing items, NOT the count of items in the model
+    // (Why did I name this method like this? idk)
     int totalCount() const { return m_watcher.progressMaximum(); }
 
     void setSortType(Config::SortType type) { m_proxyModel->setSortType(type); }
@@ -46,6 +50,8 @@ class Manager : public QObject {
 
     QString searchText() const { return m_proxyModel->getSearchText(); }
 
+    void loadAndProcess();
+
     void loadAndProcess(const QStringList& paths);
 
     void stop();
@@ -59,6 +65,7 @@ class Manager : public QObject {
 
   private:
     void _clearData();
+    void _process(const QStringList& paths);
 
   signals:
     // Properties
@@ -75,6 +82,7 @@ class Manager : public QObject {
     ProxyModel* m_proxyModel;
     QHash<QString, Data*> m_dataMap;
 
+    Config::Manager& m_configMgr;
     Cache::Manager& m_cacheMgr;
     QSize m_thumbnailSize;
 

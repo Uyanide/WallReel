@@ -32,6 +32,10 @@ Item {
             root.forceActiveFocus();
         }
 
+        function onReloadRequested() {
+            CarouselProvider.requestReload();
+        }
+
         target: topBar
     }
 
@@ -48,6 +52,7 @@ Item {
             title: carousel.currentImageName
             availableSortTypes: CarouselProvider.availableSortTypes
             isSortDescending: CarouselProvider.sortDescending
+            isLoading: CarouselProvider.isLoading
             onSortTypeSelected: (t) => {
                 return CarouselProvider.setSortType(t);
             }

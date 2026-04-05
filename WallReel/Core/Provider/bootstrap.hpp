@@ -36,6 +36,7 @@ class Bootstrap {
         }
 
         imageMgr = new Image::Manager(
+            *configMgr,
             *cacheMgr,
             configMgr->getFocusImageSize());
 
@@ -55,7 +56,7 @@ class Bootstrap {
     void start() {
         cacheMgr->evictOldEntries();
         configMgr->captureState();
-        imageMgr->loadAndProcess(configMgr->getWallpapers());
+        imageMgr->loadAndProcess();
     }
 
     bool apply(const QString& path) {

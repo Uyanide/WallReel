@@ -72,6 +72,8 @@ class Manager : public QObject {
      */
     Q_INVOKABLE void captureState();
 
+    void scanWallpapers();
+
   signals:
     void stateCaptured();
 
@@ -83,8 +85,6 @@ class Manager : public QObject {
     void _loadActionConfig(const QJsonObject& config);
     void _loadStyleConfig(const QJsonObject& config);
     void _loadCacheConfig(const QJsonObject& config);
-    // Load wallpapers
-    void _loadWallpapers();
     // Callback for state capture results
     void _onCaptureResult(const QString& key, const QString& value);
 

@@ -9,10 +9,12 @@
 WALLREEL_DECLARE_SENDER("ImageManager")
 
 WallReel::Core::Image::Manager::Manager(
+    Config::Manager& configMgr,
     Cache::Manager& cacheMgr,
     const QSize& thumbnailSize,
     QObject* parent)
     : QObject(parent),
+      m_configMgr(configMgr),
       m_cacheMgr(cacheMgr),
       m_thumbnailSize(thumbnailSize) {
     m_dataModel  = new Model(this);
@@ -38,6 +40,21 @@ WallReel::Core::Image::Manager::~Manager() {
     m_watcher.waitForFinished();
 }
 
+void WallReel::Core::Image::Manager::loadAndProcess() {
+    if (m_isLoading) {
+        WR_WARN("Already loading images. Ignoring new load request.");
+        return;
+    }
+    m_isLoading = true;
+    emit isLoadingChanged();
+
+    _clearData();
+
+    m_configMgr.scanWallpapers();
+    const auto paths = m_configMgr.getWallpapers();
+    return _process(paths);
+}
+
 void WallReel::Core::Image::Manager::loadAndProcess(const QStringList& paths) {
     if (m_isLoading) {
         WR_WARN("Already loading images. Ignoring new load request.");
@@ -48,6 +65,10 @@ void WallReel::Core::Image::Manager::loadAndProcess(const QStringList& paths) {
 
     _clearData();
 
+    return _process(paths);
+}
+
+void WallReel::Core::Image::Manager::_process(const QStringList& paths) {
     m_processedCount = 0;
     m_progressUpdateTimer.start(s_ProgressUpdateIntervalMs);
     // These are all small objects so capturing by value should be fine
@@ -75,6 +96,7 @@ void WallReel::Core::Image::Manager::stop() {
 
 void WallReel::Core::Image::Manager::_clearData() {
     m_dataModel->clearData();
+    m_dataMap.clear();
 }
 
 void WallReel::Core::Image::Manager::_onProgressValueChanged(int value) {
